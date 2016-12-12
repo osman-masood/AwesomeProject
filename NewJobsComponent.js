@@ -16,14 +16,24 @@ const {
     Button,
     Linking,
     Modal,
-    TouchableHighlight
+    TouchableHighlight,
+    PickerIOS,
+    TextInput
 } = ReactNative;
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 
+const PickerItemIOS = PickerIOS.Item;
+
 import Tabs from 'react-native-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MapView from 'react-native-maps';
+
+import update from 'immutability-helper';
+
+
+const DECLINE_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
+    "Wrong trailer type", "Not operable", "Wrong price", "Other"];
 
 export default class NewJobsComponent extends Component {
     static propTypes = {
@@ -33,6 +43,14 @@ export default class NewJobsComponent extends Component {
 
     constructor(props) {
         super(props);
+
+        this.setDeclineModalVisible = this.setDeclineModalVisible.bind(this);
+        this.setAcceptModalVisible = this.setAcceptModalVisible.bind(this);
+        this.onAcceptJob = this.onAcceptJob.bind(this);
+        this.onDeclineJob = this.onDeclineJob.bind(this);
+        this.onRegionChange = this.onRegionChange.bind(this);
+        this.callPhone = this.callPhone.bind(this);
+
         this.state = {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
@@ -54,11 +72,13 @@ export default class NewJobsComponent extends Component {
                         "pickupDate": "2016/08/12",
                         "jobExpirationDatetime": "2016-12-09T03:22:20Z",
                         "phoneNumber": "4085152051"
-                    }
+                    },
+                    "isDeclined": false,
+                    "isAccepted": false,
                 },
                 {
                     "name": "Toyota of Fremont",
-                    "jobId": "1",
+                    "jobId": "2",
                     "isPreferred": false,
                     "origin": "Fremont, CA",
                     "destination": "Los Angeles, CA",
@@ -73,7 +93,9 @@ export default class NewJobsComponent extends Component {
                         "pickupDate": "2016/08/12",
                         "jobExpirationDatetime": "2016-12-09T03:22:20Z",
                         "phoneNumber": "4085152051"
-                    }
+                    },
+                    "isDeclined": false,
+                    "isAccepted": false,
                 }
             ],
             searchOrigin: null,
@@ -86,7 +108,9 @@ export default class NewJobsComponent extends Component {
             },
             declineModalVisible: false,
             acceptModalVisible: false,
-            jobOfModal: null
+            jobOfModal: null,
+            declineReason: DECLINE_REASONS[0],
+            declineReasonComments: null
         };
     }
 
@@ -145,9 +169,15 @@ export default class NewJobsComponent extends Component {
         </View>;
     }
 
+    getNotDeclinedOrAcceptedJobs() {
+        return this.state.jobs.filter((job) => !job.isDeclined && !job.isAccepted);
+    }
+
     listView() {
+        const notDeclinedJobs = this.getNotDeclinedOrAcceptedJobs();
+
         // Get list of dealer jobs
-        const dealerJobs = this.state.jobs.filter((el) => el.isPreferred);
+        const dealerJobs = notDeclinedJobs.filter((el) => el.isPreferred);
         console.log("dealerJobs: ", dealerJobs);
         let dealerJobsContainer = null;
         if (dealerJobs.length > 0) {
@@ -164,7 +194,7 @@ export default class NewJobsComponent extends Component {
         }
 
         // Get list of nearby jobs
-        const nearbyJobs = this.state.jobs.filter((el) => !el.isPreferred);
+        const nearbyJobs = notDeclinedJobs.filter((el) => !el.isPreferred);
         console.log("nearbyJobs: ", nearbyJobs);
         let nearbyJobsContainer = null;
         if (nearbyJobs.length > 0) {
@@ -193,7 +223,7 @@ export default class NewJobsComponent extends Component {
         }
 
         if (allContainers.length === 0) {
-            return <View>No nearby jobs found! Try again later!</View>
+            return <View><Text>No jobs found! Try again later!</Text></View>
         }
         return <View>{[subTabs, ...allContainers]}</View>;
     }
@@ -242,19 +272,79 @@ export default class NewJobsComponent extends Component {
                     visible={this.state.declineModalVisible}
                     onRequestClose={() => {alert("Modal has been closed.")}}
                 >
-                    <View style={{marginTop: 22}}>
-                        <View>
-                            <Text>Hello World!</Text>
+            <View style={{flex: 1}}>
+                {/* Top right X button */}
+                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
+                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(!this.state.declineModalVisible, null) }>
+                    </Icon.Button>
+                </View>
 
-                            <TouchableHighlight onPress={() => {
-              this.setDeclineModalVisible(!this.state.declineModalVisible, null)
-            }}>
-                                <Text>Hide Modal</Text>
-                            </TouchableHighlight>
+                <View style={{flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <Text>Please select a reason to decline this job.</Text>
+                </View>
 
-                        </View>
+                <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
+                    <PickerIOS
+                        itemStyle={{fontSize: 25}}
+                        selectedValue={this.state.declineReason}
+                        onValueChange={(declineReason) => this.setState({declineReason})}>
+                        {DECLINE_REASONS.map((declineReason) => (
+                            <PickerItemIOS
+                                key={declineReason}
+                                value={declineReason}
+                                label={declineReason}
+                            />
+                        ))}
+                    </PickerIOS>
+                    <TextInput
+                        style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
+                        editable = {true}
+                        multiline = {true}
+                        numberOfLines = {4}
+                        onChangeText={(declineReasonComments) => this.setState({declineReasonComments})}
+                        maxLength = {2047}
+                        returnKeyType="send"
+                        onSubmitEditing={this.onDeclineJob}
+                        keyboardType="default"
+                        value={this.state.declineReasonComments}
+                        placeholder="Comments"
+                    />
+                    <View style={{flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
+                        <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(!this.state.declineModalVisible, null) }>
+                            Cancel
+                        </Icon.Button>
+                        <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onDeclineJob}>
+                            OK
+                        </Icon.Button>
                     </View>
+                </View>
+            </View>
                 </Modal>;
+    }
+
+    onDeclineJob() {
+        const jobIdToUpdate = this.state.jobOfModal.jobId;
+        const updatedJobs = this.getUpdatedJobsAfterAcceptOrDecline(jobIdToUpdate, false);
+
+        this.setState({
+            declineModalVisible: false,
+            jobOfModal: null,
+            jobs: updatedJobs
+        });
+        // TODO Make AJAX call to submit updated job
+    }
+
+    getUpdatedJobsAfterAcceptOrDecline(jobId: string, isAccept: boolean) {
+        // Find declined job in state's list, get the updated object, and replace old job with updated job in list.
+        const jobInList = this.state.jobs.filter((job) => job.jobId === jobId)[0];
+        const jobIndexInList = this.state.jobs.findIndex((job) => job.jobId === jobId);
+        let updatedJob;
+        if (isAccept) {
+            updatedJob = update(jobInList, {isAccepted: {$set: true}, isDeclined: {$set: false}});
+        } else {
+            updatedJob = update(jobInList, {isDeclined: {$set: true}, isAccepted: {$set: false}});
+        }
+        return update(this.state.jobs, {$splice: [[jobIndexInList, 1, updatedJob]]});
     }
 
     setAcceptModalVisible(visible, job) {
@@ -269,6 +359,7 @@ export default class NewJobsComponent extends Component {
                     onRequestClose={() => {alert("Modal has been closed.")}}
                 >
                     <View style={{flex: 1}}>
+                        {/* Top right X button */}
                         <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
                             <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.acceptModalVisible, null) }>
                             </Icon.Button>
@@ -290,12 +381,19 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
-        // Uses state.jobOfModal
+        const jobIdToUpdate = this.state.jobOfModal.jobId;
+        const updatedJobs = this.getUpdatedJobsAfterAcceptOrDecline(jobIdToUpdate, true);
 
+        this.setState({
+            acceptModalVisible: false,
+            jobOfModal: null,
+            jobs: updatedJobs
+        });
+        // TODO Make AJAX call to submit updated job
     }
 
     renderJobListElement(job) {
-        return <View key={job.id} style={{ marginTop: 5, marginBottom: 5, paddingLeft: 5, paddingTop: 5}}>
+        return <View key={job.jobId} style={{ marginTop: 5, marginBottom: 5, paddingLeft: 5, paddingTop: 5}}>
             {/* Job Text */}
             <View style={{flexDirection: 'row'}}>
                 <View style={{flex: 3}}>
@@ -332,7 +430,7 @@ export default class NewJobsComponent extends Component {
         </View>
     }
 
-    static callPhone(phoneNumber: string) {
+    callPhone(phoneNumber: string) {
         Linking.openURL("tel:1-408-555-5555").catch(
             err => console.error('An error occurred opening phone number ' + phoneNumber, err));
     }
