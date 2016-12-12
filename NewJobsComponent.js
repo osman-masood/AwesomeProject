@@ -101,17 +101,46 @@ export default class NewJobsComponent extends Component {
             searchOrigin: null,
             destinationOrigin: null,
             mapViewRegion: {
-                latitude: 37.78825,
-                longitude: -122.4324,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
+                latitude: 1.78825,
+                longitude: -1.4324,
+                latitudeDelta: 0.1822,
+                longitudeDelta: 0.0921,
             },
+            currentPosition: {latitude: null, longitude: null},
             declineModalVisible: false,
             acceptModalVisible: false,
             jobOfModal: null,
             declineReason: DECLINE_REASONS[0],
             declineReasonComments: null
         };
+
+        // Set current map position based on geolocation.
+        navigator.geolocation.getCurrentPosition(
+            (position) => this.setState({
+                currentPosition: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                },
+                mapViewRegion: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    latitudeDelta: 0.522,
+                    longitudeDelta: 0.421,
+                }
+            }),
+            (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
+        );
+
+        // Continually update current position (marker) as user's location changes
+        navigator.geolocation.watchPosition(
+            (position) => this.setState({
+                currentPosition: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                },
+            }),
+            (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
+        )
     }
 
     onRegionChange(mapViewRegion) {
@@ -235,7 +264,13 @@ export default class NewJobsComponent extends Component {
             onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
             style={{height: 490}}
         >
-            {this.state.jobs.map(job => (
+            <MapView.Marker coordinate={{latitude: this.state.currentPosition.latitude, longitude:
+            this.state.currentPosition.longitude}}
+                            title="Me"
+                            description="Where I am"
+            />
+
+            {this.getNotDeclinedOrAcceptedJobs().map(job => (
                 <MapView.Marker
                     coordinate={{latitude: parseFloat(job.location.latitude), longitude: parseFloat(job.location.longitude)}}
                     title={"COD: $" + job.cod}
@@ -267,11 +302,11 @@ export default class NewJobsComponent extends Component {
 
     renderDeclineModalIfVisible() {
         return <Modal
-                    animationType={"slide"}
-                    transparent={false}
-                    visible={this.state.declineModalVisible}
-                    onRequestClose={() => {alert("Modal has been closed.")}}
-                >
+            animationType={"slide"}
+            transparent={false}
+            visible={this.state.declineModalVisible}
+            onRequestClose={() => {alert("Modal has been closed.")}}
+        >
             <View style={{flex: 1}}>
                 {/* Top right X button */}
                 <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
@@ -319,7 +354,7 @@ export default class NewJobsComponent extends Component {
                     </View>
                 </View>
             </View>
-                </Modal>;
+        </Modal>;
     }
 
     onDeclineJob() {
@@ -335,7 +370,10 @@ export default class NewJobsComponent extends Component {
     }
 
     getUpdatedJobsAfterAcceptOrDecline(jobId: string, isAccept: boolean) {
-        // Find declined job in state's list, get the updated object, and replace old job with updated job in list.
+        /*
+        Find accepted/declined job in state's list, get the updated object,
+        and replace old job with updated job in list.
+         */
         const jobInList = this.state.jobs.filter((job) => job.jobId === jobId)[0];
         const jobIndexInList = this.state.jobs.findIndex((job) => job.jobId === jobId);
         let updatedJob;
@@ -347,37 +385,37 @@ export default class NewJobsComponent extends Component {
         return update(this.state.jobs, {$splice: [[jobIndexInList, 1, updatedJob]]});
     }
 
-    setAcceptModalVisible(visible, job) {
+    setAcceptModalVisible(visible: boolean, job) {
         this.setState({acceptModalVisible: visible, jobOfModal: job});
     }
 
     renderAcceptModalIfVisible() {
         return <Modal
-                    animationType={"slide"}
-                    transparent={false}
-                    visible={this.state.acceptModalVisible}
-                    onRequestClose={() => {alert("Modal has been closed.")}}
-                >
-                    <View style={{flex: 1}}>
-                        {/* Top right X button */}
-                        <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
-                            <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.acceptModalVisible, null) }>
-                            </Icon.Button>
-                        </View>
+            animationType={"slide"}
+            transparent={false}
+            visible={this.state.acceptModalVisible}
+            onRequestClose={() => {alert("Modal has been closed.")}}
+        >
+            <View style={{flex: 1}}>
+                {/* Top right X button */}
+                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
+                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.acceptModalVisible, null) }>
+                    </Icon.Button>
+                </View>
 
-                        <View style={{flex: 3, flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                            <Text>Are you sure you would like to accept this job?</Text>
-                        </View>
-                        <View style={{flex: 3, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
-                            <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.acceptModalVisible, null) }>
-                            Cancel
-                            </Icon.Button>
-                            <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onAcceptJob}>
-                                Yes
-                            </Icon.Button>
-                        </View>
-                    </View>
-                </Modal>;
+                <View style={{flex: 3, flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+                    <Text>Are you sure you would like to accept this job?</Text>
+                </View>
+                <View style={{flex: 3, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
+                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.acceptModalVisible, null) }>
+                        Cancel
+                    </Icon.Button>
+                    <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onAcceptJob}>
+                        Yes
+                    </Icon.Button>
+                </View>
+            </View>
+        </Modal>;
     }
 
     onAcceptJob() {
