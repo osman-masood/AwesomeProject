@@ -1,7 +1,7 @@
 /**
  * Created by osman on 12/11/16.
  */
-const jobs = [{
+export default jobsDatabase = [{
     requestId: 119991,
     shipperId: "lk23j423lk3j2434",
     shipper: {

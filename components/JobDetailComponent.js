@@ -17,26 +17,25 @@ const {
 import NavigationBar from 'react-native-navbar';
 
 
-export default class MyJobsComponent extends Component {
+export default class JobDetailComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
     };
 
     render() {
-
-        const rightButtonConfig = {
-            title: 'Menu',
-            handler: () => alert('Menu!'),
+        const leftButtonConfig = {
+            title: 'Back',
+            handler: () => this.props.navigator.pop()
         };
 
         return <View style={{flex: 1}}>
             <NavigationBar
                 title={{title: this.props.title}}
-                rightButton={rightButtonConfig}
+                leftButton={leftButtonConfig}
             />
             <View style={{alignItems: 'center', backgroundColor: 'white'}}>
-                <Text style={styles.tabText}>MyJobsComponent</Text>
+                <Text style={styles.tabText}>JobDetailComponent</Text>
             </View>
         </View>
     }

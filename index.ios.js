@@ -5,6 +5,7 @@
  */
 
 import React, { Component, PropTypes } from 'react';
+//noinspection JSUnresolvedVariable
 import {
     AppRegistry,
     StyleSheet,
@@ -14,87 +15,25 @@ import {
     TextInput,
     Button
 } from 'react-native';
+import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 
-import TabBarComponent from './TabBarComponent';
-
-var NavigationBar = require('react-native-navbar');
-
-
-class LoginPage extends Component {
-    static propTypes = {
-        title: PropTypes.string.isRequired,
-        navigator: PropTypes.object.isRequired,
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = { phoneNumber: '(408)515-2051' };
-    }
-
-    _onForward = () => {
-        this.props.navigator.push({
-            title: 'New Jobs',
-            component: TabBarComponent,
-            navigationBarHidden: true,
-        });
-    };
-
-    render() {
-        return (
-            <View style={styles.container}>
-                <Text style={styles.welcome}>
-                    Stowk
-                </Text>
-                <TextInput
-                    style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-                    onChangeText={(phoneNumber) => this.setState({phoneNumber})}
-                    value={this.state.phoneNumber}
-                />
-                <Button
-                    onPress={this._onForward}
-                    title="Send Code"
-                    color="#841584"
-                    accessibilityLabel="Send code through SMS to log in"
-                />
-            </View>
-        );
-    }
-}
+import NewJobsComponent from "./components/NewJobsComponent";
 
 export default class AwesomeProject extends Component {
     render() {
+        console.info("Rendering AwesomeProject with props ", this.props);
         return (
             <NavigatorIOS
                 initialRoute={{
-                    component: LoginPage,
-                    title: 'Login',
+                    component: EnterPhoneNumberComponent, // NewJobsComponent
+                    title: 'Enter Phone Number',
                     navigationBarHidden: true,
-                    passProps: {'title': "Login"}
+                    passProps: {title: "Enter Phone Number", accessToken: '123'}
                     }}
                 style={{flex: 1}}
             />
         );
     }
 }
-
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#F5FCFF',
-    },
-    welcome: {
-        fontSize: 20,
-        textAlign: 'center',
-        margin: 10,
-    },
-    instructions: {
-        textAlign: 'center',
-        color: '#333333',
-        marginBottom: 5,
-    },
-});
 
 AppRegistry.registerComponent('AwesomeProject', () => AwesomeProject);
