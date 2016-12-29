@@ -42,6 +42,7 @@ export default class MyJobsComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
+        carrierRequests: PropTypes.array.isRequired
     };
 
     constructor(props) {

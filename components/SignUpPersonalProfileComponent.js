@@ -18,7 +18,7 @@ import {
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 
-import { getAccessTokenFromResponse } from './utils';
+import { getAccessTokenFromResponse } from './common';
 
 
 export default class SignUpPersonalProfileComponent extends Component {

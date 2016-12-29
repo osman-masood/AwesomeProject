@@ -15,7 +15,7 @@ import {
     Button
 } from 'react-native';
 
-import { getAccessTokenFromResponse } from './utils';
+import { getAccessTokenFromResponse } from './common';
 
 import EnterCodeComponent from "./EnterCodeComponent";
 

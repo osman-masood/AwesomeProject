@@ -39,11 +39,15 @@ const DECLINE_REASONS = ["Not interested", "Customer not available", "Customer d
 
 const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
 
+
 export default class NewJobsComponent extends Component {
+    //noinspection JSUnresolvedVariable
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        locationRequests: PropTypes.array.isRequired,
+        currentPosition: PropTypes.object.isRequired
     };
 
     constructor(props) {
@@ -64,7 +68,7 @@ export default class NewJobsComponent extends Component {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            jobs: jobsDatabase,
+            locationRequests: update(this.props.locationRequests),
             searchParams: {
                 origin: null,
                 destination: null,
@@ -81,7 +85,7 @@ export default class NewJobsComponent extends Component {
                 latitudeDelta: 0.1822,
                 longitudeDelta: 0.0921,
             },
-            currentPosition: {latitude: null, longitude: null},
+            currentPosition: {latitude: this.props.currentPosition.latitude, longitude: this.props.currentPosition.longitude},
             isFilterDropdownVisible: false,
             isDeclineModalVisible: false,
             isAcceptModalVisible: false,
@@ -94,33 +98,31 @@ export default class NewJobsComponent extends Component {
         navigator.geolocation.getCurrentPosition(
             (position) => this.setState({
                 currentPosition: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
+                    latitude: this.props.currentPosition.latitude,
+                    longitude: this.props.currentPosition.longitude,
                 },
                 mapViewRegion: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
+                    latitude: this.props.currentPosition.latitude,
+                    longitude: this.props.currentPosition.longitude,
                     latitudeDelta: 0.522,
                     longitudeDelta: 0.421,
                 }
             }),
             (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
         );
+    }
 
-        // Continually update current position (marker) as user's location changes
-        navigator.geolocation.watchPosition(
-            (position) => this.setState({
-                currentPosition: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                },
-            }),
-            (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
-        )
+    componentWillReceiveProps(nextProps) {
+        if (this.props.locationRequests.length !== nextProps.locationRequests.length) {
+            // TODO we can optimize further by deep-comparing locationRequests in shouldComponentUpdate.
+            this.setState({
+                locationRequests: nextProps.locationRequests,
+            });
+        }
     }
 
     onRegionChange(mapViewRegion) {
-        console.log("onRegionChange called with this: ", this);
+        console.log(`NewJobComponent.onRegionChange(mapViewRegion: ${mapViewRegion})`);
         this.setState({mapViewRegion});
     }
 
@@ -170,10 +172,6 @@ export default class NewJobsComponent extends Component {
                 </View>
             </View>
         </View>;
-    }
-
-    getNotDeclinedAndNotAcceptedJobs() {
-        return this.state.jobs.filter((job) => !job.isDeclined && !job.isAccepted);
     }
 
     searchLoadsView() {
@@ -330,12 +328,12 @@ export default class NewJobsComponent extends Component {
         this.setState({searchParams: newSearchParams});
     }
 
-    listView() {
-        const notDeclinedJobs = this.getNotDeclinedAndNotAcceptedJobs();
-
-        // Get list of dealer jobs
-        const dealerJobs = notDeclinedJobs.filter((job) => job.isPreferred);
-        console.log("dealerJobs: ", dealerJobs);
+    dealerJobsContainer() {
+        /**
+         * Renders Requests whose preferred carrier ID is this carrier.
+         */
+        const dealerJobs = this.state.locationRequests.filter(
+            (req) => req['preferredCarrierIds'].indexOf(this.props.carrierId) !== -1);
         let dealerJobsContainer = null;
         if (dealerJobs.length > 0) {
             const dealerJobsViews = [];
@@ -349,10 +347,11 @@ export default class NewJobsComponent extends Component {
                 {dealerJobsViews}
             </View>;
         }
+        return dealerJobsContainer;
+    }
 
-        // Get list of network jobs
-        const networkJobs = notDeclinedJobs.filter((job) => job.isNetwork);
-        console.log("networkJobs: ", networkJobs);
+    networkJobsContainer() {
+        const networkJobs = this.state.locationRequests;  // TODO perform filter
         let networkJobsContainer = null;
         if (networkJobs.length > 0) {
             const networkJobsViews = [];
@@ -366,10 +365,11 @@ export default class NewJobsComponent extends Component {
                 {networkJobsViews}
             </View>;
         }
+        return networkJobsContainer;
+    }
 
-        // Get list of nearby jobs
-        const allJobs = notDeclinedJobs.filter((job) => !job.isPreferred && !job.isNetwork);
-        console.log("allJobs: ", allJobs);
+    allJobsContainer() {
+        const allJobs = this.state.locationRequests;
         let allJobsContainer = null;
         if (allJobs.length > 0) {
             const allJobsViews = [];
@@ -379,7 +379,7 @@ export default class NewJobsComponent extends Component {
                 allJobsViews.push(this.renderJobListElement(allJobs[jobIndex], false, marginBottom));
             }
             /* Bottom padding is so you can see the last job's buttons, because bottom nav tabs block
-            those from view due to the ScrollView */
+             those from view due to the ScrollView */
             allJobsContainer = <View key="allJobsContainer"
                                      style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}}>
                 <View style={[styles.listViewHeader, {backgroundColor: '#F4F0F0', paddingTop: 10, paddingBottom: 10, paddingLeft: 15, marginTop: 10}]}>
@@ -388,26 +388,32 @@ export default class NewJobsComponent extends Component {
                 {allJobsViews}
             </View>;
         }
+        return allJobsContainer;
+    }
+
+    listView() {
+        // Get list of dealer jobs
+        let dealerJobsContainer = this.dealerJobsContainer();
+
+        // Get list of network jobs
+        let networkJobsContainer = this.networkJobsContainer();
+
+        // Get list of nearby jobs
+        let allJobsContainer = this.allJobsContainer();
 
         // Sub-tabs (depends on state)
         const subTabs = this.renderAllJobsSubTabs();
 
         // Render them out in the list
-        const allContainers = [];
-        if (dealerJobsContainer) {
-            allContainers.push(dealerJobsContainer);
-        }
-        if (networkJobsContainer) {
-            allContainers.push(networkJobsContainer);
-        }
-        if (allJobsContainer) {
-            allContainers.push(allJobsContainer);
-        }
+        const allContainers = [dealerJobsContainer, networkJobsContainer, allJobsContainer].filter((c) => c !== null);
 
+        let returnView;
         if (allContainers.length === 0) {
-            return <View><Text>No jobs found! Try again later!</Text></View>
+            returnView = <View><Text>No jobs found! Try again later!</Text></View>
+        } else {
+            returnView = <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
         }
-        return <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
+        return returnView;
     }
 
     mapView() {
@@ -423,7 +429,7 @@ export default class NewJobsComponent extends Component {
                             description="Where I am"
             />
 
-            {this.getNotDeclinedAndNotAcceptedJobs().map(job => (
+            {this.locationRequests.map(job => (
                 <MapView.Marker
                     key={job.name + job.location.latitude + job.location.longitude}
                     coordinate={{latitude: parseFloat(job.location.latitude), longitude: parseFloat(job.location.longitude)}}
@@ -447,8 +453,8 @@ export default class NewJobsComponent extends Component {
         </View>;
     }
 
-    setDeclineModalVisible(visible, job) {
-        this.setState({isDeclineModalVisible: visible, jobOfModal: job});
+    setDeclineModalVisible(visible, request) {
+        this.setState({isDeclineModalVisible: visible, jobOfModal: request});
     }
 
     renderDeclineModalIfVisible() {
@@ -509,8 +515,8 @@ export default class NewJobsComponent extends Component {
     }
 
     onDeclineJob() {
-        const jobIdToUpdate = this.state.jobOfModal.jobId;
-        const updatedJobs = this.getUpdatedJobsAfterAcceptOrDecline(jobIdToUpdate, false);
+        const jobIdToUpdate = this.state.jobOfModal.id;
+        const updatedJobs = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, false);
 
         this.setState({
             isDeclineModalVisible: false,
@@ -520,20 +526,20 @@ export default class NewJobsComponent extends Component {
         // TODO Make AJAX call to submit updated job
     }
 
-    getUpdatedJobsAfterAcceptOrDecline(jobId: string, isAccept: boolean) {
+    getUpdatedRequestsAfterAcceptOrDecline(requestId: string, isAccept: boolean) {
         /*
          Find accepted/declined job in state's list, get the updated object,
          and replace old job with updated job in list.
          */
-        const jobInList = this.state.jobs.filter((job) => job.jobId === jobId)[0];
-        const jobIndexInList = this.state.jobs.findIndex((job) => job.jobId === jobId);
+        const jobInList = this.state.locationRequests.filter((req) => req.id === requestId)[0];
+        const jobIndexInList = this.state.locationRequests.findIndex((req) => req.id === requestId);
         let updatedJob;
         if (isAccept) {
-            updatedJob = update(jobInList, {isAccepted: {$set: true}, isDeclined: {$set: false}});
+            updatedJob = update(jobInList, {status: {$set: 2}});
         } else {
-            updatedJob = update(jobInList, {isDeclined: {$set: true}, isAccepted: {$set: false}});
+            updatedJob = update(jobInList, {status: {$set: 2}});  // TODO add support for is declined
         }
-        return update(this.state.jobs, {$splice: [[jobIndexInList, 1, updatedJob]]});
+        return update(this.state.locationRequests, {$splice: [[jobIndexInList, 1, updatedJob]]});
     }
 
     setAcceptModalVisible(visible: boolean, job) {
@@ -570,8 +576,8 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
-        const jobIdToUpdate = this.state.jobOfModal.jobId;
-        const updatedJobs = this.getUpdatedJobsAfterAcceptOrDecline(jobIdToUpdate, true);
+        const jobIdToUpdate = this.state.jobOfModal.id;
+        const updatedJobs = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, true);
 
         this.setState({
             isAcceptModalVisible: false,
@@ -581,7 +587,7 @@ export default class NewJobsComponent extends Component {
         // TODO Make AJAX call to submit updated job
     }
 
-    renderJobListElement(job, showPhoneNumber: boolean, marginBottom: number) {
+    renderJobListElement(request, showPhoneNumber: boolean, marginBottom: number) {
         if (showPhoneNumber === undefined) {
             showPhoneNumber = true;
         }
@@ -598,7 +604,7 @@ export default class NewJobsComponent extends Component {
             phoneNumberLambda = (job) => <View style={{width: 0, height: 0}} />;
         }
 
-        return <View key={job.jobId} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+        return <View key={request.id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
             {/* Job Text */}
             {/*
             <TouchableHighlight onPress={() => this.props.navigator.push({
@@ -610,29 +616,29 @@ export default class NewJobsComponent extends Component {
             */}
                 <View style={{flexDirection: 'row'}}>
                     <View style={{flex: 3}}>
-                        <Text style={{fontWeight: 'bold'}}>{job.name}</Text>
-                        <Text>Origin: {job.origin}</Text>
-                        <Text>Destination: {job.destination}</Text>
-                        <Text>Vehicles: {job.vehicles}</Text>
-                        <Text>Trailer Type: {job.trailerType}</Text>
-                        <Text>{job.isOperable ? "Operable" : "Inoperable"}</Text>
+                        <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
+                        <Text>Origin: {request.origin}</Text>
+                        <Text>Destination: {request.destination}</Text>
+                        <Text>Vehicles: {request.vehicles}</Text>
+                        <Text>Trailer Type: {request.trailerType}</Text>
+                        <Text>{request.isOperable ? "Operable" : "Inoperable"}</Text>
                     </View>
                     <View style={{flex: 1}}>
-                        <Text>COD: {job.cod}</Text>
-                        <Text>Distance: {job.location.distance}</Text>
-                        <Text>Pickup: {job.pickupDate}</Text>
-                        <Text>Job Expires: {job.jobExpirationDatetime}</Text>
+                        <Text>COD: {request.cod}</Text>
+                        <Text>Distance: {request.location.distance}</Text>
+                        <Text>Pickup: {request.pickupDate}</Text>
+                        <Text>Job Expires: {request.jobExpirationDatetime}</Text>
                     </View>
                 </View>
             {/*</TouchableHighlight>*/}
 
             {/* Call, Accept/Decline buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-                { phoneNumberLambda(job) }
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(true, job)}>
+                { phoneNumberLambda(request) }
+                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(true, request)}>
                     <Text style={{fontSize: 12}}>Accept</Text>
                 </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(true, job)}>
+                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(true, request)}>
                     <Text style={{fontSize: 12}}>Decline</Text>
                 </Icon.Button>
                 {/*
