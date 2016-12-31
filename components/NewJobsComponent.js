@@ -8,6 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
+import {haversine} from "./common";
 const ReactNative = require('react-native');
 const {
     StyleSheet,
@@ -516,14 +517,14 @@ export default class NewJobsComponent extends Component {
 
     onDeclineJob() {
         const jobIdToUpdate = this.state.jobOfModal.id;
-        const updatedJobs = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, false);
+        const updatedRequests = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, false);
 
         this.setState({
             isDeclineModalVisible: false,
             jobOfModal: null,
-            jobs: updatedJobs
+            locationRequests: updatedRequests
         });
-        // TODO Make AJAX call to submit updated job
+        // TODO Make AJAX call to submit declined job
     }
 
     getUpdatedRequestsAfterAcceptOrDecline(requestId: string, isAccept: boolean) {
@@ -576,13 +577,13 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
-        const jobIdToUpdate = this.state.jobOfModal.id;
-        const updatedJobs = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, true);
+        const requestIdToUpdate = this.state.jobOfModal.id;
+        const updatedRequests = this.getUpdatedRequestsAfterAcceptOrDecline(requestIdToUpdate, true);
 
         this.setState({
             isAcceptModalVisible: false,
             jobOfModal: null,
-            jobs: updatedJobs
+            locationRequests: updatedRequests
         });
         // TODO Make AJAX call to submit updated job
     }
@@ -597,13 +598,18 @@ export default class NewJobsComponent extends Component {
 
         let phoneNumberLambda = null;
         if (showPhoneNumber) {
-            phoneNumberLambda = (job) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.code)}>
+            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phone)}>
                 <Text style={{fontSize: 12}}>Call</Text>
             </Icon.Button>;
         } else {
-            phoneNumberLambda = (job) => <View style={{width: 0, height: 0}} />;
+            phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
         }
 
+        const haversineDistance = haversine(
+            {latitude: this.state.currentPosition.latitude, longitude: this.state.currentPosition.longitude},
+            {latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]},
+            {unit: "mile"}
+        );
         return <View key={request.id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
             {/* Job Text */}
             {/*
@@ -617,17 +623,17 @@ export default class NewJobsComponent extends Component {
                 <View style={{flexDirection: 'row'}}>
                     <View style={{flex: 3}}>
                         <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                        <Text>Origin: {request.origin}</Text>
-                        <Text>Destination: {request.destination}</Text>
-                        <Text>Vehicles: {request.vehicles}</Text>
-                        <Text>Trailer Type: {request.trailerType}</Text>
+                        <Text>Origin: {request.origin.locationName}</Text>
+                        <Text>Destination: {request.destination.locationName}</Text>
+                        <Text>Vehicles: {request.vehicles.length}</Text>
+                        <Text>Trailer Type: {"TODO"}</Text>
                         <Text>{request.isOperable ? "Operable" : "Inoperable"}</Text>
                     </View>
                     <View style={{flex: 1}}>
                         <Text>COD: {request.cod}</Text>
-                        <Text>Distance: {request.location.distance}</Text>
+                        <Text>Distance: {haversineDistance}</Text>
                         <Text>Pickup: {request.pickupDate}</Text>
-                        <Text>Job Expires: {request.jobExpirationDatetime}</Text>
+                        <Text>Job Expires: {request.dropoffDate}</Text>
                     </View>
                 </View>
             {/*</TouchableHighlight>*/}
