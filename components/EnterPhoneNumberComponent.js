@@ -92,9 +92,9 @@ export default class EnterPhoneNumberComponent extends Component {
                     keyboardType="phone-pad"
                 />
                 <Button
-                    disabled={!this.state.phone || this.state.phone.length < 10}
+                    disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
                     onPress={this._onForward}
-                    title="Next"
+                    title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
                     color="#841584"
                     accessibilityLabel="Send code through SMS to log in"
                 />

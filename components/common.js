@@ -7,7 +7,8 @@
  */
 "use strict";
 
-/*
+
+/**
  ABOUT REQUEST STATUSES: Taken from https://github.com/yasinarif1/stowk-APIserver/blob/dad8baa308b1bc7e417e4824405a2d2a5c4784de/api/data/models/Request.js
 
  0 new: new request created - payment not processed
@@ -19,12 +20,28 @@
 
  Status can only increase.
  */
+const RequestStatusEnum = Object.freeze({
+    NEW: 0,
+    PROCESSING: 1,
+    DISPATCHED: 2,
+    IN_PROGRESS: 3,
+    COMPLETE: 4,
+    CANCELLED: 5,
+});
 
-const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql";
+
+const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
 const genericRequestsQueryLambda = (requestsFunctionString) => `{
   viewer {
-    ${requestsFunctionString} {
+    me {
+      _id,
+      carrier {
+        _id
+      }
+    }
+  
+    locationRequests(latitude: 30.0, longitude:-130, distance:5000) {
       _id,
       status,
       amountDue,
@@ -37,6 +54,7 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
           }
         }
       },
+      vehicleIds,
       vehicles {
         count,
         edges {
@@ -45,10 +63,12 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
             make,
             model,
             type,
-            color
+            color,
+            enclosed,
+            running
           }
         }
-      }
+      },
       preferredCarrierIds,
       origin {
         coordinates,
@@ -74,13 +94,32 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
   }
 }`;
 
-const carrierRequestsQuery = genericRequestsQueryLambda("carrierRequests");
-
-const locationRequestsQueryLambda = (latitude, longitude, distance) => {
-    genericRequestsQueryLambda(`locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance}`);
+const acceptRequestMutationLambda = (requestId:string, latitude:number, longitude:number, vehicleIds:Array<string>) => {
+    const vehicleIdsString = "[" + vehicleIds.map((vehicleId) => `"${vehicleId}"`).join(",") + "]";
+    return `
+    mutation {
+      acceptRequest(requestId:"${requestId}", latitude: ${latitude}, longitude: ${longitude}, vehicleIds: ${vehicleIdsString}) {
+        recordId
+      }
+    }`;
 };
 
-const carrierQueryLambda = (carrierId) => `
+const declineRequestMutationLambda = (requestId:string, reason:string) => `
+    mutation {
+      declineRequest(requestId:"${requestId}", reason:"${reason.replace('"', '\\"')}") {
+        requestId
+      }
+    }`;
+
+const carrierRequestsQuery = genericRequestsQueryLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
+
+const locationRequestsQueryLambda = (latitude:number, longitude:number, distance:number) => {
+    const rFS = `locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance})`;
+    console.log("locationRequestsQueryLambda: requestFunctionString=", rFS);
+    return genericRequestsQueryLambda(rFS);
+};
+
+const carrierQueryLambda = (carrierId:string) => `
     carrier(filter: {_id: "${carrierId}"}) {
       _id,
       name,
@@ -117,7 +156,7 @@ function getAccessTokenFromResponse(response) {
     // Fetch out access token from response header object
     const setCookieHeaderValue = response.headers.get('set-cookie');
     if (!setCookieHeaderValue) {
-        throw new Error("Response header did not contain set-cookie: " + response.headers);
+        throw new Error("Response header did not contain set-cookie: " + response.headers.entries());
     }
     let accessToken;
     for (let headerKeyValue of setCookieHeaderValue.split(';')) {
@@ -128,42 +167,47 @@ function getAccessTokenFromResponse(response) {
         }
     }
     if (!accessToken) {
-        throw new Error("set-cookie header in response did not contain access token: " + response.headers);
+        throw new Error("set-cookie header in response did not contain access token: " + response.headers.entries());
     }
     return accessToken;
 }
 
-function fetchGraphQlQuery(accessToken:string, query:string, responseDataViewerKey:string) {
-    console.log(`fetchGraphQlQuery(accessToken: ${accessToken}, responseDataViewerKey: ${responseDataViewerKey}`);
+function fetchGraphQlQuery(accessToken:string, query:string) {
+    console.log(`fetchGraphQlQuery(accessToken: ${accessToken}) with body:`, JSON.stringify({"query": query}));
     return fetch(GRAPHQL_ENDPOINT, {
         method: "POST",
         headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            'Accept': 'application/json',
-            'Cookie': 'accessToken=' + accessToken
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Cookie": "accessToken=" + accessToken
         },
-        body: JSON.stringify({"query": query})
+        body: JSON.stringify({"query": query, "variables": null, "operationName": null})
     })
+    // return fetch(GRAPHQL_ENDPOINT + "?query=" + query, {
+    //     method: "GET",
+    //     headers: {
+    //         "Content-Type": "text/plain; charset=utf-8",
+    //         'Accept': 'application/json',
+    //         'Cookie': 'accessToken=' + accessToken
+    //     },
+    // })
         .then((response) => {
-            return [response.json(), response.status]
-        })
-        .then((responseTuple) => {
-            const responseJson = responseTuple[0];
-            const responseStatus = responseTuple[1];
-            if (responseTuple[1] !== 200) {
-                throw new Error(`Get ${responseDataViewerKey} had non-200 response: ${responseStatus}, Content: ${responseJson}`);
+            console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
+            if (response.status !== 200) {
+                throw new Error(`fetchGraphQlQuery: GET had non-200 response: ${response.status}`);
             }
-            return responseJson['data']['viewer'][responseDataViewerKey];
-        });
+            return response.json();
+        })
 }
 
-function fetchCarrierRequests(accessToken) {
-    return fetchGraphQlQuery(accessToken, carrierRequestsQuery, "carrierRequests");
+function fetchCarrierRequests(accessToken:string) {
+    return fetchGraphQlQuery(accessToken, carrierRequestsQuery);
 }
 
-function fetchLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
-    return fetchGraphQlQuery(accessToken, locationRequestsQueryLambda(latitude, longitude, distance), "locationRequests")
-        .then((locationRequests) => locationRequests.filter((req) => req.status === 1));
+function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
+    const query = locationRequestsQueryLambda(latitude, longitude, distance);
+    console.log("fetchCurrentUserAndLocationRequests: fetchGraphQlQuery with query=", query);
+    return fetchGraphQlQuery(accessToken, query);
 }
 
 /** Following Haversine implementation taken from:
@@ -194,8 +238,8 @@ function haversine(start, end, options) {
         Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return options.threshold ? options.threshold > (R * c) : R * c;
+    return options.threshold ? options.threshold > (R * c) : Math.round(R * c);
 }
 
 
-export {getAccessTokenFromResponse, fetchCarrierRequests, fetchLocationRequests, haversine}
+export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversine, RequestStatusEnum, fetchGraphQlQuery, acceptRequestMutationLambda, declineRequestMutationLambda}

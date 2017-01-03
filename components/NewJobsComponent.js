@@ -8,7 +8,9 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {haversine} from "./common";
+import {haversine, acceptRequestMutationLambda} from "./common";
+const deepcopy = require("deepcopy");
+
 const ReactNative = require('react-native');
 const {
     StyleSheet,
@@ -46,9 +48,11 @@ export default class NewJobsComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired,
-        locationRequests: PropTypes.array.isRequired,
-        currentPosition: PropTypes.object.isRequired
+        openPreferredRequests: PropTypes.array.isRequired,
+        openNonPreferredRequests: PropTypes.array.isRequired,
+        currentPosition: PropTypes.object.isRequired,
+        acceptRequestFunction: PropTypes.func.isRequired,
+        declineRequestFunction: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -69,7 +73,8 @@ export default class NewJobsComponent extends Component {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            locationRequests: update(this.props.locationRequests),
+            openPreferredRequests: deepcopy(this.props.openPreferredRequests),
+            openNonPreferredRequests: deepcopy(this.props.openNonPreferredRequests),
             searchParams: {
                 origin: null,
                 destination: null,
@@ -86,7 +91,7 @@ export default class NewJobsComponent extends Component {
                 latitudeDelta: 0.1822,
                 longitudeDelta: 0.0921,
             },
-            currentPosition: {latitude: this.props.currentPosition.latitude, longitude: this.props.currentPosition.longitude},
+            currentPosition: deepcopy(this.props.currentPosition),
             isFilterDropdownVisible: false,
             isDeclineModalVisible: false,
             isAcceptModalVisible: false,
@@ -114,12 +119,17 @@ export default class NewJobsComponent extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (this.props.locationRequests.length !== nextProps.locationRequests.length) {
-            // TODO we can optimize further by deep-comparing locationRequests in shouldComponentUpdate.
-            this.setState({
-                locationRequests: nextProps.locationRequests,
-            });
-        }
+        // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
+        this.setState({
+            openNonPreferredRequests: deepcopy(nextProps.openNonPreferredRequests),
+            openPreferredRequests: deepcopy(nextProps.openPreferredRequests),
+            currentPosition: deepcopy(nextProps.currentPosition)
+        });
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
+        return true;
     }
 
     onRegionChange(mapViewRegion) {
@@ -333,8 +343,7 @@ export default class NewJobsComponent extends Component {
         /**
          * Renders Requests whose preferred carrier ID is this carrier.
          */
-        const dealerJobs = this.state.locationRequests.filter(
-            (req) => req['preferredCarrierIds'].indexOf(this.props.carrierId) !== -1);
+        const dealerJobs = this.state.openPreferredRequests;
         let dealerJobsContainer = null;
         if (dealerJobs.length > 0) {
             const dealerJobsViews = [];
@@ -352,7 +361,7 @@ export default class NewJobsComponent extends Component {
     }
 
     networkJobsContainer() {
-        const networkJobs = this.state.locationRequests;  // TODO perform filter
+        const networkJobs = [];  // TODO perform filter
         let networkJobsContainer = null;
         if (networkJobs.length > 0) {
             const networkJobsViews = [];
@@ -370,7 +379,7 @@ export default class NewJobsComponent extends Component {
     }
 
     allJobsContainer() {
-        const allJobs = this.state.locationRequests;
+        const allJobs = this.state.openNonPreferredRequests;
         let allJobsContainer = null;
         if (allJobs.length > 0) {
             const allJobsViews = [];
@@ -419,6 +428,7 @@ export default class NewJobsComponent extends Component {
 
     mapView() {
         const subTabs = this.renderAllJobsSubTabs();
+        const locationRequests = this.state.openNonPreferredRequests.concat(this.state.openPreferredRequests);
         return [subTabs, <View key="mapview"><MapView
             region={this.state.mapViewRegion}
             onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
@@ -430,7 +440,7 @@ export default class NewJobsComponent extends Component {
                             description="Where I am"
             />
 
-            {this.locationRequests.map(job => (
+            {locationRequests.map(job => (
                 <MapView.Marker
                     key={job.name + job.location.latitude + job.location.longitude}
                     coordinate={{latitude: parseFloat(job.location.latitude), longitude: parseFloat(job.location.longitude)}}
@@ -516,31 +526,28 @@ export default class NewJobsComponent extends Component {
     }
 
     onDeclineJob() {
-        const jobIdToUpdate = this.state.jobOfModal.id;
-        const updatedRequests = this.getUpdatedRequestsAfterAcceptOrDecline(jobIdToUpdate, false);
+        // Remove job from all lists
+        const requestIdToRemove = this.state.jobOfModal._id;
+        if (!requestIdToRemove) {
+            console.error("NewJobsComponent.onDeclineJob: No requestIdToRemove. jobOfModal:", this.state.jobOfModal);
+        }
+        const openNonPreferredRequests = this.state.openNonPreferredRequests.filter((r) => r._id !== requestIdToRemove);
+        const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
+        // API call to decline request
+        const finalDeclineReason = this.state.declineReason + (this.state.declineReasonComments ? `\n${this.state.declineReasonComments}` : "");
+        this.props.declineRequestFunction(this.state.jobOfModal, finalDeclineReason).then((responseJson) => {
+            console.log("NewJobsComponent.onDeclineJob: Successfully declined job. Response: ", responseJson);
+        });
+
+        // Set state to indicate request is declined
         this.setState({
             isDeclineModalVisible: false,
             jobOfModal: null,
-            locationRequests: updatedRequests
+            openNonPreferredRequests: openNonPreferredRequests,
+            openPreferredRequests: openPreferredRequests
         });
-        // TODO Make AJAX call to submit declined job
-    }
 
-    getUpdatedRequestsAfterAcceptOrDecline(requestId: string, isAccept: boolean) {
-        /*
-         Find accepted/declined job in state's list, get the updated object,
-         and replace old job with updated job in list.
-         */
-        const jobInList = this.state.locationRequests.filter((req) => req.id === requestId)[0];
-        const jobIndexInList = this.state.locationRequests.findIndex((req) => req.id === requestId);
-        let updatedJob;
-        if (isAccept) {
-            updatedJob = update(jobInList, {status: {$set: 2}});
-        } else {
-            updatedJob = update(jobInList, {status: {$set: 2}});  // TODO add support for is declined
-        }
-        return update(this.state.locationRequests, {$splice: [[jobIndexInList, 1, updatedJob]]});
     }
 
     setAcceptModalVisible(visible: boolean, job) {
@@ -577,15 +584,26 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
-        const requestIdToUpdate = this.state.jobOfModal.id;
-        const updatedRequests = this.getUpdatedRequestsAfterAcceptOrDecline(requestIdToUpdate, true);
+        // Remove job from all lists
+        const requestIdToRemove = this.state.jobOfModal._id;
+        if (!requestIdToRemove) {
+            console.error("NewJobsComponent.onAcceptJob: No requestIdToRemove. jobOfModal:", this.state.jobOfModal);
+        }
+        const openNonPreferredRequests = this.state.openNonPreferredRequests.filter((r) => r._id !== requestIdToRemove);
+        const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
+        // API call to accept job
+        this.props.acceptRequestFunction(this.state.jobOfModal).then((responseJson) => {
+            console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
+        });
+
+        // Set state to hide accepted job & modal
         this.setState({
             isAcceptModalVisible: false,
             jobOfModal: null,
-            locationRequests: updatedRequests
+            openNonPreferredRequests: openNonPreferredRequests,
+            openPreferredRequests: openPreferredRequests
         });
-        // TODO Make AJAX call to submit updated job
     }
 
     renderJobListElement(request, showPhoneNumber: boolean, marginBottom: number) {
@@ -610,7 +628,7 @@ export default class NewJobsComponent extends Component {
             {latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]},
             {unit: "mile"}
         );
-        return <View key={request.id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
             {/* Job Text */}
             {/*
             <TouchableHighlight onPress={() => this.props.navigator.push({
@@ -625,7 +643,7 @@ export default class NewJobsComponent extends Component {
                         <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
                         <Text>Origin: {request.origin.locationName}</Text>
                         <Text>Destination: {request.destination.locationName}</Text>
-                        <Text>Vehicles: {request.vehicles.length}</Text>
+                        <Text>Vehicles: {request.vehicles.count}</Text>
                         <Text>Trailer Type: {"TODO"}</Text>
                         <Text>{request.isOperable ? "Operable" : "Inoperable"}</Text>
                     </View>
