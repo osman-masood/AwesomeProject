@@ -32,7 +32,7 @@ const RequestStatusEnum = Object.freeze({
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
-const genericRequestsQueryLambda = (requestsFunctionString) => `{
+const genericRequestsQueryStringLambda = (requestsFunctionString) => `{
   viewer {
     me {
       _id,
@@ -44,8 +44,12 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
     locationRequests(latitude: 30.0, longitude:-130, distance:5000) {
       _id,
       status,
+      paymentType,
       amountDue,
-      amountEstimated,  
+      amountEstimated,
+      declinedBy {
+        carrierId
+      },
       deliveries {
         edges {
           node {
@@ -74,13 +78,15 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
         coordinates,
         locationName,
         contactName,
-        contactPhone
+        contactPhone,
+        address
       },
       destination {
         coordinates,
         locationName,
         contactName,
-        contactPhone
+        contactPhone,
+        address
       },
       pickupDate,
       dropoffDate,
@@ -94,7 +100,7 @@ const genericRequestsQueryLambda = (requestsFunctionString) => `{
   }
 }`;
 
-const acceptRequestMutationLambda = (requestId:string, latitude:number, longitude:number, vehicleIds:Array<string>) => {
+const acceptRequestMutationStringLambda = (requestId:string, latitude:number, longitude:number, vehicleIds:Array<string>) => {
     const vehicleIdsString = "[" + vehicleIds.map((vehicleId) => `"${vehicleId}"`).join(",") + "]";
     return `
     mutation {
@@ -104,19 +110,29 @@ const acceptRequestMutationLambda = (requestId:string, latitude:number, longitud
     }`;
 };
 
-const declineRequestMutationLambda = (requestId:string, reason:string) => `
-    mutation {
-      declineRequest(requestId:"${requestId}", reason:"${reason.replace('"', '\\"')}") {
-        requestId
+const changeStatusMutationStringLambda = (request, newStatus) => {
+    return `mutation UpdateRequestById {
+      requestUpdateById(input: {clientMutationId: "11", record:{_id:"${request._id}", status: ${newStatus}}}) {
+        recordId
       }
     }`;
+};
 
-const carrierRequestsQuery = genericRequestsQueryLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
+const declineRequestMutationStringLambda = (request, carrierId, reason:string) => {
+    const newDeclinedBy = [...request.declinedBy, {carrierId: carrierId, reason: reason || ""}];
+    return `mutation UpdateRequestById {
+      requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${JSON.stringify(newDeclinedBy)}}}) {
+        recordId
+      }
+    }`;
+};
 
-const locationRequestsQueryLambda = (latitude:number, longitude:number, distance:number) => {
+const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
+
+const locationRequestsQueryStringLambda = (latitude:number, longitude:number, distance:number) => {
     const rFS = `locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance})`;
     console.log("locationRequestsQueryLambda: requestFunctionString=", rFS);
-    return genericRequestsQueryLambda(rFS);
+    return genericRequestsQueryStringLambda(rFS);
 };
 
 const carrierQueryLambda = (carrierId:string) => `
@@ -201,11 +217,11 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
 }
 
 function fetchCarrierRequests(accessToken:string) {
-    return fetchGraphQlQuery(accessToken, carrierRequestsQuery);
+    return fetchGraphQlQuery(accessToken, carrierRequestsQueryString);
 }
 
 function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
-    const query = locationRequestsQueryLambda(latitude, longitude, distance);
+    const query = locationRequestsQueryStringLambda(latitude, longitude, distance);
     console.log("fetchCurrentUserAndLocationRequests: fetchGraphQlQuery with query=", query);
     return fetchGraphQlQuery(accessToken, query);
 }
@@ -241,5 +257,25 @@ function haversine(start, end, options) {
     return options.threshold ? options.threshold > (R * c) : Math.round(R * c);
 }
 
+function haversineDistanceToRequest(currentPosition, request) {
+    const isPickUp = request.status !== RequestStatusEnum.IN_PROGRESS;  // We'd only go to the destination if it's already picked up.
+    const originOrDestinationKey = isPickUp ? "origin" : "destination";
+    return haversine(
+        {latitude: currentPosition.latitude, longitude: currentPosition.longitude},
+        {latitude: request[originOrDestinationKey].coordinates[0], longitude: request[originOrDestinationKey].coordinates[1]},
+        {unit: "mile"}
+    );
+}
 
-export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversine, RequestStatusEnum, fetchGraphQlQuery, acceptRequestMutationLambda, declineRequestMutationLambda}
+function generateOperableString(request) {
+    // Generate operable/inoperable count string
+    const numOperable = request.vehicles.edges.filter((edge) => edge.node.running).length;
+    const numInoperable = request.vehicles.edges.filter((edge) => !edge.node.running).length;
+    return (!numInoperable ?
+        "Operable" :
+        (!numOperable ?
+            "Inoperable" :
+            `${numInoperable} Inoperable, ${numOperable} Operable`));
+}
+
+export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestMutationStringLambda, declineRequestMutationStringLambda, generateOperableString, changeStatusMutationStringLambda}

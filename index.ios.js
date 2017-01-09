@@ -27,7 +27,7 @@ export default class AwesomeProject extends Component {
                     component: TabBarComponent,  // TabBarComponent, // EnterPhoneNumberComponent,
                     title: 'Enter Phone Number',
                     navigationBarHidden: true,
-                    passProps: {title: "Enter Phone Number", accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODYzNDljZjI0NmQ2OTI1OWM0MWIxYTIiLCJlbWFpbCI6IkJldHR5NDBAeWFob28uY29tIiwiZmlyc3ROYW1lIjoiS2FpbHluIiwibGFzdE5hbWUiOiJMZWJzYWNrIiwicGhvbmUiOiIrMTQwODUxNTIwNTEiLCJyb2xlIjoidXNlciIsInByb2ZpbGUiOnsidHlwZSI6ImNhcnJpZXIiLCJyb2xlIjoib3duZXIiLCJjYXJyaWVyIjoiNTg2MzQ5Y2YyNDZkNjkyNTljNDFiMWQ0In0sInZlcmlmaWVkIjp0cnVlLCJpYXQiOjE0ODMzNTE3ODcsImV4cCI6MTUxNDg4Nzc4N30.AszPT8ifkgkiYpUzEdN-UpAwTNLrEMTOqhg0N6-Ixa4'}
+                    passProps: {title: "Enter Phone Number", accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODcxZTVkNDBmYjkzMzMxYmFkZmZhZDkiLCJlbWFpbCI6IkNsYXkuTWVkaHVyc3Q3NUB5YWhvby5jb20iLCJmaXJzdE5hbWUiOiJKYW55IiwibGFzdE5hbWUiOiJLZW1tZXIiLCJwaG9uZSI6IisxNDA4NTE1MjA1MSIsInJvbGUiOiJ1c2VyIiwicHJvZmlsZSI6eyJ0eXBlIjoiY2FycmllciIsInJvbGUiOiJvd25lciIsImNhcnJpZXIiOiI1ODcxZTVkNTBmYjkzMzMxYmFkZmZiMjAifSwidmVyaWZpZWQiOnRydWUsImlhdCI6MTQ4MzkyOTA2NywiZXhwIjoxNTE1NDY1MDY3fQ.QAOrGM1mEX2CLL0eYonBhXKfD-iPmZsUoVaHqptMPZE'}
                     }}
                 style={{flex: 1}}
             />

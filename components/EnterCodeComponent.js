@@ -57,7 +57,7 @@ export default class EnterCodeComponent extends Component {
 
                 if (statusCode === 202) {
                     // User is not registered: Take to registration
-                    console.error("Not implemented");
+                    console.error("User is not registered. Registration flow not implemented; must create the user first");
                 } else if (statusCode === 200) {
                     // User is registered: Take to new jobs
                     this.setState({submittingCodeState: 2});

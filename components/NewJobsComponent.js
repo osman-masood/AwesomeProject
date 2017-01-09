@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {haversine, acceptRequestMutationLambda} from "./common";
+import {haversineDistanceToRequest} from "./common";
 const deepcopy = require("deepcopy");
 
 const ReactNative = require('react-native');
@@ -33,7 +33,6 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 //noinspection JSUnresolvedVariable
 import MapView from 'react-native-maps';
 import update from 'immutability-helper';
-import jobsDatabase from './mockDatabase';
 
 const PickerItemIOS = PickerIOS.Item;
 
@@ -60,6 +59,7 @@ export default class NewJobsComponent extends Component {
 
         this.setDeclineModalVisible = this.setDeclineModalVisible.bind(this);
         this.setAcceptModalVisible = this.setAcceptModalVisible.bind(this);
+        this.renderAcceptModalIfVisible = this.renderAcceptModalIfVisible.bind(this);
         this.onAcceptJob = this.onAcceptJob.bind(this);
         this.onDeclineJob = this.onDeclineJob.bind(this);
         this.onRegionChange = this.onRegionChange.bind(this);
@@ -440,12 +440,12 @@ export default class NewJobsComponent extends Component {
                             description="Where I am"
             />
 
-            {locationRequests.map(job => (
+            {locationRequests.map(request => (
                 <MapView.Marker
-                    key={job.name + job.location.latitude + job.location.longitude}
-                    coordinate={{latitude: parseFloat(job.location.latitude), longitude: parseFloat(job.location.longitude)}}
-                    title={"COD: $" + job.cod}
-                    description={job.name}
+                    key={request._id}
+                    coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}
+                    title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
+                    description={request.origin.locationName}
                 />
             ))}
         </MapView></View>];
@@ -489,7 +489,7 @@ export default class NewJobsComponent extends Component {
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
                     <PickerIOS
                         itemStyle={{fontSize: 25}}
-                        selectedValue={this.state.declineReason}
+                        selectedValue={this.state.cancelReason}
                         onValueChange={(declineReason) => this.setState({declineReason})}>
                         {DECLINE_REASONS.map((declineReason) => (
                             <PickerItemIOS
@@ -509,7 +509,7 @@ export default class NewJobsComponent extends Component {
                         returnKeyType="send"
                         onSubmitEditing={this.onDeclineJob}
                         keyboardType="default"
-                        value={this.state.declineReasonComments}
+                        value={this.state.cancelReasonComments}
                         placeholder="Comments"
                     />
                     <View style={{flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
@@ -535,7 +535,7 @@ export default class NewJobsComponent extends Component {
         const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
         // API call to decline request
-        const finalDeclineReason = this.state.declineReason + (this.state.declineReasonComments ? `\n${this.state.declineReasonComments}` : "");
+        const finalDeclineReason = this.state.cancelReason + (this.state.cancelReasonComments ? `\n${this.state.cancelReasonComments}` : "");
         this.props.declineRequestFunction(this.state.jobOfModal, finalDeclineReason).then((responseJson) => {
             console.log("NewJobsComponent.onDeclineJob: Successfully declined job. Response: ", responseJson);
         });
@@ -623,11 +623,8 @@ export default class NewJobsComponent extends Component {
             phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
         }
 
-        const haversineDistance = haversine(
-            {latitude: this.state.currentPosition.latitude, longitude: this.state.currentPosition.longitude},
-            {latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]},
-            {unit: "mile"}
-        );
+        const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
+
         return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
             {/* Job Text */}
             {/*
@@ -648,7 +645,7 @@ export default class NewJobsComponent extends Component {
                         <Text>{request.isOperable ? "Operable" : "Inoperable"}</Text>
                     </View>
                     <View style={{flex: 1}}>
-                        <Text>COD: {request.cod}</Text>
+                        <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}</Text>
                         <Text>Distance: {haversineDistance}</Text>
                         <Text>Pickup: {request.pickupDate}</Text>
                         <Text>Job Expires: {request.dropoffDate}</Text>

@@ -8,6 +8,10 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
+import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest} from "./common";
+import JobDetailComponent from "./JobDetailComponent";
+const deepcopy = require("deepcopy");
+
 const ReactNative = require('react-native');
 const {
     StyleSheet,
@@ -21,7 +25,6 @@ const {
     ScrollView,
     Button
 } = ReactNative;
-import JobDetailComponent from './JobDetailComponent';
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
@@ -29,162 +32,68 @@ import Tabs from 'react-native-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 //noinspection JSUnresolvedVariable
 import MapView from 'react-native-maps';
-import update from 'immutability-helper';
 
 const PickerItemIOS = PickerIOS.Item;
 
-const DECLINE_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
+const CANCEL_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
     "Wrong trailer type", "Not operable", "Wrong price", "Other"];
 
-const LIST_VIEW_BOTTOM_PADDING_HACK = 80;
+const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
+
 
 export default class MyJobsComponent extends Component {
+    //noinspection JSUnresolvedVariable
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        carrierRequests: PropTypes.array.isRequired
+        acceptedRequests: PropTypes.array.isRequired,
+        currentPosition: PropTypes.object.isRequired,
+        cancelRequestFunction: PropTypes.func.isRequired
     };
 
     constructor(props) {
         super(props);
 
-        this.setDeclineModalVisible = this.setDeclineModalVisible.bind(this);
-        this.setAcceptModalVisible = this.setAcceptModalVisible.bind(this);
-        this.onPickupJob = this.onPickupJob.bind(this);
-        this.onDeclineJob = this.onDeclineJob.bind(this);
+        this.setCancelModalVisible = this.setCancelModalVisible.bind(this);
+        this.onNavigateToPickUpOrDropOff = this.onNavigateToPickUpOrDropOff.bind(this);
+        this.onCancelJob = this.onCancelJob.bind(this);
         this.onRegionChange = this.onRegionChange.bind(this);
         this.callPhone = this.callPhone.bind(this);
-        this.selectVehicleType = this.selectVehicleType.bind(this);
-        this.selectIsInOperation = this.selectIsInOperation.bind(this);
-        this.selectTrailerType = this.selectTrailerType.bind(this);
-        this.selectShipFromDaysInFuture = this.selectShipFromDaysInFuture.bind(this);
 
         this.state = {
-            selectedTab: "list",  // selectedTab is "list", "map", or "sort"
-            jobs: [
-                {
-                    "name": "Toyota of Fresno",
-                    "jobId": "1",
-                    "isPreferred": true,
-                    "isNetwork": false,
-                    "origin": "Fresno, CA",
-                    "destination": "Los Angeles, CA",
-                    "vehicles": "10 (4 Cars, 4 Pickup, 2 SUV)",
-                    "trailerType": "Open",
-                    "isOperable": true,
-                    "cod": 150.0,
-                    "location": {
-                        "latitude": "37.532762",
-                        "longitude": "-122.553908",
-                        "distance": 29,
-                        "pickupDate": "2016/08/12",
-                        "jobExpirationDatetime": "2016-12-09T03:22:20Z",
-                        "phoneNumber": "4085152051"
-                    },
-                    "isDeclined": false,
-                    "isAccepted": false,
-                },
-                {
-                    "name": "Toyota of Los Angeles",
-                    "jobId": "2",
-                    "isPreferred": false,
-                    "isNetwork": false,
-                    "origin": "Fremont, CA",
-                    "destination": "Los Angeles, CA",
-                    "vehicles": "20 (8 Cars, 8 Pickup, 4 SUV)",
-                    "trailerType": "Open",
-                    "isOperable": false,
-                    "cod": 150.0,
-                    "location": {
-                        "latitude": "37.432762",
-                        "longitude": "-122.153908",
-                        "distance": 29,
-                        "pickupDate": "2016/08/12",
-                        "jobExpirationDatetime": "2016-12-09T03:22:20Z",
-                        "phoneNumber": "4085152051"
-                    },
-                    "isDeclined": false,
-                    "isAccepted": false,
-                },
-                {
-                    "name": "Toyota of Fremont",
-                    "jobId": "3",
-                    "isPreferred": false,
-                    "isNetwork": true,
-                    "origin": "Los Angeles, CA",
-                    "destination": "San Francisco, CA",
-                    "vehicles": "10 (4 Cars, 4 Pickup, 2 SUV)",
-                    "trailerType": "Open",
-                    "isOperable": false,
-                    "cod": 250.0,
-                    "location": {
-                        "latitude": "37.432762",
-                        "longitude": "-122.153908",
-                        "distance": 29,
-                        "pickupDate": "2016/08/12",
-                        "jobExpirationDatetime": "2016-12-09T03:22:20Z",
-                        "phoneNumber": "4085152051"
-                    },
-                    "isDeclined": false,
-                    "isAccepted": false,
-                }
-            ],
-            searchParams: {
-                origin: null,
-                destination: null,
-                vehicleType: null,
-                trailerType: null,
-                isRunning: null,
-                minVehicles: "0",  // TODO for now, must be string because TextInputs throw warnings if you pass them numbers
-                maxVehicles: "1000",
-                readyToShipFromDate: null,
-            },
+            allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
+
+            acceptedRequests: deepcopy(this.props.acceptedRequests),
             mapViewRegion: {
                 latitude: 1.78825,
                 longitude: -1.4324,
                 latitudeDelta: 0.1822,
                 longitudeDelta: 0.0921,
             },
-            currentPosition: {latitude: null, longitude: null},
+            currentPosition: deepcopy(this.props.currentPosition),
             isFilterDropdownVisible: false,
-            isDeclineModalVisible: false,
-            isAcceptModalVisible: false,
+            isCancelModalVisible: false,
             jobOfModal: null,
-            declineReason: DECLINE_REASONS[0],
-            declineReasonComments: null
+            cancelReason: CANCEL_REASONS[0],
+            cancelReasonComments: null
         };
+    }
 
-        // Set current map position based on geolocation.
-        navigator.geolocation.getCurrentPosition(
-            (position) => this.setState({
-                currentPosition: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                },
-                mapViewRegion: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    latitudeDelta: 0.522,
-                    longitudeDelta: 0.421,
-                }
-            }),
-            (positionError) => console.error("MyJobsComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
-        );
+    componentWillReceiveProps(nextProps) {
+        // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
+        this.setState({
+            acceptedRequests: deepcopy(nextProps.acceptedRequests),
+            currentPosition: deepcopy(nextProps.currentPosition)
+        });
+    }
 
-        // Continually update current position (marker) as user's location changes
-        navigator.geolocation.watchPosition(
-            (position) => this.setState({
-                currentPosition: {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                },
-            }),
-            (positionError) => console.error("MyJobsComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
-        )
+    shouldComponentUpdate(nextProps, nextState) {
+        // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
+        return true;
     }
 
     onRegionChange(mapViewRegion) {
-        console.log("onRegionChange called with this: ", this);
+        console.log(`NewJobComponent.onRegionChange(mapViewRegion: ${mapViewRegion})`);
         this.setState({mapViewRegion});
     }
 
@@ -200,11 +109,10 @@ export default class MyJobsComponent extends Component {
         };
 
         let mainView = <Text>Not defined yet!</Text>;
-        console.info("MyJobsComponent state.selectedTab: ", this.state.selectedTab);
-        if (this.state.selectedTab === "list") {
+        if (this.state.allJobsSubTab === "list") {
             mainView = this.listView();
         }
-        else if (this.state.selectedTab === "map") {
+        else if (this.state.allJobsSubTab === "map") {
             mainView = this.mapView();
         }
 
@@ -215,252 +123,54 @@ export default class MyJobsComponent extends Component {
             />
             <View style={{marginTop: 40}}>
                 <View>
-                    {this.renderAcceptModalIfVisible()}
-                    {this.renderDeclineModalIfVisible()}
+                    {this.renderCancelModalIfVisible()}
                     {mainView}
                 </View>
             </View>
         </View>;
     }
 
-    getAcceptedAndNotFinishedJobs() {
-        return this.state.jobs.filter((job) => job.isAccepted);
-    }
-
-    searchLoadsView() {
-        return <View>
-            <TextInput
-                style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
-                editable = {true}
-                multiline = {false}
-                numberOfLines = {1}
-                onChangeText={(origin) => this.updateSearchParams("origin", origin)}
-                maxLength = {256}
-                returnKeyType="next"
-                onSubmitEditing={() => alert('Submitted!')}
-                keyboardType="default"
-                value={this.state.searchParams.origin}
-                placeholder="Origin City, State"
-            />
-            <TextInput
-                style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
-                editable = {true}
-                multiline = {false}
-                numberOfLines = {1}
-                onChangeText={(destination) => this.updateSearchParams("destination", destination)}
-                maxLength = {256}
-                returnKeyType="next"
-                onSubmitEditing={() => alert('Submitted!')}
-                keyboardType="default"
-                value={this.state.searchParams.destination}
-                placeholder="Destination City, State"
-            />
-
-            <Text>Vehicle Type</Text>
-            <View style={{flexDirection: "row"}}>
-                <Button
-                    onPress={() => this.selectVehicleType("Car")}
-                    title="Car"
-                    accessibilityLabel="Filter for Car" />
-                <Button
-                    onPress={() => this.selectVehicleType("SUV")}
-                    title="SUV"
-                    accessibilityLabel="Filter for SUV" />
-                <Button
-                    onPress={() => this.selectVehicleType("Van")}
-                    title="Van"
-                    accessibilityLabel="Filter for Van" />
-                <Button
-                    onPress={() => this.selectVehicleType("Pickup")}
-                    title="Pickup"
-                    accessibilityLabel="Filter for Pickup"/>
-            </View>
-
-            <Text>Trailer Type</Text>
-            <View style={{flexDirection: "row"}}>
-                <Button
-                    onPress={() => this.selectTrailerType("Open")}
-                    title="Open"
-                    accessibilityLabel="Filter for Open" />
-                <Button
-                    onPress={() => this.selectTrailerType("Enclosed")}
-                    title="Enclosed"
-                    accessibilityLabel="Filter for Enclosed" />
-            </View>
-
-            <Text>Running</Text>
-            <View style={{flexDirection: "row"}}>
-                <Button
-                    onPress={() => this.selectIsInOperation(true)}
-                    title="Operable"
-                    accessibilityLabel="Filter for Operable" />
-                <Button
-                    onPress={() => this.selectIsInOperation(false)}
-                    title="Non-operable"
-                    accessibilityLabel="Filter for Non-operable" />
-            </View>
-
-            <View style={{flexDirection: 'row'}}>
-                <View>
-                    <Text>Min</Text>
-                    <TextInput
-                        style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
-                        editable = {true}
-                        multiline = {false}
-                        numberOfLines = {1}
-                        onChangeText={(text) => this.updateSearchParams("minVehicles", text)}
-                        maxLength = {3}
-                        returnKeyType="next"
-                        onSubmitEditing={() => alert('Submitted!')}
-                        keyboardType="default"
-                        value={this.state.searchParams.minVehicles}
-                        placeholder="Min"
-                    />
-                </View>
-                <View>
-                    <Text>Max</Text>
-                    <TextInput
-                        style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
-                        editable = {true}
-                        multiline = {false}
-                        numberOfLines = {1}
-                        onChangeText={(text) => this.updateSearchParams("maxVehicles", text)}
-                        maxLength = {3}
-                        returnKeyType="next"
-                        onSubmitEditing={() => alert('Submitted!')}
-                        keyboardType="default"
-                        value={this.state.searchParams.maxVehicles}
-                        placeholder="Max"
-                    />
-                </View>
-            </View>
-
-            <Text>Ready to ship within</Text>
-            <View style={{flexDirection: "row"}}>
-                <Button
-                    onPress={() => this.selectShipFromDaysInFuture(0)}
-                    title="ASAP"
-                    accessibilityLabel="Filter for ship ASAP" />
-                <Button
-                    onPress={() => this.selectShipFromDaysInFuture(7)}
-                    title="7 Days"
-                    accessibilityLabel="Filter for ship within 7 Days" />
-                <Button
-                    onPress={() => this.selectShipFromDaysInFuture(30)}
-                    title="30 Days"
-                    accessibilityLabel="Filter for ship within 30 days" />
-                <Button
-                    onPress={() => this.selectShipFromDaysInFuture(60)}
-                    title="60 Days"
-                    accessibilityLabel="Filter for ship within 60 days" />
-            </View>
-
-        </View>
-    }
-
-    selectVehicleType(vehicleType: string) {
-        this.updateSearchParams("vehicleType", vehicleType);
-    }
-
-    selectTrailerType(trailerType: string) {
-        this.updateSearchParams("trailerType", trailerType)
-    }
-
-    selectIsInOperation(isInOperation: boolean) {
-        this.updateSearchParams("isOperable", isInOperation)
-    }
-
-    selectShipFromDaysInFuture(shipFromDaysInFuture: number) {
-        // TODO:
-    }
-
-    updateSearchParams(keyName: string, newValue) {
-        const updateObject = {};
-        updateObject[keyName] = {$set: newValue};
-        let newSearchParams = update(this.state.searchParams, updateObject);
-        this.setState({searchParams: newSearchParams});
-    }
-
-    listView() {
-        const notDeclinedJobs = this.getAcceptedAndNotFinishedJobs();
-
-        // Get list of dealer jobs
-        const dealerJobs = notDeclinedJobs.filter((job) => job.isPreferred);
-        console.log("dealerJobs: ", dealerJobs);
-        let dealerJobsContainer = null;
-        if (dealerJobs.length > 0) {
-            const dealerJobsViews = [];
-            for (let job of dealerJobs) {
-                dealerJobsViews.push(this.renderJobListElement(job));
-            }
-            dealerJobsContainer = <View key="dealerJobsContainer">
-                <View style={[styles.listViewHeader, {backgroundColor: '#BA4141', paddingTop: 10, paddingBottom: 10, paddingLeft: 15}]}>
-                    <Text style={styles.listViewHeaderText}>My Dealer Jobs</Text>
-                </View>
-                {dealerJobsViews}
-            </View>;
-        }
-
-        // Get list of network jobs
-        const networkJobs = notDeclinedJobs.filter((job) => job.isNetwork);
-        console.log("networkJobs: ", networkJobs);
-        let networkJobsContainer = null;
-        if (networkJobs.length > 0) {
-            const networkJobsViews = [];
-            for (let job of networkJobs) {
-                networkJobsViews.push(this.renderJobListElement(job));
-            }
-            networkJobsContainer = <View key="networkJobsContainer">
-                <View style={[styles.listViewHeader, {backgroundColor: '#DDA956', paddingTop: 10, paddingBottom: 10, paddingLeft: 15, marginTop: 10}]}>
-                    <Text style={styles.listViewHeaderText}>Network Jobs</Text>
-                </View>
-                {networkJobsViews}
-            </View>;
-        }
-
-        // Get list of nearby jobs
-        const allJobs = notDeclinedJobs.filter((job) => !job.isPreferred && !job.isNetwork);
-        console.log("allJobs: ", allJobs);
+    allJobsContainer() {
+        const allJobs = this.state.acceptedRequests;
         let allJobsContainer = null;
         if (allJobs.length > 0) {
             const allJobsViews = [];
-            for (let job of allJobs) {
-                allJobsViews.push(this.renderJobListElement(job));
+            for (let jobIndex = 0; jobIndex < allJobs.length; jobIndex++) {
+                // Bottom margin should be more for very last element so that bottom tab doesn't cover it.
+                const marginBottom = (jobIndex === allJobs.length - 1) ? 70 : undefined;
+                allJobsViews.push(this.renderJobListElement(allJobs[jobIndex], true, marginBottom));
             }
             /* Bottom padding is so you can see the last job's buttons, because bottom nav tabs block
              those from view due to the ScrollView */
             allJobsContainer = <View key="allJobsContainer"
                                      style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}}>
-                <View style={[styles.listViewHeader, {backgroundColor: '#1B6C1B', paddingTop: 10, paddingBottom: 10, paddingLeft: 15, marginTop: 10}]}>
-                    <Text style={styles.listViewHeaderText}>All Jobs</Text>
+                <View style={[styles.listViewHeader, {backgroundColor: '#F4F0F0', paddingTop: 10, paddingBottom: 10, paddingLeft: 15, marginTop: 10}]}>
+                    <Text style={styles.listViewHeaderText}>Jobs</Text>
                 </View>
                 {allJobsViews}
             </View>;
         }
+        return allJobsContainer;
+    }
+
+    listView() {
+        // Get list of nearby jobs
+        let allJobsContainer = this.allJobsContainer();
 
         // Sub-tabs (depends on state)
-        const subTabs = this.renderSelectedTabs();
+        const subTabs = this.renderAllJobsSubTabs();
 
-        // Render them out in the list
-        const allContainers = [];
-        if (dealerJobsContainer) {
-            allContainers.push(dealerJobsContainer);
+        let returnView;
+        if (!allJobsContainer) {
+            returnView = <View><Text>No jobs found! Try again later!</Text></View>
+        } else {
+            returnView = <ScrollView>{[subTabs, allJobsContainer]}</ScrollView>;
         }
-        if (networkJobsContainer) {
-            allContainers.push(networkJobsContainer);
-        }
-        if (allJobsContainer) {
-            allContainers.push(allJobsContainer);
-        }
-
-        if (allContainers.length === 0) {
-            return <View><Text>No jobs found! Try again later!</Text></View>
-        }
-        return <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
+        return returnView;
     }
 
     mapView() {
-        const subTabs = this.renderSelectedTabs();
+        const subTabs = this.renderAllJobsSubTabs();
         return [subTabs, <View key="mapview"><MapView
             region={this.state.mapViewRegion}
             onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
@@ -469,65 +179,65 @@ export default class MyJobsComponent extends Component {
             <MapView.Marker coordinate={{latitude: this.state.currentPosition.latitude, longitude:
             this.state.currentPosition.longitude}}
                             title="Me"
-                            description="Where I am"
+                            description="My location"
             />
 
-            {this.getAcceptedAndNotFinishedJobs().map(job => (
+            {this.state.acceptedRequests.map(request => (
                 <MapView.Marker
-                    key={job.name + job.location.latitude + job.location.longitude}
-                    coordinate={{latitude: parseFloat(job.location.latitude), longitude: parseFloat(job.location.longitude)}}
-                    title={"COD: $" + job.cod}
-                    description={job.name}
+                    key={request._id}
+                    coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}
+                    title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
+                    description={request.origin.locationName}
                 />
             ))}
         </MapView></View>];
     }
 
-    renderSelectedTabs() {
-        return <View key="subTabs" style={{marginTop: 20}}>
-            <Tabs selected={this.state.selectedTab}
+    renderAllJobsSubTabs() {
+        return <View key="subTabs" style={{marginTop: 50}}>
+            <Tabs selected={this.state.allJobsSubTab}
                   style={{backgroundColor:'white'}}
                   selectedStyle={{fontWeight:'bold'}}
                   selectedIconStyle={{borderWidth:1,borderColor:'grey'}}
-                  onSelect={el => this.setState({selectedTab:el.props.name})}>
+                  onSelect={el => this.setState({allJobsSubTab:el.props.name})}>
                 <Text style={{fontWeight: '100'}} name="list">List View</Text>
                 <Text style={{fontWeight: '100'}} name="map">Map View</Text>
             </Tabs>
         </View>;
     }
 
-    setDeclineModalVisible(visible, job) {
-        this.setState({isDeclineModalVisible: visible, jobOfModal: job});
+    setCancelModalVisible(visible, request) {
+        this.setState({isCancelModalVisible: visible, jobOfModal: request});
     }
 
-    renderDeclineModalIfVisible() {
+    renderCancelModalIfVisible() {
         return <Modal
             animationType={"slide"}
             transparent={false}
-            visible={this.state.isDeclineModalVisible}
+            visible={this.state.isCancelModalVisible}
             onRequestClose={() => {alert("Modal has been closed.")}}
         >
             <View style={{flex: 1}}>
                 {/* Top right X button */}
                 <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
-                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(!this.state.isDeclineModalVisible, null) }>
+                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(!this.state.isCancelModalVisible, null) }>
                     </Icon.Button>
                 </View>
 
                 <View style={{flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start'}}>
-                    <Text>Please select a reason to decline this job.</Text>
+                    <Text>Please select a reason to cancel this job.</Text>
                 </View>
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
                     <PickerIOS
                         itemStyle={{fontSize: 25}}
-                        selectedValue={this.state.declineReason}
-                        onValueChange={(declineReason) => this.setState({declineReason})}>
-                        {DECLINE_REASONS.map((declineReason) => (
+                        selectedValue={this.state.cancelReason}
+                        onValueChange={(cancelReason) => this.setState({cancelReason})}>
+                        {CANCEL_REASONS.map((cancelReason) => (
                             <PickerItemIOS
-                                key={declineReason}
-                                value={declineReason}
-                                label={declineReason}
+                                key={cancelReason}
+                                value={cancelReason}
+                                label={cancelReason}
                             />
                         ))}
                     </PickerIOS>
@@ -536,19 +246,19 @@ export default class MyJobsComponent extends Component {
                         editable = {true}
                         multiline = {true}
                         numberOfLines = {4}
-                        onChangeText={(declineReasonComments) => this.setState({declineReasonComments})}
+                        onChangeText={(cancelReasonComments) => this.setState({cancelReasonComments})}
                         maxLength = {2047}
                         returnKeyType="send"
-                        onSubmitEditing={this.onDeclineJob}
+                        onSubmitEditing={this.onCancelJob}
                         keyboardType="default"
-                        value={this.state.declineReasonComments}
+                        value={this.state.cancelReasonComments}
                         placeholder="Comments"
                     />
                     <View style={{flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
-                        <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(!this.state.isDeclineModalVisible, null) }>
+                        <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(!this.state.isCancelModalVisible, null) }>
                             Cancel
                         </Icon.Button>
-                        <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onDeclineJob}>
+                        <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onCancelJob}>
                             OK
                         </Icon.Button>
                     </View>
@@ -557,128 +267,122 @@ export default class MyJobsComponent extends Component {
         </Modal>;
     }
 
-    onDeclineJob() {
-        const jobIdToUpdate = this.state.jobOfModal.jobId;
-        const updatedJobs = this.getUpdatedJobsAfterFinishOrDecline(jobIdToUpdate, false);
-
-        this.setState({
-            isDeclineModalVisible: false,
-            jobOfModal: null,
-            jobs: updatedJobs
-        });
-        // TODO Make AJAX call to submit updated job
-    }
-
-    getUpdatedJobsAfterFinishOrDecline(jobId: string, isAccept: boolean) {
-        /*
-         Find finished/declined job in state's list, get the updated object,
-         and replace old job with updated job in list.
-         */
-        const jobInList = this.state.jobs.filter((job) => job.jobId === jobId)[0];
-        const jobIndexInList = this.state.jobs.findIndex((job) => job.jobId === jobId);
-        let updatedJob;
-        if (isAccept) {
-            updatedJob = update(jobInList, {isAccepted: {$set: true}, isDeclined: {$set: false}});
-        } else {
-            updatedJob = update(jobInList, {isDeclined: {$set: true}, isAccepted: {$set: false}});
+    onCancelJob() {
+        // Remove job from all lists
+        const requestIdToRemove = this.state.jobOfModal._id;
+        if (!requestIdToRemove) {
+            console.error("MyJobsComponent.onCancelJob: No requestIdToRemove. jobOfModal:", this.state.jobOfModal);
         }
-        return update(this.state.jobs, {$splice: [[jobIndexInList, 1, updatedJob]]});
-    }
+        const acceptedRequests = this.state.acceptedRequests.filter((r) => r._id !== requestIdToRemove);
 
-    setAcceptModalVisible(visible: boolean, job) {
-        this.setState({isAcceptModalVisible: visible, jobOfModal: job});
-    }
+        // API call to cancel request
+        const finalDeclineReason = this.state.cancelReason + (this.state.cancelReasonComments ? `\n${this.state.cancelReasonComments}` : "");
+        // this.props.cancelRequestFunction(this.state.jobOfModal, finalDeclineReason).then((responseJson) => {
+        //     console.log("MyJobsComponent.onCancelJob: Successfully declined job. Response: ", responseJson);
+        // });  TODO once cancellation works
 
-    renderAcceptModalIfVisible() {
-        return <Modal
-            animationType={"slide"}
-            transparent={false}
-            visible={this.state.isAcceptModalVisible}
-            onRequestClose={() => {alert("Modal has been closed.")}}
-        >
-            <View style={{flex: 1}}>
-                {/* Top right X button */}
-                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end'}}>
-                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.isAcceptModalVisible, null) }>
-                    </Icon.Button>
-                </View>
-
-                <View style={{flex: 3, flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                    <Text>Are you sure you would like to accept this job?</Text>
-                </View>
-                <View style={{flex: 3, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
-                    <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.isAcceptModalVisible, null) }>
-                        Cancel
-                    </Icon.Button>
-                    <Icon.Button name="thumbs-o-up" color="green" backgroundColor="white" size={30} onPress={this.onPickupJob}>
-                        Yes
-                    </Icon.Button>
-                </View>
-            </View>
-        </Modal>;
-    }
-
-    onPickupJob() {
-        const jobIdToUpdate = this.state.jobOfModal.jobId;
-        const updatedJobs = this.getUpdatedJobsAfterFinishOrDecline(jobIdToUpdate, true);
-
+        // Set state to indicate request is declined
         this.setState({
-            isAcceptModalVisible: false,
+            isCancelModalVisible: false,
             jobOfModal: null,
-            jobs: updatedJobs
+            acceptedRequests: acceptedRequests,
         });
-        // TODO Make AJAX call to submit updated job
+
     }
 
-    renderJobListElement(job) {
-        return <View key={job.jobId} style={{ marginTop: 5, marginBottom: 5, paddingLeft: 5, paddingTop: 5}}>
+    /**
+     * Opens Google Maps app to navigate to pick up.
+     * https://developers.google.com/maps/documentation/ios-sdk/urlscheme
+     */
+    onNavigateToPickUpOrDropOff(visible: boolean, request, isPickUp: boolean) {
+        const originOrDestinationKey = isPickUp ? "origin" : "destination";
+        const latitude = request[originOrDestinationKey].coordinates[0];
+        const longitude = request[originOrDestinationKey].coordinates[1];
 
+        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&x-success=stowkapp://?resume=true&x-source=stowkapp`;
 
-            {/* Job Text */}
-            <TouchableHighlight onPress={() => this.props.navigator.push({
-                component: JobDetailComponent,
-                navigationBarHidden: false,
-                navigator: this.props.navigator,
-                passProps: {title: job.name, job:job}
-            })}>
-                <View style={{flexDirection: 'row'}}>
-                    <View style={{flex: 3}}>
-                        <Text style={{fontWeight: 'bold'}}>{job.name}</Text>
-                        <Text>Origin: {job.origin}</Text>
-                        <Text>Destination: {job.destination}</Text>
-                        <Text>Vehicles: {job.vehicles}</Text>
-                        <Text>Trailer Type: {job.trailerType}</Text>
-                        <Text>{job.isOperable ? "Operable" : "Inoperable"}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text>COD: {job.cod}</Text>
-                        <Text>Distance: {job.location.distance}</Text>
-                        <Text>Pickup: {job.pickupDate}</Text>
-                        <Text>Job Expires: {job.jobExpirationDatetime}</Text>
-                    </View>
-                </View>
-            </TouchableHighlight>
+        Linking.openURL(directionsRequest).catch(
+            err => console.error('An error occurred opening directions request' + directionsRequest, err));
+    }
 
-            {/* Call, Accept/Decline buttons */}
-            <View style={{flexDirection: 'row'}}>
-                <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.code)}>
-                    <Text style={{fontSize: 12}}>Call</Text>
+    renderJobListElement(request, showPhoneNumber: boolean, marginBottom?: number) {
+        // Whether to show Call Phone button
+        let phoneNumberLambda = null;
+        if (showPhoneNumber) {
+            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phone)}>
+                <Text style={{fontSize: 12}}>Call</Text>
+            </Icon.Button>;
+        } else {
+            phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
+        }
+
+        // Is it pick up or drop off?
+        const isPickUp = request.status === RequestStatusEnum.DISPATCHED;
+
+        // The touchable job summary
+        const summaryView = this.renderJobListElementSummary(request, true);
+
+        if (marginBottom === null || marginBottom === undefined) {
+            marginBottom = 5;
+        }
+        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+            {/* Job View */}
+            { summaryView }
+
+            {/* Navigate and Cancel buttons */}
+            <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+                { phoneNumberLambda(request) }
+                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
+                    <Text style={{fontSize: 12}}>Navigate to {isPickUp ? "Pick up" : "Drop off"}</Text>
                 </Icon.Button>
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(true, job)}>
-                    <Text style={{fontSize: 12}}>Accept</Text>
-                </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(true, job)}>
-                    <Text style={{fontSize: 12}}>Decline</Text>
-                </Icon.Button>
-                <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.code)}>
-                    <Text style={{fontSize: 12}}>Forward</Text>
+                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(true, request)}>
+                    <Text style={{fontSize: 12}}>Cancel</Text>
                 </Icon.Button>
             </View>
         </View>
     }
 
+    renderJobListElementSummary(request, isTouchable?: boolean) {
+        // Calculate straight-line distance between current location and ending point
+        const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
+
+        // View which displays request info
+        const summaryView = <View style={{flexDirection: 'row'}}>
+            <View style={{flex: 3}}>
+                <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
+                <Text>Origin: {request.origin.locationName}</Text>
+                <Text>Destination: {request.destination.locationName}</Text>
+                <Text>Vehicles: {request.vehicles.count}</Text>
+                <Text>Trailer Type: {"TODO"}</Text>
+                <Text>{generateOperableString(request)}</Text>
+            </View>
+            <View style={{flex: 1}}>
+                <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "100.00"}`}</Text>
+                <Text>Distance: {haversineDistance}</Text>
+                <Text>Pickup: {request.pickupDate}</Text>
+                <Text>Job Expires: {request.dropoffDate}</Text>
+            </View>
+        </View>;
+
+        // If it's touchable, wrap it with a TouchableHighlight
+        let finalView;
+        if (isTouchable) {
+            finalView = <TouchableHighlight onPress={() => this.props.navigator.push({
+                component: JobDetailComponent,
+                navigationBarHidden: false,
+                navigator: this.props.navigator,
+                passProps: {title: "View Job", request:request, haversineDistance:haversineDistance}})}>
+
+                {summaryView}
+            </TouchableHighlight>
+        } else {
+            finalView = summaryView
+        }
+        return finalView;
+    }
+
     callPhone(phoneNumber: string) {
-        Linking.openURL("tel:1-408-555-5555").catch(
+        Linking.openURL("tel:" + phoneNumber).catch(
             err => console.error('An error occurred opening phone number ' + phoneNumber, err));
     }
 }
@@ -695,8 +399,11 @@ const styles = StyleSheet.create({
     listViewHeader: {
     },
     listViewHeaderText: {
-        color: 'white',
-        fontFamily: 'Helvetica Neue'
+        color: '#000000',
+        fontFamily: 'Helvetica Neue',
+        textShadowColor: '#DDDDDD',
+        textShadowOffset: {width: 0, height: 3},
+        textShadowRadius: 6
     },
     button: {
         borderRadius: 5,
