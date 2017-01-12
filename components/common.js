@@ -100,23 +100,37 @@ const genericRequestsQueryStringLambda = (requestsFunctionString) => `{
   }
 }`;
 
-const acceptRequestMutationStringLambda = (requestId:string, latitude:number, longitude:number, vehicleIds:Array<string>) => {
-    const vehicleIdsString = "[" + vehicleIds.map((vehicleId) => `"${vehicleId}"`).join(",") + "]";
-    return `
-    mutation {
-      acceptRequest(requestId:"${requestId}", latitude: ${latitude}, longitude: ${longitude}, vehicleIds: ${vehicleIdsString}) {
-        recordId
-      }
-    }`;
+const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
+    return fetchGraphQlQuery(
+        accessToken,
+        `mutation UpdateRequestById {
+            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status:${RequestStatusEnum.DISPATCHED}}}) {
+                recordId
+            }
+        }`
+    ).then((response) => {
+        return fetchGraphQlQuery(
+            accessToken,
+            `mutation AddDeliveryToRequest {
+                deliveryCreate(input:{clientMutationId:"11",record:{carrierId:"${carrierId}", requestId:"${request._id}", currentCoordinates:[${currentLatitude}, ${currentLongitude}]}}) {
+                    record { _id }
+                }
+            }`
+        )
+    });
 };
 
-const changeStatusMutationStringLambda = (request, newStatus) => {
+const changeStatusMutationStringFunction = (request, newStatus) => {
     return `mutation UpdateRequestById {
       requestUpdateById(input: {clientMutationId: "11", record:{_id:"${request._id}", status: ${newStatus}}}) {
         recordId
       }
     }`;
 };
+
+const changeStatusMutationFunction = (accessToken:string, request, newStatus:number) => fetchGraphQlQuery(
+    accessToken,
+    changeStatusMutationStringFunction(request._id, newStatus));
 
 const declineRequestMutationStringLambda = (request, carrierId, reason:string) => {
     const newDeclinedBy = [...request.declinedBy, {carrierId: carrierId, reason: reason || ""}];
@@ -126,6 +140,10 @@ const declineRequestMutationStringLambda = (request, carrierId, reason:string) =
       }
     }`;
 };
+
+const declineRequestFunction = (accessToken:string, request, reason: string) => fetchGraphQlQuery(
+    accessToken,
+    declineRequestMutationStringLambda(request._id, reason));
 
 const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
 
@@ -278,4 +296,4 @@ function generateOperableString(request) {
             `${numInoperable} Inoperable, ${numOperable} Operable`));
 }
 
-export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestMutationStringLambda, declineRequestMutationStringLambda, generateOperableString, changeStatusMutationStringLambda}
+export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunction, generateOperableString, changeStatusMutationFunction}

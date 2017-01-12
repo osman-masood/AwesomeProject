@@ -20,8 +20,8 @@ import MyNetworkComponent from "./MyNetworkComponent";
 import {
     fetchCurrentUserAndLocationRequests,
     RequestStatusEnum,
-    acceptRequestMutationStringLambda,
-    declineRequestMutationStringLambda,
+    acceptRequestAndCreateDeliveryFunction,
+    declineRequestFunction,
     fetchGraphQlQuery
 } from "./common";
 
@@ -700,26 +700,11 @@ class TabBarComponent extends Component {
         console.log("TabBarComponent._renderContent called with selectedTab=", this.state.selectedTab);
         let returnComponent;
         if (this.state.selectedTab == 'newJobsTab') {
-            const acceptRequestFunction = (request) => {
-                // TODO accept request needs to set request status to 2, and create a Delivery object that is a child of this Request object.
-                return {
-                    "ok": "it's ok"
-                }
-            };
-
-            /*fetchGraphQlQuery(
-             this.props.accessToken,
-             acceptRequestMutationStringLambda(request._id, this.state.currentPosition.latitude, this.state.currentPosition.longitude, request['vehicleIds'])
-             );*/
-            const declineRequestFunction = (request, reason: string) => fetchGraphQlQuery(
-                this.props.accessToken,
-                declineRequestMutationStringLambda(request._id, reason)
-            );
             returnComponent = <NewJobsComponent title="New Jobs" currentPosition={this.state.currentPosition}
                                                 openNonPreferredRequests={this.state.openNonPreferredRequests}
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
-                                                acceptRequestFunction={acceptRequestFunction}
+                                                acceptRequestFunction={acceptRequestAndCreateDeliveryFunction}
                                                 declineRequestFunction={declineRequestFunction}/>
         }
         else if (this.state.selectedTab == 'myJobsTab') {
@@ -743,7 +728,7 @@ class TabBarComponent extends Component {
                                                 openNonPreferredRequests={this.state.openNonPreferredRequests}
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
-                                                acceptRequestFunction={acceptRequestFunction}
+                                                acceptRequestFunction={acceptRequestAndCreateDeliveryFunction}
                                                 declineRequestFunction={declineRequestFunction}/>
         }
         return returnComponent;
