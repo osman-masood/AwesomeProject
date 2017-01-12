@@ -199,14 +199,6 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
         },
         body: JSON.stringify({"query": query, "variables": null, "operationName": null})
     })
-    // return fetch(GRAPHQL_ENDPOINT + "?query=" + query, {
-    //     method: "GET",
-    //     headers: {
-    //         "Content-Type": "text/plain; charset=utf-8",
-    //         'Accept': 'application/json',
-    //         'Cookie': 'accessToken=' + accessToken
-    //     },
-    // })
         .then((response) => {
             console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
             if (response.status !== 200) {

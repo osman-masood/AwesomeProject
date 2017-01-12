@@ -12,7 +12,8 @@
 //noinspection JSUnresolvedVariable
 import React, {Component, PropTypes} from "react";
 //noinspection JSUnresolvedVariable
-import {AppRegistry, StyleSheet, Text, View, NavigatorIOS, TextInput, Button, TabBarIOS} from "react-native";
+import {AppRegistry, StyleSheet, Text, View, NavigatorIOS, TextInput, TabBarIOS} from "react-native";
+
 import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
 import DeliveredComponent from "./DeliveredComponent";
@@ -83,8 +84,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                69.4541,
-                75.0014
+                37.335081,
+                -121.894675
             ],
             "locationName": " Armstrongfort Dealership",
             "contactName": "Xzavier Hermiston",
@@ -92,8 +93,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         },
         "destination": {
             "coordinates": [
-                90.8684,
-                15.0839
+                37.525171,
+                -122.280922
             ],
             "locationName": " Lake Connorburgh Dealership",
             "contactName": "Nickolas Auer",
@@ -163,8 +164,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                -8.8182,
-                28.4297
+                37.331085,
+                -121.899679
             ],
             "locationName": " South Bart Dealership",
             "contactName": "Pearl O'Hara DDS",
@@ -172,8 +173,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         },
         "destination": {
             "coordinates": [
-                -91.5672,
-                -63.4062
+                37.335071,
+                -121.894665
             ],
             "locationName": " McLaughlinberg Dealership",
             "contactName": "Giovanna Altenwerth",
@@ -242,8 +243,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                -14.0174,
-                33.2452
+                37.336213,
+                -121.897627
             ],
             "locationName": " Purdyfort Dealership",
             "contactName": "Ruthie Fisher",
@@ -251,8 +252,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         },
         "destination": {
             "coordinates": [
-                -53.6027,
-                89.5244
+                37.335027,
+                -121.894611
             ],
             "locationName": " Dooleyland Dealership",
             "contactName": "Velma Bailey",
@@ -700,12 +701,9 @@ class TabBarComponent extends Component {
         console.log("TabBarComponent._renderContent called with selectedTab=", this.state.selectedTab);
         let returnComponent;
         if (this.state.selectedTab == 'newJobsTab') {
-            const acceptRequestFunction = (request) => {
-                // TODO accept request needs to set request status to 2, and create a Delivery object that is a child of this Request object.
-                return {
-                    "ok": "it's ok"
-                }
-            };
+            const acceptRequestFunction = (request) => fetchGraphQlQuery(this.props.accessToken,
+                acceptRequestMutationStringLambda(request._id,0,0, request.vehicleIds)
+            );
 
             /*fetchGraphQlQuery(
              this.props.accessToken,

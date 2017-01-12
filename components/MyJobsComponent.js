@@ -65,10 +65,10 @@ export default class MyJobsComponent extends Component {
 
             acceptedRequests: deepcopy(this.props.acceptedRequests),
             mapViewRegion: {
-                latitude: 1.78825,
-                longitude: -1.4324,
-                latitudeDelta: 0.1822,
-                longitudeDelta: 0.0921,
+                latitude: this.props.currentPosition.latitude,
+                longitude: this.props.currentPosition.longitude,
+                latitudeDelta: 1.0,
+                longitudeDelta: 1.0,
             },
             currentPosition: deepcopy(this.props.currentPosition),
             isFilterDropdownVisible: false,
@@ -121,7 +121,7 @@ export default class MyJobsComponent extends Component {
                 title={{title: this.props.title}}
                 rightButton={rightButtonConfig}
             />
-            <View style={{marginTop: 40}}>
+            <View>
                 <View>
                     {this.renderCancelModalIfVisible()}
                     {mainView}
@@ -169,25 +169,45 @@ export default class MyJobsComponent extends Component {
         return returnView;
     }
 
+    randomColor() {
+        return '#' + Math.floor(Math.random()*16777215).toString(16);
+    }
+
     mapView() {
+        console.log('calling mapView()');
         const subTabs = this.renderAllJobsSubTabs();
         return [subTabs, <View key="mapview"><MapView
             region={this.state.mapViewRegion}
-            onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
-            style={{height: 490}}
-        >
-            <MapView.Marker coordinate={{latitude: this.state.currentPosition.latitude, longitude:
-            this.state.currentPosition.longitude}}
-                            title="Me"
-                            description="My location"
-            />
+            //onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
+            style={{height: 490}}>
 
+            {this.state.acceptedRequests.map(request => (
+                <MapView.Polyline
+                    key={request._id}
+                    strokeColor={this.randomColor()}
+                    coordinates={[{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]},
+                    {latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}]}
+                    strokeWidth={1}
+                />
+
+        ))}
             {this.state.acceptedRequests.map(request => (
                 <MapView.Marker
                     key={request._id}
+                    //image={require("../assets/flag-yellow.png")}
+                    pinColor="#6f91d6"
                     coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}
                     title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
                     description={request.origin.locationName}
+                />
+            ))}
+            {this.state.acceptedRequests.map(request => (
+                <MapView.Marker
+                    key={request._id}
+                    pinColor="#68c267"
+                    coordinate={{latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}}
+                    title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
+                    description={request.destination.locationName}
                 />
             ))}
         </MapView></View>];

@@ -12,6 +12,7 @@ import {haversineDistanceToRequest} from "./common";
 const deepcopy = require("deepcopy");
 
 const ReactNative = require('react-native');
+
 const {
     StyleSheet,
     Text,
@@ -21,9 +22,10 @@ const {
     TouchableHighlight,
     PickerIOS,
     TextInput,
+    Button,
     ScrollView,
-    Button
 } = ReactNative;
+
 import JobDetailComponent from './JobDetailComponent';
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
