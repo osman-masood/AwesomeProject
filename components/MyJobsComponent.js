@@ -60,7 +60,25 @@ export default class MyJobsComponent extends Component {
         this.onRegionChange = this.onRegionChange.bind(this);
         this.callPhone = this.callPhone.bind(this);
 
-        this.state = {
+        const thisState: {
+            allJobsSubTab: string,
+            acceptedRequests: Array<Request>,
+            mapViewRegion: {
+                latitude: number,
+                longitude: number,
+                latitudeDelta: number,
+                longitudeDelta: number
+            },
+            currentPosition: {
+                latitude: number,
+                longitude: number
+            },
+            isFilterDropdownVisible: boolean,
+            isCancelModalVisible: false,
+            jobOfModal: Request,
+            cancelReason: string,
+            cancelReasonComments: string
+        } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
             acceptedRequests: deepcopy(this.props.acceptedRequests),
@@ -77,6 +95,7 @@ export default class MyJobsComponent extends Component {
             cancelReason: CANCEL_REASONS[0],
             cancelReasonComments: null
         };
+        this.state = thisState;
     }
 
     componentWillReceiveProps(nextProps) {
@@ -206,7 +225,7 @@ export default class MyJobsComponent extends Component {
         </View>;
     }
 
-    setCancelModalVisible(visible, request) {
+    setCancelModalVisible(visible:boolean, request:Request) {
         this.setState({isCancelModalVisible: visible, jobOfModal: request});
     }
 
