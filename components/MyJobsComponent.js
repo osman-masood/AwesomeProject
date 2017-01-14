@@ -23,7 +23,10 @@ const {
     PickerIOS,
     TextInput,
     ScrollView,
-    Button
+    Button,
+    Dimensions,
+    Image,
+    Alert
 } = ReactNative;
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
@@ -32,6 +35,7 @@ import Tabs from 'react-native-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 //noinspection JSUnresolvedVariable
 import MapView from 'react-native-maps';
+var moment = require('moment');
 
 const PickerItemIOS = PickerIOS.Item;
 
@@ -75,7 +79,8 @@ export default class MyJobsComponent extends Component {
             isCancelModalVisible: false,
             jobOfModal: null,
             cancelReason: CANCEL_REASONS[0],
-            cancelReasonComments: null
+            cancelReasonComments: null,
+            buildPreview: null
         };
     }
 
@@ -85,6 +90,16 @@ export default class MyJobsComponent extends Component {
             acceptedRequests: deepcopy(nextProps.acceptedRequests),
             currentPosition: deepcopy(nextProps.currentPosition)
         });
+    }
+
+    componentDidMount() {
+        Linking.addEventListener('url', (event) => {
+            console.log("addEventListener('url", event);
+        });
+    }
+
+    componentWillUnmount() {
+        Linking.removeEventListener('url');
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -121,7 +136,7 @@ export default class MyJobsComponent extends Component {
                 title={{title: this.props.title}}
                 rightButton={rightButtonConfig}
             />
-            <View>
+            <View  style={{flex: 2}}>
                 <View>
                     {this.renderCancelModalIfVisible()}
                     {mainView}
@@ -173,13 +188,30 @@ export default class MyJobsComponent extends Component {
         return '#' + Math.floor(Math.random()*16777215).toString(16);
     }
 
+    pressedMarker(request, dist) {
+        console.log('pressedMarker', request, dist);
+        var lat = (dist == 'O') ? request.origin.coordinates[0] : request.destination.coordinates[0];
+        var lng = (dist == 'O') ? request.origin.coordinates[1] : request.destination.coordinates[1];
+        this.setState({
+            jobOfModal: request,
+            buildPreview: [dist, request],
+            mapViewRegion: {
+                latitude: lat,
+                longitude: lng,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01
+            }
+        });
+    }
+
     mapView() {
-        console.log('calling mapView()');
+
         const subTabs = this.renderAllJobsSubTabs();
-        return [subTabs, <View key="mapview"><MapView
+        return [subTabs, <View key="mapview">
+            <MapView
             region={this.state.mapViewRegion}
             //onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
-            style={{height: 490}}>
+            style={{height: Dimensions.get("window").height-160}}>
 
             {this.state.acceptedRequests.map(request => (
                 <MapView.Polyline
@@ -190,27 +222,28 @@ export default class MyJobsComponent extends Component {
                     strokeWidth={1}
                 />
 
-        ))}
+            ))}
             {this.state.acceptedRequests.map(request => (
-                <MapView.Marker
-                    key={request._id}
-                    //image={require("../assets/flag-yellow.png")}
-                    pinColor="#6f91d6"
-                    coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}
-                    title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
-                    description={request.origin.locationName}
-                />
+                <MapView.Marker key={request._id}
+                                coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}>
+                    <MarkerCustomView letter="O" bgColor={styles.redBackground} request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
+                </MapView.Marker>
             ))}
             {this.state.acceptedRequests.map(request => (
                 <MapView.Marker
                     key={request._id}
-                    pinColor="#68c267"
-                    coordinate={{latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}}
-                    title={`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}
-                    description={request.destination.locationName}
-                />
+                    coordinate={{latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}}>
+                    <MarkerCustomView bgColor={styles.greenBackground} letter="D" request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
+                </MapView.Marker>
             ))}
-        </MapView></View>];
+        </MapView>
+            <JobMapPreview
+                buildPreview={this.state.buildPreview}
+                cancelRequestFunction={this.props.cancelRequestFunction}
+                onCancelJob={this.onCancelJob}
+                navigateTo={this.onNavigateToPickUpOrDropOff}
+            />
+        </View>];
     }
 
     renderAllJobsSubTabs() {
@@ -306,6 +339,7 @@ export default class MyJobsComponent extends Component {
             isCancelModalVisible: false,
             jobOfModal: null,
             acceptedRequests: acceptedRequests,
+            buildPreview: null
         });
 
     }
@@ -315,14 +349,21 @@ export default class MyJobsComponent extends Component {
      * https://developers.google.com/maps/documentation/ios-sdk/urlscheme
      */
     onNavigateToPickUpOrDropOff(visible: boolean, request, isPickUp: boolean) {
+
         const originOrDestinationKey = isPickUp ? "origin" : "destination";
         const latitude = request[originOrDestinationKey].coordinates[0];
         const longitude = request[originOrDestinationKey].coordinates[1];
 
         const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&x-success=stowkapp://?resume=true&x-source=stowkapp`;
-
-        Linking.openURL(directionsRequest).catch(
-            err => console.error('An error occurred opening directions request' + directionsRequest, err));
+        console.log(latitude, longitude);
+        Linking.canOpenURL(directionsRequest).then(supported => {
+            if (!supported) {
+                Linking.openURL('http://maps.apple.com/?saddr=Current%20Location&daddr=' + latitude + ',' + longitude + '&x-callback-url=stowkapp&id=1');
+            } else {
+                Linking.openURL(directionsRequest).catch(
+                    err => console.error('An error occurred opening directions request' + directionsRequest, err));
+            }
+        });
     }
 
     renderJobListElement(request, showPhoneNumber: boolean, marginBottom?: number) {
@@ -391,7 +432,12 @@ export default class MyJobsComponent extends Component {
                 component: JobDetailComponent,
                 navigationBarHidden: false,
                 navigator: this.props.navigator,
-                passProps: {title: "View Job", request:request, haversineDistance:haversineDistance}})}>
+                passProps: {
+                    title: "View Job",
+                    request:request,
+                    haversineDistance:haversineDistance,
+                    cancelJob: this.onCancelJob,
+                    cancelRequestFunction: this.props.cancelRequestFunction}})}>
 
                 {summaryView}
             </TouchableHighlight>
@@ -407,7 +453,185 @@ export default class MyJobsComponent extends Component {
     }
 }
 
+class MarkerCustomView extends Component {
+
+    constructor(props) {
+        super(props);
+    }
+
+    markerPress() {
+        this.props.onMarkerPress(this.props.request, this.props.letter);
+    }
+
+    render() {
+        return(
+            <TouchableHighlight onPress={this.markerPress.bind(this)}>
+                <View style={this.props.bgColor}>
+                    <Text>{this.props.letter}</Text>
+                </View>
+            </TouchableHighlight>
+        )
+    }
+}
+
+class JobMapPreview extends Component {
+    constructor(props) {
+        super(props);
+
+        this.navigate = this.navigate.bind(this);
+    }
+
+    makeCall() {
+        var job = this.props.buildPreview[1];
+        var disct = this.props.buildPreview[0];
+        var phoneNumber = (disct == 'O') ? job.origin.contactPhone : job.destination.contactPhone;
+        Linking.openURL('tell:' + phoneNumber)
+    }
+
+    cancelJob() {
+        var job = this.props.buildPreview[1];
+        var self = this;
+
+        Alert.alert(
+            'Cancel?',
+            job.origin.locationName + ' to ' + job.destination.locationName,
+            [
+                {text: 'YES', onPress: () => {
+                    self.props.cancelRequestFunction(job).then(function (data) {
+                        if (data.errors.length > 0) {
+                            Alert.alert('Could not cancel request');
+                        }else {
+                            self.props.onCancelJob();
+                        }
+                    })
+                }},
+                {
+                    text: 'NO', onPress: () => {
+                        console.log('cancel')
+                }
+                }
+            ]
+        )
+    }
+
+    navigate() {
+        let job = this.props.buildPreview[1];
+        const isPickUp = job.status === RequestStatusEnum.DISPATCHED;
+        this.props.navigateTo(true, this.props.buildPreview[1], isPickUp);
+    }
+
+    render() {
+        if (this.props.buildPreview == null) {
+            return (
+                <View></View>
+            )
+        }else {
+            var job = this.props.buildPreview[1];
+            var disct = this.props.buildPreview[0];
+            var title = (disct == 'O') ? job.origin.locationName : job.destination.locationName;
+            var vcounts = {};
+            job.vehicles.edges.map(v => {
+                if (vcounts[v.node.type]) {
+                    vcounts[v.node.type]++;
+                }else {
+                    vcounts[v.node.type] = 1;
+                }
+            });
+            var vehicles = '';
+            for (let obj in vcounts) {
+                vehicles += ' ' + vcounts[obj] + ' ' + obj;
+            }
+
+            const isPickUp = job.status === RequestStatusEnum.DISPATCHED;
+            return (
+                <View style={styles.buildPreview}>
+                    <View style={{height: 30}}>
+                        <View style={{flex: 1, flexDirection: 'row'}}>
+                            <Text style={styles.titleText}>{title}</Text>
+                            <Text style={{height:30}}>{job.paymentType}: ${job.amountEstimated}</Text>
+                        </View>
+                    </View>
+                    <View style={{height: 74}}>
+                        <View style={{flex: 1, flexDirection: 'row'}}>
+                            <View style={{width: 230, height: 70}}>
+                                <Text>Origin: {job.origin.address}</Text>
+                                <Text>Destination: {job.destination.address}</Text>
+                                <Text>Vehicles: {job.vehicles.count} ({vehicles})</Text>
+                                <Text>{generateOperableString(job)}</Text>
+                            </View>
+                            <View style={{width: 200, height: 50}}>
+                                <Text>Pickup: {moment(job.pickupDate).format("MMM Do ddd, hA")}</Text>
+                                <Text>Expires: {moment(job.dropoffDate).format("MMM Do ddd, hA")}</Text>
+                            </View>
+                        </View>
+                    </View>
+                    <View style={{marginLeft: 5, height:2,
+                     width: Dimensions.get("window").width-10, backgroundColor:'#CCCCCC'}}>
+                    </View>
+                    <View style={{height: 30}}>
+                        <View style={{flex: 1, flexDirection: 'row', alignItems:'center'}}>
+                            <TouchableHighlight onPress={this.makeCall.bind(this)}>
+                                <View style={styles.previewActionItem}>
+                                    <Image style={{padding: 4}} source={require('../assets/phone@3x.png')} />
+                                    <Text>Call</Text>
+                                </View>
+                            </TouchableHighlight>
+                            <TouchableHighlight>
+                                <View style={[styles.previewActionItem, {width:80}]}>
+                                    <Image style={{padding: 4}} source={require('../assets/phone@3x.png')} />
+                                    <Text>Forward</Text>
+                                </View>
+                            </TouchableHighlight>
+                            <TouchableHighlight onPress={this.cancelJob.bind(this)}>
+                                <View style={styles.previewActionItem}>
+                                    <Image style={{padding: 4}} source={require('../assets/phone@3x.png')} />
+                                    <Text style={{backgroundColor: '#a12631',color:'#FFFFFF'}}>Cancel</Text>
+                                </View>
+                            </TouchableHighlight>
+                            <TouchableHighlight onPress={this.navigate}>
+                                <View style={[styles.previewActionItem, {width: 150}]}>
+                                    <Image style={{padding: 4}} source={require('../assets/phone@3x.png')} />
+                                    <Text style={{backgroundColor:'#3B8B50'}}>Navigate to {(isPickUp) ? 'Pick up': 'Drop off'}</Text>
+                                </View>
+                            </TouchableHighlight>
+                        </View>
+                    </View>
+                </View>
+            )
+        }
+    }
+}
+
 const styles = StyleSheet.create({
+    previewActionItem: {
+        marginLeft: 10,
+        width: 70,
+        padding: 10
+    },
+    buildPreview: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 1,
+        height: 170,
+        backgroundColor: '#FFFFFF'
+    },
+    titleText: {
+        fontSize: 15,
+        width: 300,
+        fontWeight: '400',
+        textAlign: 'center',
+        paddingTop: 5,
+        height:30
+    },
+    redBackground: {
+        backgroundColor: '#a12631',
+        padding: 2,
+    },
+    greenBackground: {
+        backgroundColor: '#2bba26',
+        padding: 2
+    },
     tabContent: {
         flex: 1,
         alignItems: 'center',

@@ -21,9 +21,10 @@ import MyNetworkComponent from "./MyNetworkComponent";
 import {
     fetchCurrentUserAndLocationRequests,
     RequestStatusEnum,
-    acceptRequestMutationStringLambda,
-    declineRequestMutationStringLambda,
-    fetchGraphQlQuery
+    acceptRequestAndCreateDeliveryFunction,
+    declineRequestFunction,
+    fetchGraphQlQuery,
+    changeStatusMutationFunction
 } from "./common";
 
 const base64Icon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABLCAQAAACSR7JhAAADtUlEQVR4Ac3YA2Bj6QLH0XPT1Fzbtm29tW3btm3bfLZtv7e2ObZnms7d8Uw098tuetPzrxv8wiISrtVudrG2JXQZ4VOv+qUfmqCGGl1mqLhoA52oZlb0mrjsnhKpgeUNEs91Z0pd1kvihA3ULGVHiQO2narKSHKkEMulm9VgUyE60s1aWoMQUbpZOWE+kaqs4eLEjdIlZTcFZB0ndc1+lhB1lZrIuk5P2aib1NBpZaL+JaOGIt0ls47SKzLC7CqrlGF6RZ09HGoNy1lYl2aRSWL5GuzqWU1KafRdoRp0iOQEiDzgZPnG6DbldcomadViflnl/cL93tOoVbsOLVM2jylvdWjXolWX1hmfZbGR/wjypDjFLSZIRov09BgYmtUqPQPlQrPapecLgTIy0jMgPKtTeob2zWtrGH3xvjUkPCtNg/tm1rjwrMa+mdUkPd3hWbH0jArPGiU9ufCsNNWFZ40wpwn+62/66R2RUtoso1OB34tnLOcy7YB1fUdc9e0q3yru8PGM773vXsuZ5YIZX+5xmHwHGVvlrGPN6ZSiP1smOsMMde40wKv2VmwPPVXNut4sVpUreZiLBHi0qln/VQeI/LTMYXpsJtFiclUN+5HVZazim+Ky+7sAvxWnvjXrJFneVtLWLyPJu9K3cXLWeOlbMTlrIelbMDlrLenrjEQOtIF+fuI9xRp9ZBFp6+b6WT8RrxEpdK64BuvHgDk+vUy+b5hYk6zfyfs051gRoNO1usU12WWRWL73/MMEy9pMi9qIrR4ZpV16Rrvduxazmy1FSvuFXRkqTnE7m2kdb5U8xGjLw/spRr1uTov4uOgQE+0N/DvFrG/Jt7i/FzwxbA9kDanhf2w+t4V97G8lrT7wc08aA2QNUkuTfW/KimT01wdlfK4yEw030VfT0RtZbzjeMprNq8m8tnSTASrTLti64oBNdpmMQm0eEwvfPwRbUBywG5TzjPCsdwk3IeAXjQblLCoXnDVeoAz6SfJNk5TTzytCNZk/POtTSV40NwOFWzw86wNJRpubpXsn60NJFlHeqlYRbslqZm2jnEZ3qcSKgm0kTli3zZVS7y/iivZTweYXJ26Y+RTbV1zh3hYkgyFGSTKPfRVbRqWWVReaxYeSLarYv1Qqsmh1s95S7G+eEWK0f3jYKTbV6bOwepjfhtafsvUsqrQvrGC8YhmnO9cSCk3yuY984F1vesdHYhWJ5FvASlacshUsajFt2mUM9pqzvKGcyNJW0arTKN1GGGzQlH0tXwLDgQTurS8eIQAAAABJRU5ErkJggg==';
@@ -34,8 +35,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b93c",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -89,7 +90,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
             ],
             "locationName": " Armstrongfort Dealership",
             "contactName": "Xzavier Hermiston",
-            "contactPhone": "(231) 321-1065"
+            "contactPhone": "(231) 321-1065",
+            "address": "San Jose, CA"
         },
         "destination": {
             "coordinates": [
@@ -98,7 +100,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
             ],
             "locationName": " Lake Connorburgh Dealership",
             "contactName": "Nickolas Auer",
-            "contactPhone": "(104) 651-3804"
+            "contactPhone": "(104) 651-3804",
+            "address": "San Fransisco, CA"
         },
         "pickupDate": "2016-07-18T15:08:04.788Z",
         "dropoffDate": "2016-07-18T15:08:04.788Z",
@@ -113,8 +116,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b837",
         "status": 2,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -169,7 +172,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
             ],
             "locationName": " South Bart Dealership",
             "contactName": "Pearl O'Hara DDS",
-            "contactPhone": "457.330.1411"
+            "contactPhone": "457.330.1411",
+            "address": "San Jose, CA"
         },
         "destination": {
             "coordinates": [
@@ -186,15 +190,16 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "shipper": {
             "name": "McGlynn, Sanford and Gottlieb",
             "buyerNumber": "67490717",
-            "phone": "+13913580943"
+            "phone": "+13913580943",
+            "address": "San jose, CA"
         }
     },
     {
         "_id": "58634a24246d69259c41b9ab",
         "status": 2,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -248,7 +253,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
             ],
             "locationName": " Purdyfort Dealership",
             "contactName": "Ruthie Fisher",
-            "contactPhone": "012.371.6269"
+            "contactPhone": "012.371.6269",
+            "address": "San jose, CA"
         },
         "destination": {
             "coordinates": [
@@ -257,7 +263,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
             ],
             "locationName": " Dooleyland Dealership",
             "contactName": "Velma Bailey",
-            "contactPhone": "736-408-6271 x82136"
+            "contactPhone": "736-408-6271 x82136",
+            "address": "San Fransisco, CA"
         },
         "pickupDate": "2016-09-13T08:04:14.676Z",
         "dropoffDate": "2016-09-13T08:04:14.676Z",
@@ -272,8 +279,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b821",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -351,8 +358,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b846",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": []
         },
@@ -594,6 +601,18 @@ class TabBarComponent extends Component {
         accessToken: PropTypes.string.isRequired
     };
 
+     acceptRequestAndCreateDelivery (request) {
+        return acceptRequestAndCreateDeliveryFunction(this.props.accessToken,
+            request,
+            this.state.currentUser['carrier']['_id'],
+            this.state.currentPosition.latitude,
+            this.state.currentPosition.longitude);
+    }
+
+    cancelRequestFunction(request) {
+        return changeStatusMutationFunction(this.props.accessToken, request, RequestStatusEnum.CANCELLED);
+    }
+
     constructor(props) {
         super(props);
         this.state = {
@@ -637,6 +656,9 @@ class TabBarComponent extends Component {
             }),
             (positionError) => console.error("TabBarComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
         );
+
+        this.acceptRequestAndCreateDelivery = this.acceptRequestAndCreateDelivery.bind(this);
+        this.cancelRequestFunction = this.cancelRequestFunction.bind(this);
 
         // Get all nearby Requests from GraphQL endpoint, and set state vars based on response
         fetchCurrentUserAndLocationRequests(
@@ -701,31 +723,21 @@ class TabBarComponent extends Component {
         console.log("TabBarComponent._renderContent called with selectedTab=", this.state.selectedTab);
         let returnComponent;
         if (this.state.selectedTab == 'newJobsTab') {
-            const acceptRequestFunction = (request) => fetchGraphQlQuery(this.props.accessToken,
-                acceptRequestMutationStringLambda(request._id,0,0, request.vehicleIds)
-            );
-
-            /*fetchGraphQlQuery(
-             this.props.accessToken,
-             acceptRequestMutationStringLambda(request._id, this.state.currentPosition.latitude, this.state.currentPosition.longitude, request['vehicleIds'])
-             );*/
-            const declineRequestFunction = (request, reason: string) => fetchGraphQlQuery(
-                this.props.accessToken,
-                declineRequestMutationStringLambda(request._id, reason)
-            );
             returnComponent = <NewJobsComponent title="New Jobs" currentPosition={this.state.currentPosition}
                                                 openNonPreferredRequests={this.state.openNonPreferredRequests}
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
-                                                acceptRequestFunction={acceptRequestFunction}
-                                                declineRequestFunction={declineRequestFunction}/>
+                                                acceptRequestFunction={this.acceptRequestAndCreateDelivery}
+                                                declineRequestFunction={declineRequestFunction}
+            />
         }
         else if (this.state.selectedTab == 'myJobsTab') {
-            const cancelRequestFunction = (request) => { return {"OK": "OK"}};
+
             returnComponent = <MyJobsComponent title="My Jobs" currentPosition={this.state.currentPosition}
                                                acceptedRequests={this.state.acceptedRequests}
                                                navigator={this.props.navigator}
-                                               cancelRequestFunction={cancelRequestFunction}/>
+                                               cancelRequestFunction={this.cancelRequestFunction}
+            />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
             returnComponent = <DeliveredComponent title="Delivered" navigator={this.props.navigator}
@@ -741,7 +753,7 @@ class TabBarComponent extends Component {
                                                 openNonPreferredRequests={this.state.openNonPreferredRequests}
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
-                                                acceptRequestFunction={acceptRequestFunction}
+                                                acceptRequestFunction={acceptRequestAndCreateDeliveryFunction}
                                                 declineRequestFunction={declineRequestFunction}/>
         }
         return returnComponent;
