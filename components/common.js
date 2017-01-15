@@ -48,12 +48,12 @@ class Request {
     amountEstimated: number;
     declinedBy: Array<string>;
     deliveries: {
-        edges: {
+        edges: [{
             node: {
                 _id: string,
                 carrierId: string,
             }
-        }
+        }]
     };
     vehicleIds: Array<String>;
     vehicles: {
@@ -211,22 +211,55 @@ const changeStatusMutationFunction = (accessToken:string, request:Request, newSt
     accessToken,
     changeStatusMutationStringFunction(request._id, newStatus));
 
-const declineRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
-    let retPromise;
+const createDeclinedByGraphQlString = (request:Request, carrierId:string, reason:string) => {
+    let newDeclinedBy = request.declinedBy;
     if (request.declinedBy.map((db) => db['carrierId']).indexOf(carrierId) !== -1) {
-        console.warn("declineRequestFunctionWithAccessToken: Request ", request, "already contains the carrier ID", carrierId, "in its declinedBy");
-        retPromise = Promise();
+        console.warn("createDeclinedByGraphQlString: Request ", request, "already contains the carrier ID", carrierId, "in its declinedBy. Shouldn't happen, corrupted DB data?");
     } else {
-        const newDeclinedBy = request.declinedBy.concat([{carrierId: carrierId, reason: reason || ""}]);
-        const newDeclinedByStr = "[" + newDeclinedBy.map((db) => `{carrierId: "${db.carrierId}", reason: "${db.reason}"}`).join(',') + "]"; // TODO really should use the graphql vars for this. Can't use JSON.stringify because the key names have doubel quotes which GraphQL doesn't like.
-        const mutationString = `mutation UpdateRequestById {
-            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${newDeclinedByStr}}}) {
-                recordId
-            }
-        }`;
-        retPromise = fetchGraphQlQuery(accessToken, mutationString);
+        newDeclinedBy = newDeclinedBy.concat([{carrierId: carrierId, reason: reason || ""}]);
     }
-    return retPromise;
+    return "[" + newDeclinedBy.map((db) => `{carrierId: "${db.carrierId}", reason: "${db.reason}"}`).join(',') + "]"; // TODO really should use the graphql vars for this. Can't use JSON.stringify because the key names have doubel quotes which GraphQL doesn't like.
+}
+;
+
+/**
+ * Adds the carrierId to the Request's declinedBy array.
+ */
+const declineRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
+    const newDeclinedByStr = createDeclinedByGraphQlString(request, carrierId, reason);
+    const mutationString = `mutation UpdateRequestById {
+        requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${newDeclinedByStr}}}) {
+            recordId
+        }
+    }`;
+    return fetchGraphQlQuery(accessToken, mutationString);
+};
+
+/**
+ * Similar to declineRequest function, but will delete the Delivery object, set the Request status back to PROCESSING,
+ * and also Declines the Request so it can't be added again.
+ */
+const cancelRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
+    // Create mutation string to delete delivery
+    const deliveryIdOfCarrier = request.deliveries.edges.filter(edge => edge.node.carrierId === carrierId)[0].node._id;
+    const deleteDeliveryString = `mutation DeleteDeliveryById{
+      deliveryRemoveById(input:{_id: "${deliveryIdOfCarrier}", clientMutationId:"13"}) {
+        recordId
+      }
+    }`;
+
+    // Create mutation string to decline the Request and set its status to PROCESSING
+    const newDeclinedByStr = createDeclinedByGraphQlString(request, carrierId, reason);
+    const declineAndRevertRequestString = `mutation UpdateRequestById {
+        requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status: ${RequestStatusEnum.PROCESSING}, declinedBy:${newDeclinedByStr}}}) {
+            recordId
+        }
+    }`;
+
+    // Create Promise chain of queries
+    return fetchGraphQlQuery(accessToken, deleteDeliveryString).then(() => {
+        return fetchGraphQlQuery(accessToken, declineAndRevertRequestString);
+    });
 };
 
 const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
@@ -380,4 +413,4 @@ function generateOperableString(request:Request) {
             `${numInoperable} Inoperable, ${numOperable} Operable`));
 }
 
-export {Request, User, getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, generateOperableString, changeStatusMutationFunction}
+export {Request, User, getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString, changeStatusMutationFunction}
