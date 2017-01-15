@@ -435,9 +435,12 @@ export default class MyJobsComponent extends Component {
                 passProps: {
                     title: "View Job",
                     request:request,
+                    navigator: this.props.navigator,
                     haversineDistance:haversineDistance,
                     cancelJob: this.onCancelJob,
-                    cancelRequestFunction: this.props.cancelRequestFunction}})}>
+                    cancelRequestFunction: this.props.cancelRequestFunction,
+                    onNavigateToPickUpOrDropOff: this.onNavigateToPickUpOrDropOff
+                }})}>
 
                 {summaryView}
             </TouchableHighlight>

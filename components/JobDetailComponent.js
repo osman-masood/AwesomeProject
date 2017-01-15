@@ -6,8 +6,9 @@
 
 
 import React, { Component, PropTypes } from 'react';
-import {generateOperableString} from "./common";
+import {generateOperableString, RequestStatusEnum} from "./common";
 const ReactNative = require('react-native');
+import VehicleInspectionComponent from "./VehicleInspectionComponent";
 var moment = require('moment');
 
 const {
@@ -77,7 +78,23 @@ export default class JobDetailComponent extends Component {
     }
 
     messageJobAction() {
+    }
 
+    navigateTo() {
+        this.props.onNavigateToPickUpOrDropOff(true, this.state.job, this.state.job.status === RequestStatusEnum.DISPATCHED)
+    }
+
+    goToInspection() {
+        this.props.navigator.push({
+            component: VehicleInspectionComponent,
+            navigationBarHidden: false,
+            navigator: this.props.navigator,
+            passProps: {
+                title: "Inspect",
+                navigator: this.props.navigator,
+                request: this.state.job
+            }
+        });
     }
 
     render() {
@@ -85,11 +102,15 @@ export default class JobDetailComponent extends Component {
             title: 'Back',
             handler: () => this.props.navigator.pop()
         };
+        var titleConfig = {
+            title: 'Inspect',
+        };
+
         const request = this.props.request;
 
         return (<View>
             <NavigationBar
-                title={{title: this.props.title}}
+                title={titleConfig}
                 leftButton={leftButtonConfig}
             />
             <View>
@@ -136,22 +157,37 @@ export default class JobDetailComponent extends Component {
                         </View>
                     </View>
                     <View style={{height: 1, backgroundColor: '#CCCCCC'}}></View>
-
-                    <View style={{flex: 3, flexDirection: 'row', marginTop: 20, alignItems: 'center', justifyContent: 'center'}}>
-                        <TouchableHighlight style={{backgroundColor: '#FF5722', padding: 5, width: 90, height: 30, marginLeft: 6}}
-                            onPress={this.cancelJobAction}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Cancel Job</Text>
-                        </TouchableHighlight>
-                        <TouchableHighlight style={{backgroundColor: '#42A5F5', padding: 5, width: 90, height: 30, marginLeft: 6}}
-                                            onPress={this.callJobAction}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Call</Text>
-                        </TouchableHighlight>
-                        <TouchableHighlight style={{backgroundColor: '#009688', padding: 5, width: 90, height: 30, marginLeft: 6}}
-                                            onPress={this.messageJobAction.bind(this)}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Message</Text>
+                    <View style={{height: 70}}>
+                        <View style={{flex: 3, flexDirection: 'row', marginTop: 20, alignItems: 'center', justifyContent: 'center'}}>
+                            <TouchableHighlight style={{backgroundColor: '#FF5722', padding: 5, width: 90, height: 30, marginLeft: 6}}
+                                onPress={this.cancelJobAction}>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Cancel Job</Text>
+                            </TouchableHighlight>
+                            <TouchableHighlight style={{backgroundColor: '#42A5F5', padding: 5, width: 90, height: 30, marginLeft: 6}}
+                                                onPress={this.callJobAction}>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Call</Text>
+                            </TouchableHighlight>
+                            <TouchableHighlight style={{backgroundColor: '#009688', padding: 5, width: 90, height: 30, marginLeft: 6}}
+                                                onPress={this.messageJobAction.bind(this)}>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Message</Text>
+                            </TouchableHighlight>
+                            <TouchableHighlight style={{backgroundColor: '#66BB6A', padding: 5, width: 100, height: 30, marginLeft: 6}}
+                                                onPress={this.navigateTo.bind(this)}>
+                                <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 10,}}>Navigate to
+                                    {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? 'Pick up' : 'Drop off'}</Text>
+                            </TouchableHighlight>
+                        </View>
+                    </View>
+                    <View>
+                        <TouchableHighlight style={{backgroundColor: '#26C6DA', padding: 5, width: 300, height: 30, marginLeft: 6}}
+                                            onPress={this.goToInspection.bind(this)}>
+                            <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13,}}>
+                                TAP TO START
+                                {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? 'PICK UP' : 'DROP OFF'}
+                                INSPECTION
+                            </Text>
                         </TouchableHighlight>
                     </View>
-
                 </View>
             </View>
         </View>)

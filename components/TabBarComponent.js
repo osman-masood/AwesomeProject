@@ -12,7 +12,7 @@
 //noinspection JSUnresolvedVariable
 import React, {Component, PropTypes} from "react";
 //noinspection JSUnresolvedVariable
-import {AppRegistry, StyleSheet, Text, View, NavigatorIOS, TextInput, TabBarIOS} from "react-native";
+import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput, TabBarIOS} from "react-native";
 
 import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
