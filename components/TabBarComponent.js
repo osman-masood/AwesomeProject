@@ -22,9 +22,8 @@ import {
     fetchCurrentUserAndLocationRequests,
     RequestStatusEnum,
     acceptRequestAndCreateDeliveryFunction,
-    declineRequestFunction,
-    fetchGraphQlQuery,
-    changeStatusMutationFunction
+    declineRequestFunctionWithAccessToken,
+    User, Request, cancelRequestFunctionWithAccessToken
 } from "./common";
 
 const base64Icon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABLCAQAAACSR7JhAAADtUlEQVR4Ac3YA2Bj6QLH0XPT1Fzbtm29tW3btm3bfLZtv7e2ObZnms7d8Uw098tuetPzrxv8wiISrtVudrG2JXQZ4VOv+qUfmqCGGl1mqLhoA52oZlb0mrjsnhKpgeUNEs91Z0pd1kvihA3ULGVHiQO2narKSHKkEMulm9VgUyE60s1aWoMQUbpZOWE+kaqs4eLEjdIlZTcFZB0ndc1+lhB1lZrIuk5P2aib1NBpZaL+JaOGIt0ls47SKzLC7CqrlGF6RZ09HGoNy1lYl2aRSWL5GuzqWU1KafRdoRp0iOQEiDzgZPnG6DbldcomadViflnl/cL93tOoVbsOLVM2jylvdWjXolWX1hmfZbGR/wjypDjFLSZIRov09BgYmtUqPQPlQrPapecLgTIy0jMgPKtTeob2zWtrGH3xvjUkPCtNg/tm1rjwrMa+mdUkPd3hWbH0jArPGiU9ufCsNNWFZ40wpwn+62/66R2RUtoso1OB34tnLOcy7YB1fUdc9e0q3yru8PGM773vXsuZ5YIZX+5xmHwHGVvlrGPN6ZSiP1smOsMMde40wKv2VmwPPVXNut4sVpUreZiLBHi0qln/VQeI/LTMYXpsJtFiclUN+5HVZazim+Ky+7sAvxWnvjXrJFneVtLWLyPJu9K3cXLWeOlbMTlrIelbMDlrLenrjEQOtIF+fuI9xRp9ZBFp6+b6WT8RrxEpdK64BuvHgDk+vUy+b5hYk6zfyfs051gRoNO1usU12WWRWL73/MMEy9pMi9qIrR4ZpV16Rrvduxazmy1FSvuFXRkqTnE7m2kdb5U8xGjLw/spRr1uTov4uOgQE+0N/DvFrG/Jt7i/FzwxbA9kDanhf2w+t4V97G8lrT7wc08aA2QNUkuTfW/KimT01wdlfK4yEw030VfT0RtZbzjeMprNq8m8tnSTASrTLti64oBNdpmMQm0eEwvfPwRbUBywG5TzjPCsdwk3IeAXjQblLCoXnDVeoAz6SfJNk5TTzytCNZk/POtTSV40NwOFWzw86wNJRpubpXsn60NJFlHeqlYRbslqZm2jnEZ3qcSKgm0kTli3zZVS7y/iivZTweYXJ26Y+RTbV1zh3hYkgyFGSTKPfRVbRqWWVReaxYeSLarYv1Qqsmh1s95S7G+eEWK0f3jYKTbV6bOwepjfhtafsvUsqrQvrGC8YhmnO9cSCk3yuY984F1vesdHYhWJ5FvASlacshUsajFt2mUM9pqzvKGcyNJW0arTKN1GGGzQlH0tXwLDgQTurS8eIQAAAABJRU5ErkJggg==';
@@ -593,6 +592,7 @@ const ACCEPTED_REQUEST_STUB_DATA = [
 class TabBarComponent extends Component {
     static title = '<TabBarIOS>';
     static description = 'Tab-based navigation.';
+    //noinspection JSUnusedGlobalSymbols
     static displayName = 'TabBarComponent';
 
     //noinspection JSUnresolvedVariable,JSUnusedGlobalSymbols
@@ -609,13 +609,22 @@ class TabBarComponent extends Component {
             this.state.currentPosition.longitude);
     }
 
-    cancelRequestFunction(request) {
-        return changeStatusMutationFunction(this.props.accessToken, request, RequestStatusEnum.CANCELLED);
-    }
-
     constructor(props) {
         super(props);
-        this.state = {
+        //noinspection UnnecessaryLocalVariableJS
+        let thisState: {
+            selectedTab: string,
+            notificationCount: number,
+            presses: number,
+            openNonPreferredRequests: Array<Request>,
+            openPreferredRequests: Array<Request>,
+            acceptedRequests: Array<Request>,
+            currentPosition: {
+                latitude: number,
+                longitude: number
+            },
+            currentUser: User
+        } = {
             selectedTab: 'newJobsTab',
             notificationCount: 0,
             presses: 0,
@@ -628,6 +637,7 @@ class TabBarComponent extends Component {
             },
             currentUser: null
         };
+        this.state = thisState;
 
         // Set current map position based on geolocation.
         navigator.geolocation.getCurrentPosition(
@@ -673,7 +683,8 @@ class TabBarComponent extends Component {
                 let openNonPreferredRequests = [], openPreferredRequests = [], acceptedRequests = [];
                 for (let openRequest of locationRequests) {
                     // If request was declined by this carrier, skip it
-                    if (openRequest.declinedBy && openRequest.declinedBy.length > 0 && openRequest.declinedBy.indexOf(currentCarrierId) !== -1) {
+                    if (openRequest.declinedBy && openRequest.declinedBy.length > 0 && openRequest.declinedBy.map((db) => db['carrierId']).indexOf(currentCarrierId) !== -1) {
+                        console.log("TabBarComponent constructor: Request ", openRequest, "had current carrier ID ", currentCarrierId, " in its declined list");
                         continue;
                     }
 
@@ -706,38 +717,48 @@ class TabBarComponent extends Component {
             });
     }
 
-    static hasCarrierAcceptedRequest(carrierId: string, request) {
+    static hasCarrierAcceptedRequest(carrierId: string, request:Request) {
         // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.
+        let ret;
         if ((request.status === RequestStatusEnum.DISPATCHED || request.status === RequestStatusEnum.IN_PROGRESS) &&
             (request.deliveries && request.deliveries.edges && request.deliveries.edges.length > 0)) {
 
             const deliveryCarrierIds = request.deliveries.edges.map((edge) => edge.node.carrierId);
-            if (deliveryCarrierIds.indexOf(carrierId) !== -1) {
-                return true;
-            }
+            ret = deliveryCarrierIds.indexOf(carrierId) !== -1;
         }
-        return false;
+        return ret;
     }
+
+    acceptRequestFunction = (request:Request, currentLatitude:string, currentLongitude:string) => {
+        return acceptRequestAndCreateDeliveryFunction(this.props.accessToken, request, this.state.currentUser.carrier._id, currentLatitude, currentLongitude);
+    };
+
+    declineRequestFunction = (request:Request, reason: string) => {
+        return declineRequestFunctionWithAccessToken(this.props.accessToken, request, this.state.currentUser.carrier._id, reason);
+    };
+
+    cancelRequestFunction = (request:Request, reason: string) => {
+        return cancelRequestFunctionWithAccessToken(this.props.accessToken, request, this.state.currentUser.carrier._id, reason);
+    };
 
     _renderContent = () => {
         console.log("TabBarComponent._renderContent called with selectedTab=", this.state.selectedTab);
         let returnComponent;
         if (this.state.selectedTab == 'newJobsTab') {
-            returnComponent = <NewJobsComponent title="New Jobs" currentPosition={this.state.currentPosition}
+            returnComponent = <NewJobsComponent title="New Jobs"
+                                                currentPosition={this.state.currentPosition}
                                                 openNonPreferredRequests={this.state.openNonPreferredRequests}
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
-                                                acceptRequestFunction={this.acceptRequestAndCreateDelivery}
-                                                declineRequestFunction={declineRequestFunction}
-            />
+                                                acceptRequestFunction={this.acceptRequestFunction}
+                                                declineRequestFunction={this.declineRequestFunction}/>
         }
         else if (this.state.selectedTab == 'myJobsTab') {
-
-            returnComponent = <MyJobsComponent title="My Jobs" currentPosition={this.state.currentPosition}
+            returnComponent = <MyJobsComponent title="My Jobs"
+                                               currentPosition={this.state.currentPosition}
                                                acceptedRequests={this.state.acceptedRequests}
                                                navigator={this.props.navigator}
-                                               cancelRequestFunction={this.cancelRequestFunction}
-            />
+                                               cancelRequestFunction={this.cancelRequestFunction}/>
         }
         else if (this.state.selectedTab == 'deliveredTab') {
             returnComponent = <DeliveredComponent title="Delivered" navigator={this.props.navigator}
@@ -749,12 +770,7 @@ class TabBarComponent extends Component {
         }
         else {
             console.error("Unknown selected tab: ", this.state.selectedTab);
-            returnComponent = <NewJobsComponent title="New Jobs" currentPosition={this.state.currentPosition}
-                                                openNonPreferredRequests={this.state.openNonPreferredRequests}
-                                                openPreferredRequests={this.state.openPreferredRequests}
-                                                navigator={this.props.navigator}
-                                                acceptRequestFunction={acceptRequestAndCreateDeliveryFunction}
-                                                declineRequestFunction={declineRequestFunction}/>
+            throw new Error("Unknown selected tab WTF?");
         }
         return returnComponent;
     };

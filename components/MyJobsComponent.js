@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest} from "./common";
+import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import JobDetailComponent from "./JobDetailComponent";
 const deepcopy = require("deepcopy");
 
@@ -64,7 +64,25 @@ export default class MyJobsComponent extends Component {
         this.onRegionChange = this.onRegionChange.bind(this);
         this.callPhone = this.callPhone.bind(this);
 
-        this.state = {
+        const thisState: {
+            allJobsSubTab: string,
+            acceptedRequests: Array<Request>,
+            mapViewRegion: {
+                latitude: number,
+                longitude: number,
+                latitudeDelta: number,
+                longitudeDelta: number
+            },
+            currentPosition: {
+                latitude: number,
+                longitude: number
+            },
+            isFilterDropdownVisible: boolean,
+            isCancelModalVisible: false,
+            jobOfModal: Request,
+            cancelReason: string,
+            cancelReasonComments: string
+        } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
             acceptedRequests: deepcopy(this.props.acceptedRequests),
@@ -82,6 +100,7 @@ export default class MyJobsComponent extends Component {
             cancelReasonComments: null,
             buildPreview: null
         };
+        this.state = thisState;
     }
 
     componentWillReceiveProps(nextProps) {
@@ -259,7 +278,7 @@ export default class MyJobsComponent extends Component {
         </View>;
     }
 
-    setCancelModalVisible(visible, request) {
+    setCancelModalVisible(visible:boolean, request:Request) {
         this.setState({isCancelModalVisible: visible, jobOfModal: request});
     }
 

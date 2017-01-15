@@ -45,7 +45,7 @@ const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
 
 
 export default class NewJobsComponent extends Component {
-    //noinspection JSUnresolvedVariable
+    //noinspection JSUnusedGlobalSymbols,JSUnresolvedVariable
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
@@ -71,7 +71,38 @@ export default class NewJobsComponent extends Component {
         this.selectTrailerType = this.selectTrailerType.bind(this);
         this.selectShipFromDaysInFuture = this.selectShipFromDaysInFuture.bind(this);
 
-        this.state = {
+        let thisState: {
+            selectedTab: string,
+            allJobsSubTab: string,
+
+            openPreferredRequests: Array<Request>,
+            openNonPreferredRequests: Array<Request>,
+            searchParams: {
+                origin: string,
+                destination: string,
+                vehicleType: string,
+                trailerType: string,
+                isRunning: boolean,
+                minVehicles: string,
+                maxVehicles: string,
+                readyToShipFromDate: string
+            },
+            mapViewRegion: {
+                latitude: number,
+                longitude: number,
+                latitudeDelta: number,
+                longitudeDelta: number
+            },
+            currentPosition: {
+                latitude: number,
+                longitude: number
+            },
+            isFilterDropdownVisible: boolean,
+            isDeclineModalVisible: boolean,
+            jobOfModal: Request,
+            declineReason: string,
+            declineReasonComments: string
+        } = {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
@@ -101,6 +132,7 @@ export default class NewJobsComponent extends Component {
             declineReason: DECLINE_REASONS[0],
             declineReasonComments: null
         };
+        this.state = thisState;
 
         // Set current map position based on geolocation.
         navigator.geolocation.getCurrentPosition(
@@ -121,6 +153,7 @@ export default class NewJobsComponent extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        console.log(`componentWillReceiveProps with nextProps: openNonPreferredRequests: ${nextProps.openNonPreferredRequests.length}, openPreferredRequests: ${nextProps.openPreferredRequests.length}, currentPosition: ${this.props.currentPosition})`);
         // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
         this.setState({
             openNonPreferredRequests: deepcopy(nextProps.openNonPreferredRequests),
@@ -130,6 +163,7 @@ export default class NewJobsComponent extends Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
+        console.log(`shouldComponentUpdate with nextProps: openNonPreferredRequests: ${nextProps.openNonPreferredRequests.length}, openPreferredRequests: ${nextProps.openPreferredRequests.length}, currentPosition: ${this.props.currentPosition})`);
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
         return true;
     }
@@ -143,7 +177,6 @@ export default class NewJobsComponent extends Component {
      * To make it so that NavigationBar interacts with Navigator (i.e. back button support), do:
      * http://stackoverflow.com/questions/34986149/how-to-hidden-back-button-of-react-native-navigator
      */
-
     render() {
         const rightButtonConfig = {
             title: 'Menu',
@@ -334,7 +367,7 @@ export default class NewJobsComponent extends Component {
         // TODO:
     }
 
-    updateSearchParams(keyName: string, newValue) {
+    updateSearchParams(keyName: string, newValue: string) {
         const updateObject = {};
         updateObject[keyName] = {$set: newValue};
         let newSearchParams = update(this.state.searchParams, updateObject);
@@ -466,7 +499,7 @@ export default class NewJobsComponent extends Component {
         </View>;
     }
 
-    setDeclineModalVisible(visible, request) {
+    setDeclineModalVisible(visible, request:Request) {
         this.setState({isDeclineModalVisible: visible, jobOfModal: request});
     }
 
@@ -492,7 +525,7 @@ export default class NewJobsComponent extends Component {
                     <PickerIOS
                         itemStyle={{fontSize: 25}}
                         selectedValue={this.state.cancelReason}
-                        onValueChange={(declineReason) => this.setState({declineReason})}>
+                        onValueChange={(declineReason:string) => this.setState({declineReason})}>
                         {DECLINE_REASONS.map((declineReason) => (
                             <PickerItemIOS
                                 key={declineReason}
@@ -506,12 +539,12 @@ export default class NewJobsComponent extends Component {
                         editable = {true}
                         multiline = {true}
                         numberOfLines = {4}
-                        onChangeText={(declineReasonComments) => this.setState({declineReasonComments})}
+                        onChangeText={(declineReasonComments:string) => this.setState({declineReasonComments})}
                         maxLength = {2047}
                         returnKeyType="send"
                         onSubmitEditing={this.onDeclineJob}
                         keyboardType="default"
-                        value={this.state.cancelReasonComments}
+                        value={this.state.declineReasonComments}
                         placeholder="Comments"
                     />
                     <View style={{flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
@@ -537,7 +570,7 @@ export default class NewJobsComponent extends Component {
         const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
         // API call to decline request
-        const finalDeclineReason = this.state.cancelReason + (this.state.cancelReasonComments ? `\n${this.state.cancelReasonComments}` : "");
+        const finalDeclineReason = this.state.declineReason + (this.state.declineReasonComments ? `\n${this.state.declineReasonComments}` : "");
         this.props.declineRequestFunction(this.state.jobOfModal, finalDeclineReason).then((responseJson) => {
             console.log("NewJobsComponent.onDeclineJob: Successfully declined job. Response: ", responseJson);
         });
@@ -549,10 +582,9 @@ export default class NewJobsComponent extends Component {
             openNonPreferredRequests: openNonPreferredRequests,
             openPreferredRequests: openPreferredRequests
         });
-
     }
 
-    setAcceptModalVisible(visible: boolean, job) {
+    setAcceptModalVisible(visible: boolean, job:Request) {
         this.setState({isAcceptModalVisible: visible, jobOfModal: job});
     }
 
@@ -586,6 +618,7 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
+        console.log("onAcceptJob called with state.currentPosition:", this.state.currentPosition);
         // Remove job from all lists
         const requestIdToRemove = this.state.jobOfModal._id;
         if (!requestIdToRemove) {
@@ -595,7 +628,7 @@ export default class NewJobsComponent extends Component {
         const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
         // API call to accept job
-        this.props.acceptRequestFunction(this.state.jobOfModal).then((responseJson) => {
+        this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
             console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 
@@ -608,7 +641,7 @@ export default class NewJobsComponent extends Component {
         });
     }
 
-    renderJobListElement(request, showPhoneNumber: boolean, marginBottom: number) {
+    renderJobListElement(request:Request, showPhoneNumber: boolean, marginBottom: number) {
         if (showPhoneNumber === undefined) {
             showPhoneNumber = true;
         }

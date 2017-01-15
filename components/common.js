@@ -29,10 +29,80 @@ const RequestStatusEnum = Object.freeze({
     CANCELLED: 5,
 });
 
+const DeliveryStatusEnum = Object.freeze({
+    ACCEPTED: 0,
+    IN_PROGRESS: 1,  // They picked it up
+    DROPPED_OFF: 2,
+    RETURNED: 3
+});
+
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
-const genericRequestsQueryStringLambda = (requestsFunctionString) => `{
+/* For Flow support */
+class Request {
+    _id: string;
+    status: number;
+    paymentType: string;
+    amountDue: number;
+    amountEstimated: number;
+    declinedBy: Array<string>;
+    deliveries: {
+        edges: [{
+            node: {
+                _id: string,
+                carrierId: string,
+            }
+        }]
+    };
+    vehicleIds: Array<String>;
+    vehicles: {
+        count: number;
+        edges: {
+            node: {
+                year: number;
+                make: string;
+                model: string;
+                type: string;
+                color: string;
+                enclosed: boolean;
+                running: boolean;
+            }
+        }
+    };
+    preferredCarrierIds: Array<String>;
+    origin: {
+        coordinates: Array<number>;
+        locationName: string;
+        contactName: string;
+        contactPhone: string;
+        address: string;
+    };
+    destination: {
+        coordinates: Array<number>;
+        locationName: string;
+        contactName: string;
+        contactPhone: string;
+        address: string;
+    };
+    pickupDate: string;
+    dropoffDate: string;
+    createdAt: string;
+    shipper: {
+        name: string;
+        buyerNumber: string;
+        phone: string;
+    };
+}
+
+class User {
+    _id: string;
+    carrier: {
+        _id: string
+    };
+}
+
+const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
   viewer {
     me {
       _id,
@@ -100,7 +170,7 @@ const genericRequestsQueryStringLambda = (requestsFunctionString) => `{
   }
 }`;
 
-const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
+const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
     return fetchGraphQlQuery(
         accessToken,
         `mutation UpdateRequestById {
@@ -112,7 +182,16 @@ const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request, car
         return fetchGraphQlQuery(
             accessToken,
             `mutation AddDeliveryToRequest {
-                deliveryCreate(input:{clientMutationId:"11",record:{carrierId:"${carrierId}", requestId:"${request._id}", currentCoordinates:[${currentLatitude}, ${currentLongitude}]}}) {
+                deliveryCreate(input: {
+                    clientMutationId:"11",
+                    record: {
+                        carrierId:"${carrierId}", 
+                        requestId:"${request._id}", 
+                        currentCoordinates:[${currentLongitude}, ${currentLatitude}],
+                        status: ${DeliveryStatusEnum.ACCEPTED},
+                        vehicleIds: ${JSON.stringify(request.vehicleIds)}
+                    }
+                }) {
                     record { _id }
                 }
             }`
@@ -120,71 +199,62 @@ const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request, car
     });
 };
 
-const changeStatusMutationStringFunction = (request, newStatus) => {
-    return `mutation UpdateRequestById {
-      requestUpdateById(input: {clientMutationId: "11", record:{_id:"${request._id}", status: ${newStatus}}}) {
+const createDeclinedByGraphQlString = (request:Request, carrierId:string, reason:string) => {
+    let newDeclinedBy = request.declinedBy;
+    if (request.declinedBy.map((db) => db['carrierId']).indexOf(carrierId) !== -1) {
+        console.warn("createDeclinedByGraphQlString: Request ", request, "already contains the carrier ID", carrierId, "in its declinedBy. Shouldn't happen, corrupted DB data?");
+    } else {
+        newDeclinedBy = newDeclinedBy.concat([{carrierId: carrierId, reason: reason || ""}]);
+    }
+    return "[" + newDeclinedBy.map((db) => `{carrierId: "${db.carrierId}", reason: "${db.reason}"}`).join(',') + "]"; // TODO really should use the graphql vars for this. Can't use JSON.stringify because the key names have doubel quotes which GraphQL doesn't like.
+}
+;
+
+/**
+ * Adds the carrierId to the Request's declinedBy array.
+ */
+const declineRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
+    const newDeclinedByStr = createDeclinedByGraphQlString(request, carrierId, reason);
+    const mutationString = `mutation UpdateRequestById {
+        requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${newDeclinedByStr}}}) {
+            recordId
+        }
+    }`;
+    return fetchGraphQlQuery(accessToken, mutationString);
+};
+
+/**
+ * Similar to declineRequest function, but will delete the Delivery object, set the Request status back to PROCESSING,
+ * and also Declines the Request so it can't be added again.
+ */
+const cancelRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
+    // Create mutation string to delete delivery
+    const deliveryIdOfCarrier = request.deliveries.edges.filter(edge => edge.node.carrierId === carrierId)[0].node._id;
+    const deleteDeliveryString = `mutation DeleteDeliveryById{
+      deliveryRemoveById(input:{_id: "${deliveryIdOfCarrier}", clientMutationId:"13"}) {
         recordId
       }
     }`;
-};
 
-const changeStatusMutationFunction = (accessToken:string, request, newStatus:number) => fetchGraphQlQuery(
-    accessToken,
-    changeStatusMutationStringFunction(request._id, newStatus));
-
-const declineRequestMutationStringLambda = (request, carrierId, reason:string) => {
-    const newDeclinedBy = [...request.declinedBy, {carrierId: carrierId, reason: reason || ""}];
-    return `mutation UpdateRequestById {
-      requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${JSON.stringify(newDeclinedBy)}}}) {
-        recordId
-      }
+    // Create mutation string to decline the Request and set its status to PROCESSING
+    const newDeclinedByStr = createDeclinedByGraphQlString(request, carrierId, reason);
+    const declineAndRevertRequestString = `mutation UpdateRequestById {
+        requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status: ${RequestStatusEnum.PROCESSING}, declinedBy:${newDeclinedByStr}}}) {
+            recordId
+        }
     }`;
+
+    // Create Promise chain of queries
+    return fetchGraphQlQuery(accessToken, deleteDeliveryString).then(() => {
+        return fetchGraphQlQuery(accessToken, declineAndRevertRequestString);
+    });
 };
-
-const declineRequestFunction = (accessToken:string, request, reason: string) => fetchGraphQlQuery(
-    accessToken,
-    declineRequestMutationStringLambda(request._id, reason));
-
-const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
 
 const locationRequestsQueryStringLambda = (latitude:number, longitude:number, distance:number) => {
     const rFS = `locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance})`;
     console.log("locationRequestsQueryLambda: requestFunctionString=", rFS);
     return genericRequestsQueryStringLambda(rFS);
 };
-
-const carrierQueryLambda = (carrierId:string) => `
-    carrier(filter: {_id: "${carrierId}"}) {
-      _id,
-      name,
-      stripeAccountId,
-      email,
-      phone,
-      owner {
-        _id,
-        firstName,
-        lastName,
-        email,
-        phone
-      },
-      users {
-        edges {
-          node {
-            _id,
-            firstName,
-            lastName
-          }
-        }
-      }
-      requests {
-        edges {
-          node {
-            _id
-          }
-        }
-      }
-    }
-`;
 
 function getAccessTokenFromResponse(response) {
     // Fetch out access token from response header object
@@ -226,10 +296,6 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
         })
 }
 
-function fetchCarrierRequests(accessToken:string) {
-    return fetchGraphQlQuery(accessToken, carrierRequestsQueryString);
-}
-
 function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
     const query = locationRequestsQueryStringLambda(latitude, longitude, distance);
     console.log("fetchCurrentUserAndLocationRequests: fetchGraphQlQuery with query=", query);
@@ -267,7 +333,7 @@ function haversine(start, end, options) {
     return options.threshold ? options.threshold > (R * c) : Math.round(R * c);
 }
 
-function haversineDistanceToRequest(currentPosition, request) {
+function haversineDistanceToRequest(currentPosition:any, request:Request) {
     const isPickUp = request.status !== RequestStatusEnum.IN_PROGRESS;  // We'd only go to the destination if it's already picked up.
     const originOrDestinationKey = isPickUp ? "origin" : "destination";
     return haversine(
@@ -277,7 +343,7 @@ function haversineDistanceToRequest(currentPosition, request) {
     );
 }
 
-function generateOperableString(request) {
+function generateOperableString(request:Request) {
     // Generate operable/inoperable count string
     const numOperable = request.vehicles.edges.filter((edge) => edge.node.running).length;
     const numInoperable = request.vehicles.edges.filter((edge) => !edge.node.running).length;
@@ -288,4 +354,4 @@ function generateOperableString(request) {
             `${numInoperable} Inoperable, ${numOperable} Operable`));
 }
 
-export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunction, generateOperableString, changeStatusMutationFunction}
+export {Request, User, getAccessTokenFromResponse, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString}
