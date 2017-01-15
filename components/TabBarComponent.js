@@ -667,10 +667,13 @@ class TabBarComponent extends Component {
             (positionError) => console.error("TabBarComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
         );
 
-        this.acceptRequestAndCreateDelivery = this.acceptRequestAndCreateDelivery.bind(this);
-        this.cancelRequestFunction = this.cancelRequestFunction.bind(this);
+        this.fetchUserAndRequests();
+    }
 
-        // Get all nearby Requests from GraphQL endpoint, and set state vars based on response
+    /**
+     * Get User and all nearby Requests from GraphQL endpoint, and set state vars based on response.
+     */
+    fetchUserAndRequests = () => {
         fetchCurrentUserAndLocationRequests(
             this.props.accessToken, this.state.currentPosition.latitude, this.state.currentPosition.longitude, 3000)
             .then((userAndLocationRequests) => {
@@ -715,7 +718,7 @@ class TabBarComponent extends Component {
                     acceptedRequests: ACCEPTED_REQUEST_STUB_DATA    // acceptedRequests  TODO replace once we have accepted requests
                 });
             });
-    }
+    };
 
     static hasCarrierAcceptedRequest(carrierId: string, request:Request) {
         // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.

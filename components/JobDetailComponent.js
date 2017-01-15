@@ -6,10 +6,10 @@
 
 
 import React, { Component, PropTypes } from 'react';
-import {generateOperableString, RequestStatusEnum} from "./common";
+import {generateOperableString, RequestStatusEnum, Request} from "./common";
 const ReactNative = require('react-native');
 import VehicleInspectionComponent from "./VehicleInspectionComponent";
-var moment = require('moment');
+const moment = require('moment');
 
 const {
     StyleSheet,
@@ -20,13 +20,22 @@ const {
     Button,
     TouchableHighlight,
     Linking,
-    Alert
+    Alert,
+    ScrollView
 } = ReactNative;
 
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 
 
+const styles = StyleSheet.create({
+    topBox: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 70,
+        marginTop: 10
+    }
+});
 export default class JobDetailComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
@@ -37,19 +46,21 @@ export default class JobDetailComponent extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {
+        //noinspection UnnecessaryLocalVariableJS
+        let thisState: {
+            job: Request
+        } = {
             job: this.props.request
         };
+        this.state = thisState;
         this.cancelJobAction = this.cancelJobAction.bind(this);
         this.callJobAction = this.callJobAction.bind(this);
     }
 
-
-
     cancelJobAction() {
         console.log('cancelJobAction');
-        var job = this.state.job;
-        var self = this;
+        const job = this.state.job;
+        const self = this;
         Alert.alert(
             'Cancel?',
             job.origin.locationName + ' to ' + job.destination.locationName,
@@ -73,7 +84,7 @@ export default class JobDetailComponent extends Component {
     callJobAction() {
         let phoneNumber = this.state.job.shipper.phone;
         Linking.openURL("tel:" + phoneNumber).catch(er => {
-            Alert.alert('Could make call to ', phoneNumber);
+            Alert.alert('Could not make call to ', phoneNumber);
         });
     }
 
@@ -102,7 +113,7 @@ export default class JobDetailComponent extends Component {
             title: 'Back',
             handler: () => this.props.navigator.pop()
         };
-        var titleConfig = {
+        const titleConfig = {
             title: 'Inspect',
         };
 
@@ -113,7 +124,7 @@ export default class JobDetailComponent extends Component {
                 title={titleConfig}
                 leftButton={leftButtonConfig}
             />
-            <View>
+            <ScrollView>
                 <View style={styles.topBox}>
                     <Image source={require('../assets/profle@3x.png')} />
                     <Text>{request.shipper.name}</Text>
@@ -121,7 +132,7 @@ export default class JobDetailComponent extends Component {
                 </View>
                 <View style={{height: 1, backgroundColor: '#CCCCCC'}}></View>
                 <View style={{padding:10}}>
-                    <Text>Order Id: {request._id}</Text>
+                    <Text>Order Id: {request.orderId}</Text>
                     <Text style={{fontWeight: 'bold'}}>Origin:</Text>
                     <Text> {request.origin.locationName}</Text>
                     <Text> {request.origin.contactName}</Text>
@@ -189,16 +200,8 @@ export default class JobDetailComponent extends Component {
                         </TouchableHighlight>
                     </View>
                 </View>
-            </View>
+            </ScrollView>
         </View>)
     }
 }
 
-var styles = StyleSheet.create({
-    topBox: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: 70,
-        marginTop: 10
-    }
-})

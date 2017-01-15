@@ -453,9 +453,9 @@ export default class MyJobsComponent extends Component {
                 navigator: this.props.navigator,
                 passProps: {
                     title: "View Job",
-                    request:request,
+                    request: request,
                     navigator: this.props.navigator,
-                    haversineDistance:haversineDistance,
+                    haversineDistance: haversineDistance,
                     cancelJob: this.onCancelJob,
                     cancelRequestFunction: this.props.cancelRequestFunction,
                     onNavigateToPickUpOrDropOff: this.onNavigateToPickUpOrDropOff

@@ -35,7 +35,7 @@ export default class AwesomeProject extends Component {
             <NavigatorIOS
                 initialRoute={{
                     component: MainScreen,
-                    title: 'Enter Phone Number',
+                    title: '',
                     navigationBarHidden: true,
                     passProps: {title: ""}
                     }}

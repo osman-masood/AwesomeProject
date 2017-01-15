@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {haversineDistanceToRequest} from "./common";
+import {haversineDistanceToRequest, Request} from "./common";
 const deepcopy = require("deepcopy");
 
 const ReactNative = require('react-native');
@@ -71,6 +71,7 @@ export default class NewJobsComponent extends Component {
         this.selectTrailerType = this.selectTrailerType.bind(this);
         this.selectShipFromDaysInFuture = this.selectShipFromDaysInFuture.bind(this);
 
+        //noinspection UnnecessaryLocalVariableJS
         let thisState: {
             selectedTab: string,
             allJobsSubTab: string,
@@ -641,6 +642,20 @@ export default class NewJobsComponent extends Component {
         });
     }
 
+    static generateIsOperableString(request:Request) {
+        const numOperable = request.vehicles.edges.map(edge => edge.node.running).length;
+        const numInoperable = request.vehicles.edges.length - numOperable;
+        let retStr;
+        if (numOperable === 0) {
+            retStr = `${numInoperable} Inoperable`;
+        } else if (numInoperable === 0) {
+            retStr = `${numOperable} Operable`;
+        } else {
+            retStr = `${numOperable} Operable, ${numInoperable} Inoperable`;
+        }
+        return retStr;
+    }
+
     renderJobListElement(request:Request, showPhoneNumber: boolean, marginBottom: number) {
         if (showPhoneNumber === undefined) {
             showPhoneNumber = true;
@@ -677,7 +692,7 @@ export default class NewJobsComponent extends Component {
                         <Text>Destination: {request.destination.locationName}</Text>
                         <Text>Vehicles: {request.vehicles.count}</Text>
                         <Text>Trailer Type: {"TODO"}</Text>
-                        <Text>{request.isOperable ? "Operable" : "Inoperable"}</Text>
+                        <Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
                     </View>
                     <View style={{flex: 1}}>
                         <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}</Text>

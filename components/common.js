@@ -44,6 +44,7 @@ const ACCESS_TOKEN_STORAGE_KEY = 'stowkAccessToken';
 /* For Flow support */
 class Request {
     _id: string;
+    orderId: number;
     status: number;
     paymentType: string;
     amountDue: number;
@@ -60,7 +61,7 @@ class Request {
     vehicleIds: Array<String>;
     vehicles: {
         count: number;
-        edges: {
+        edges: [{
             node: {
                 year: number;
                 make: string;
@@ -70,7 +71,7 @@ class Request {
                 enclosed: boolean;
                 running: boolean;
             }
-        }
+        }]
     };
     preferredCarrierIds: Array<String>;
     origin: {
@@ -115,6 +116,7 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
   
     locationRequests(latitude: 30.0, longitude:-130, distance:5000) {
       _id,
+      orderId,
       status,
       paymentType,
       amountDue,
