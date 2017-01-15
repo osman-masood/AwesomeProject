@@ -12,6 +12,7 @@ import {haversineDistanceToRequest} from "./common";
 const deepcopy = require("deepcopy");
 
 const ReactNative = require('react-native');
+
 const {
     StyleSheet,
     Text,
@@ -21,9 +22,10 @@ const {
     TouchableHighlight,
     PickerIOS,
     TextInput,
+    Button,
     ScrollView,
-    Button
 } = ReactNative;
+
 import JobDetailComponent from './JobDetailComponent';
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
@@ -601,7 +603,7 @@ export default class NewJobsComponent extends Component {
                 </View>
 
                 <View style={{flex: 3, flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                    <Text>Are you sure you would like to accept this job?</Text>
+                    <Text>Are you sure you would like to accept this job? </Text>
                 </View>
                 <View style={{flex: 3, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
                     <Icon.Button name="close" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(!this.state.isAcceptModalVisible, null) }>

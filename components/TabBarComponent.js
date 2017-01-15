@@ -12,7 +12,8 @@
 //noinspection JSUnresolvedVariable
 import React, {Component, PropTypes} from "react";
 //noinspection JSUnresolvedVariable
-import {AppRegistry, StyleSheet, Text, View, NavigatorIOS, TextInput, Button, TabBarIOS} from "react-native";
+import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput, TabBarIOS} from "react-native";
+
 import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
 import DeliveredComponent from "./DeliveredComponent";
@@ -33,8 +34,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b93c",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -83,21 +84,23 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                69.4541,
-                75.0014
+                37.335081,
+                -121.894675
             ],
             "locationName": " Armstrongfort Dealership",
             "contactName": "Xzavier Hermiston",
-            "contactPhone": "(231) 321-1065"
+            "contactPhone": "(231) 321-1065",
+            "address": "San Jose, CA"
         },
         "destination": {
             "coordinates": [
-                90.8684,
-                15.0839
+                37.525171,
+                -122.280922
             ],
             "locationName": " Lake Connorburgh Dealership",
             "contactName": "Nickolas Auer",
-            "contactPhone": "(104) 651-3804"
+            "contactPhone": "(104) 651-3804",
+            "address": "San Fransisco, CA"
         },
         "pickupDate": "2016-07-18T15:08:04.788Z",
         "dropoffDate": "2016-07-18T15:08:04.788Z",
@@ -112,8 +115,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b837",
         "status": 2,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -163,17 +166,18 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                -8.8182,
-                28.4297
+                37.331085,
+                -121.899679
             ],
             "locationName": " South Bart Dealership",
             "contactName": "Pearl O'Hara DDS",
-            "contactPhone": "457.330.1411"
+            "contactPhone": "457.330.1411",
+            "address": "San Jose, CA"
         },
         "destination": {
             "coordinates": [
-                -91.5672,
-                -63.4062
+                37.335071,
+                -121.894665
             ],
             "locationName": " McLaughlinberg Dealership",
             "contactName": "Giovanna Altenwerth",
@@ -185,15 +189,16 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "shipper": {
             "name": "McGlynn, Sanford and Gottlieb",
             "buyerNumber": "67490717",
-            "phone": "+13913580943"
+            "phone": "+13913580943",
+            "address": "San jose, CA"
         }
     },
     {
         "_id": "58634a24246d69259c41b9ab",
         "status": 2,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -242,21 +247,23 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         ],
         "origin": {
             "coordinates": [
-                -14.0174,
-                33.2452
+                37.336213,
+                -121.897627
             ],
             "locationName": " Purdyfort Dealership",
             "contactName": "Ruthie Fisher",
-            "contactPhone": "012.371.6269"
+            "contactPhone": "012.371.6269",
+            "address": "San jose, CA"
         },
         "destination": {
             "coordinates": [
-                -53.6027,
-                89.5244
+                37.335027,
+                -121.894611
             ],
             "locationName": " Dooleyland Dealership",
             "contactName": "Velma Bailey",
-            "contactPhone": "736-408-6271 x82136"
+            "contactPhone": "736-408-6271 x82136",
+            "address": "San Fransisco, CA"
         },
         "pickupDate": "2016-09-13T08:04:14.676Z",
         "dropoffDate": "2016-09-13T08:04:14.676Z",
@@ -271,8 +278,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b821",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": [
                 {
@@ -350,8 +357,8 @@ const ACCEPTED_REQUEST_STUB_DATA = [
         "_id": "58634a24246d69259c41b846",
         "status": 3,
         "amountDue": null,
-        "amountEstimated": null,
-        "paymentType": null,
+        "amountEstimated": 200,
+        "paymentType": 'COD',
         "deliveries": {
             "edges": []
         },
@@ -594,6 +601,14 @@ class TabBarComponent extends Component {
         accessToken: PropTypes.string.isRequired
     };
 
+     acceptRequestAndCreateDelivery (request) {
+        return acceptRequestAndCreateDeliveryFunction(this.props.accessToken,
+            request,
+            this.state.currentUser['carrier']['_id'],
+            this.state.currentPosition.latitude,
+            this.state.currentPosition.longitude);
+    }
+
     constructor(props) {
         super(props);
         //noinspection UnnecessaryLocalVariableJS
@@ -651,6 +666,9 @@ class TabBarComponent extends Component {
             }),
             (positionError) => console.error("TabBarComponent.constructor: Got an error trying to watchPosition: " + positionError.message)
         );
+
+        this.acceptRequestAndCreateDelivery = this.acceptRequestAndCreateDelivery.bind(this);
+        this.cancelRequestFunction = this.cancelRequestFunction.bind(this);
 
         // Get all nearby Requests from GraphQL endpoint, and set state vars based on response
         fetchCurrentUserAndLocationRequests(

@@ -199,18 +199,6 @@ const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Requ
     });
 };
 
-const changeStatusMutationStringFunction = (request:Request, newStatus) => {
-    return `mutation UpdateRequestById {
-      requestUpdateById(input: {clientMutationId: "11", record:{_id:"${request._id}", status: ${newStatus}}}) {
-        recordId
-      }
-    }`;
-};
-
-const changeStatusMutationFunction = (accessToken:string, request:Request, newStatus:number) => fetchGraphQlQuery(
-    accessToken,
-    changeStatusMutationStringFunction(request._id, newStatus));
-
 const createDeclinedByGraphQlString = (request:Request, carrierId:string, reason:string) => {
     let newDeclinedBy = request.declinedBy;
     if (request.declinedBy.map((db) => db['carrierId']).indexOf(carrierId) !== -1) {
@@ -262,46 +250,11 @@ const cancelRequestFunctionWithAccessToken = (accessToken:string, request:Reques
     });
 };
 
-const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
-
 const locationRequestsQueryStringLambda = (latitude:number, longitude:number, distance:number) => {
     const rFS = `locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance})`;
     console.log("locationRequestsQueryLambda: requestFunctionString=", rFS);
     return genericRequestsQueryStringLambda(rFS);
 };
-
-const carrierQueryLambda = (carrierId:string) => `
-    carrier(filter: {_id: "${carrierId}"}) {
-      _id,
-      name,
-      stripeAccountId,
-      email,
-      phone,
-      owner {
-        _id,
-        firstName,
-        lastName,
-        email,
-        phone
-      },
-      users {
-        edges {
-          node {
-            _id,
-            firstName,
-            lastName
-          }
-        }
-      }
-      requests {
-        edges {
-          node {
-            _id
-          }
-        }
-      }
-    }
-`;
 
 function getAccessTokenFromResponse(response) {
     // Fetch out access token from response header object
@@ -334,14 +287,6 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
         },
         body: JSON.stringify({"query": query, "variables": null, "operationName": null})
     })
-    // return fetch(GRAPHQL_ENDPOINT + "?query=" + query, {
-    //     method: "GET",
-    //     headers: {
-    //         "Content-Type": "text/plain; charset=utf-8",
-    //         'Accept': 'application/json',
-    //         'Cookie': 'accessToken=' + accessToken
-    //     },
-    // })
         .then((response) => {
             console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
             if (response.status !== 200) {
@@ -351,13 +296,8 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
         })
 }
 
-function fetchCarrierRequests(accessToken:string) {
-    return fetchGraphQlQuery(accessToken, carrierRequestsQueryString);
-}
-
 function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
     const query = locationRequestsQueryStringLambda(latitude, longitude, distance);
-    console.log("fetchCurrentUserAndLocationRequests: fetchGraphQlQuery with query=", query);
     return fetchGraphQlQuery(accessToken, query);
 }
 
@@ -413,4 +353,18 @@ function generateOperableString(request:Request) {
             `${numInoperable} Inoperable, ${numOperable} Operable`));
 }
 
-export {Request, User, getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString, changeStatusMutationFunction}
+function uploadImageToS3(s3url, path) {
+    const ajax = new XMLHttpRequest();
+    ajax.onreadystatechange = function() {
+        if (this.status === 200 && this.readyState === 4) {
+            fu['response'].innerHTML = this.responseText;
+        }
+    };
+    ajax.open('PUR', 'post.php', true);
+    ajax.setRequestHeader('Content-type', 'multipart/form-data');
+    const data = new FormData();
+    data.append('fu-obj[]', fu['ele'].files[0], fu['ele'].files[0].name);
+    ajax.send(data)
+}
+
+export {Request, User, getAccessTokenFromResponse, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString}
