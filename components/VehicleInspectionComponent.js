@@ -97,6 +97,9 @@ export default class VehicleInspectionComponent extends Component {
         this.sketch.saveImage(this.state.encodedSignature)
             .then((data) => {
                 console.log(data.path);
+                this.setState({
+                    customerSign: data.path
+                })
             })
             .catch((error) => console.error(error));
     }
@@ -193,7 +196,7 @@ export default class VehicleInspectionComponent extends Component {
                         style={[styles.button, {width: 100, marginLeft: (Dimensions.get("window").width/2)-50}]}
                         onPress={this.signed.bind(this)}
                     >
-                        <Text style={styles.buttonText}>Agress</Text>
+                        <Text style={styles.buttonText}>Agrees</Text>
                     </TouchableOpacity>
                 </View>
             </View>
