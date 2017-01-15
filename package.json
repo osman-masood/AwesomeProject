@@ -15,7 +15,7 @@
     "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
     "react-native-maps": "0.12.2",
     "react-native-navbar": "^1.5.4",
-    "react-native-sketch": "git+ssh://git@github.com/stantoncbradley/react-native-sketch.git",
+    "react-native-sketch": "git+https://github.com/stantoncbradley/react-native-sketch.git",
     "react-native-tabs": "^1.0.9",
     "react-native-vector-icons": "^3.0.0"
   },
