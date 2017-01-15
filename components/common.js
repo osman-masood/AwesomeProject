@@ -29,6 +29,13 @@ const RequestStatusEnum = Object.freeze({
     CANCELLED: 5,
 });
 
+const DeliveryStatusEnum = Object.freeze({
+    ACCEPTED: 0,
+    IN_PROGRESS: 1,  // They picked it up
+    DROPPED_OFF: 2,
+    RETURNED: 3
+});
+
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
@@ -175,7 +182,16 @@ const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Requ
         return fetchGraphQlQuery(
             accessToken,
             `mutation AddDeliveryToRequest {
-                deliveryCreate(input:{clientMutationId:"11",record:{carrierId:"${carrierId}", requestId:"${request._id}", currentCoordinates:[${currentLongitude}, ${currentLatitude}]}}) {
+                deliveryCreate(input: {
+                    clientMutationId:"11",
+                    record: {
+                        carrierId:"${carrierId}", 
+                        requestId:"${request._id}", 
+                        currentCoordinates:[${currentLongitude}, ${currentLatitude}],
+                        status: ${DeliveryStatusEnum.ACCEPTED},
+                        vehicleIds: ${JSON.stringify(request.vehicleIds)}
+                    }
+                }) {
                     record { _id }
                 }
             }`
@@ -195,18 +211,23 @@ const changeStatusMutationFunction = (accessToken:string, request:Request, newSt
     accessToken,
     changeStatusMutationStringFunction(request._id, newStatus));
 
-const declineRequestMutationStringLambda = (request, carrierId, reason:string) => {
-    const newDeclinedBy = [...request.declinedBy, {carrierId: carrierId, reason: reason || ""}];
-    return `mutation UpdateRequestById {
-      requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${JSON.stringify(newDeclinedBy)}}}) {
-        recordId
-      }
-    }`;
+const declineRequestFunctionWithAccessToken = (accessToken:string, request:Request, carrierId:string, reason: string) => {
+    let retPromise;
+    if (request.declinedBy.map((db) => db['carrierId']).indexOf(carrierId) !== -1) {
+        console.warn("declineRequestFunctionWithAccessToken: Request ", request, "already contains the carrier ID", carrierId, "in its declinedBy");
+        retPromise = Promise();
+    } else {
+        const newDeclinedBy = request.declinedBy.concat([{carrierId: carrierId, reason: reason || ""}]);
+        const newDeclinedByStr = "[" + newDeclinedBy.map((db) => `{carrierId: "${db.carrierId}", reason: "${db.reason}"}`).join(',') + "]"; // TODO really should use the graphql vars for this. Can't use JSON.stringify because the key names have doubel quotes which GraphQL doesn't like.
+        const mutationString = `mutation UpdateRequestById {
+            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", declinedBy:${newDeclinedByStr}}}) {
+                recordId
+            }
+        }`;
+        retPromise = fetchGraphQlQuery(accessToken, mutationString);
+    }
+    return retPromise;
 };
-
-const declineRequestFunctionWithAccessToken = (accessToken:string, request:Request, reason: string) => fetchGraphQlQuery(
-    accessToken,
-    declineRequestMutationStringLambda(request._id, reason));
 
 const carrierRequestsQueryString = genericRequestsQueryStringLambda("carrierRequests"); // TODO unused for now, should be removed & code refactored
 

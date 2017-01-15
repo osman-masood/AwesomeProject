@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest} from "./common";
+import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import JobDetailComponent from "./JobDetailComponent";
 const deepcopy = require("deepcopy");
 

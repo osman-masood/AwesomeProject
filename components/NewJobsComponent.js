@@ -542,7 +542,7 @@ export default class NewJobsComponent extends Component {
                         returnKeyType="send"
                         onSubmitEditing={this.onDeclineJob}
                         keyboardType="default"
-                        value={this.state.cancelReasonComments}
+                        value={this.state.declineReasonComments}
                         placeholder="Comments"
                     />
                     <View style={{flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around'}}>
@@ -568,7 +568,7 @@ export default class NewJobsComponent extends Component {
         const openPreferredRequests = this.state.openPreferredRequests.filter((r) => r._id !== requestIdToRemove);
 
         // API call to decline request
-        const finalDeclineReason = this.state.cancelReason + (this.state.cancelReasonComments ? `\n${this.state.cancelReasonComments}` : "");
+        const finalDeclineReason = this.state.declineReason + (this.state.declineReasonComments ? `\n${this.state.declineReasonComments}` : "");
         this.props.declineRequestFunction(this.state.jobOfModal, finalDeclineReason).then((responseJson) => {
             console.log("NewJobsComponent.onDeclineJob: Successfully declined job. Response: ", responseJson);
         });
@@ -580,7 +580,6 @@ export default class NewJobsComponent extends Component {
             openNonPreferredRequests: openNonPreferredRequests,
             openPreferredRequests: openPreferredRequests
         });
-
     }
 
     setAcceptModalVisible(visible: boolean, job:Request) {
