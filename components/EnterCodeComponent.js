@@ -12,13 +12,14 @@ import {
     View,
     NavigatorIOS,
     TextInput,
-    Button
+    Button,
+    AsyncStorage
 } from 'react-native';
 
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 
-import { getAccessTokenFromResponse } from './common';
+import { getAccessTokenFromResponse, ACCESS_TOKEN_STORAGE_KEY} from './common';
 
 
 export default class EnterCodeComponent extends Component {
@@ -58,7 +59,9 @@ export default class EnterCodeComponent extends Component {
                 if (statusCode === 202) {
                     // User is not registered: Take to registration
                     console.error("User is not registered. Registration flow not implemented; must create the user first");
-                } else if (statusCode === 200) {
+                    throw new Error("Registration flow not implemented");
+                }
+                else if (statusCode === 200) {
                     // User is registered: Take to new jobs
                     this.setState({submittingCodeState: 2});
                     this.props.navigator.push({
@@ -68,10 +71,13 @@ export default class EnterCodeComponent extends Component {
                         navigationBarHidden: true,
                         passProps: {accessToken: accessToken}
                     });
-                } else {
+                    return accessToken;
+                }
+                else {
                     throw new Error("Response status code was not 200 or 202, was " + statusCode);
                 }
             })
+            .then((accessToken) => AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken))
             .catch((error) => {
                 this.setState({submittingCodeState: 3});
                 console.error("Error verifying code " + this.state.code, error);

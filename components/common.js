@@ -39,6 +39,8 @@ const DeliveryStatusEnum = Object.freeze({
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
+const ACCESS_TOKEN_STORAGE_KEY = 'stowkAccessToken';
+
 /* For Flow support */
 class Request {
     _id: string;
@@ -367,4 +369,4 @@ function uploadImageToS3(s3url, path) {
     ajax.send(data)
 }
 
-export {Request, User, getAccessTokenFromResponse, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString}
+export {Request, User, getAccessTokenFromResponse, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString, ACCESS_TOKEN_STORAGE_KEY}

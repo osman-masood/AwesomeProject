@@ -14,10 +14,12 @@
     "react-native": "0.38.1",
     "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
     "react-native-maps": "0.12.2",
+    "react-native-material-kit": "^0.3.4",
     "react-native-navbar": "^1.5.4",
     "react-native-sketch": "git+https://github.com/stantoncbradley/react-native-sketch.git",
     "react-native-tabs": "^1.0.9",
-    "react-native-vector-icons": "^3.0.0"
+    "react-native-vector-icons": "^3.0.0",
+    "undefined": "^0.1.0"
   },
   "devDependencies": {
     "babel-jest": "17.0.2",
