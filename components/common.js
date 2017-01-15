@@ -232,7 +232,6 @@ function fetchCarrierRequests(accessToken:string) {
 
 function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
     const query = locationRequestsQueryStringLambda(latitude, longitude, distance);
-    console.log("fetchCurrentUserAndLocationRequests: fetchGraphQlQuery with query=", query);
     return fetchGraphQlQuery(accessToken, query);
 }
 
@@ -286,6 +285,20 @@ function generateOperableString(request) {
         (!numOperable ?
             "Inoperable" :
             `${numInoperable} Inoperable, ${numOperable} Operable`));
+}
+
+function uploadImageToS3(s3url, path) {
+    var ajax = new XMLHttpRequest();
+    ajax.onreadystatechange = function() {
+        if (this.status === 200 && this.readyState === 4) {
+            fu['response'].innerHTML = this.responseText;
+        }
+    }
+    ajax.open('PUR', 'post.php', true);
+    ajax.setRequestHeader('Content-type', 'multipart/form-data');
+    var data = new FormData();
+    data.append('fu-obj[]', fu['ele'].files[0], fu['ele'].files[0].name);
+    ajax.send(data)
 }
 
 export {getAccessTokenFromResponse, fetchCarrierRequests, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunction, generateOperableString, changeStatusMutationFunction}
