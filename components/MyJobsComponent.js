@@ -137,7 +137,7 @@ export default class MyJobsComponent extends Component {
      */
 
     render() {
-        const rightButtonConfig = {
+        const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
             handler: () => alert('Menu!'),
         };
@@ -153,7 +153,7 @@ export default class MyJobsComponent extends Component {
         return <View style={{flex: 1}}>
             <NavigationBar
                 title={{title: this.props.title}}
-                rightButton={rightButtonConfig}
+                rightButton={undefined}
             />
             <View  style={{flex: 2}}>
                 <View>
