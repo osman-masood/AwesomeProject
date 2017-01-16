@@ -50,9 +50,12 @@ const S3Options = {
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
 
+const ACCESS_TOKEN_STORAGE_KEY = 'stowkAccessToken';
+
 /* For Flow support */
 class Request {
     _id: string;
+    orderId: number;
     status: number;
     paymentType: string;
     amountDue: number;
@@ -69,7 +72,7 @@ class Request {
     vehicleIds: Array<String>;
     vehicles: {
         count: number;
-        edges: {
+        edges: [{
             node: {
                 year: number;
                 make: string;
@@ -79,7 +82,7 @@ class Request {
                 enclosed: boolean;
                 running: boolean;
             }
-        }
+        }]
     };
     preferredCarrierIds: Array<String>;
     origin: {
@@ -124,6 +127,7 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
   
     locationRequests(latitude: 30.0, longitude:-130, distance:5000) {
       _id,
+      orderId,
       status,
       paymentType,
       amountDue,
@@ -270,15 +274,23 @@ const locationRequestsQueryStringLambda = (latitude:number, longitude:number, di
 /**
  *
  * */
-const signedUploadURLLambda = (accessToken: string, fileName: string) => {
-  return fetchGraphQlQuery(accessToken,
-      `{viewer {
-            getImageUploadUrl(fileName: "${fileName}") {
-              signedUrl
+const updateDeliveryMutation = (token, _id: string, notes: Array, customerName: string, customerSignature: string) => {
+    const mutationQuery = `
+            mutation {
+          deliveryUpdateById(input:{
+            record:{
+              _id: "${_id}",
+              inspectionCustomerName: "${customerName}",
+              inspectionCustomerSignatureUrl: "${customerSignature}",
+              inspectionNotes: ${notes}
+            }
+          }) {
+            record {
+              id
             }
           }
-        }`
-  )
+        }`;
+    return fetchGraphQlQuery(token, mutationQuery);
 };
 
 function getAccessTokenFromResponse(response) {
@@ -387,6 +399,7 @@ function uploadImageJPGS3(path:string) {
     return RNS3.put(file, S3Options);
 }
 
+
 export {
     Request,
     User,
@@ -399,5 +412,7 @@ export {
     declineRequestFunctionWithAccessToken,
     cancelRequestFunctionWithAccessToken,
     generateOperableString,
-    uploadImageJPGS3
+    uploadImageJPGS3,
+    ACCESS_TOKEN_STORAGE_KEY,
+    updateDeliveryMutation
 }

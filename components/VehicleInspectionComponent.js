@@ -6,21 +6,18 @@
 import React, { Component, PropTypes } from 'react';
 import {generateOperableString, RequestStatusEnum} from "./common";
 const ReactNative = require('react-native');
-import NavigationBar from 'react-native-navbar';
+
 var moment = require('moment');
 import Camera from 'react-native-camera';
 import Sketch from 'react-native-sketch';
 
 const {
     StyleSheet,
-    TabBarIOS,
     Text,
     View,
     Image,
-    Button,
     TouchableHighlight,
     TouchableOpacity,
-    Linking,
     Alert,
     Dimensions,
     Modal,
@@ -97,12 +94,35 @@ export default class VehicleInspectionComponent extends Component {
     }
 
     signed() {
+        var that = this;
         this.sketch.saveImage(this.state.encodedSignature)
             .then((data) => {
-                this.props.uploadImageJPGS3(data.path).then(response => {
-                    this.setState({
-                        customerSign: response.body.postResponse.location
-                    });
+                that.props.uploadImageJPGS3(data.path).then(response => {
+                    that.props.updateDeliveryMutation(
+                        that.state.job._id,
+                        that.state.photos,
+                        that.state.customerName,
+                        response.body.postResponse.location
+                    ).then(response => {
+                        that.setState({
+                            customerModelOpen: false
+                        });
+                        that.props.navigator.popN(2);
+                    }).catch(e => {
+                        Alert.alert('Could not save request details',
+                            e.message,
+                        [
+                            {
+                                text: 'Ok',
+                                onPress: () => {
+                                    that.setState({
+                                        customerModelOpen: false
+                                    });
+                                }
+                            }
+                        ]);
+                    })
+
                 });
             })
             .catch((error) => console.error(error));
@@ -126,7 +146,7 @@ export default class VehicleInspectionComponent extends Component {
 
     addCustomerName(event) {
         this.setState({
-            CustomerName: event.nativeEvent.text
+            customerName: event.nativeEvent.text
         })
     }
 
@@ -275,6 +295,13 @@ class ResultsView extends Component {
 
     componentWillMount() {
         var photos = this.props.photos;
+        var photos = [{
+            path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/1D7DBBBD-5D44-4665-BF52-ECD012618C14/Documents/EEAED1ED-BADE-40B6-859F-2B08AEC3F946.jpg',
+            note: 'note 1 blue'
+        }, {
+            path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/1D7DBBBD-5D44-4665-BF52-ECD012618C14/Documents/63B5E876-F197-4987-B1A3-38CE5DA6DEB4.jpg',
+            note: 'red/brown'
+        }];
 
         // start uploading photos to S3
         this.setState({
@@ -287,9 +314,13 @@ class ResultsView extends Component {
         photos.map((photo) => {
             this.props.uploadImageJPGS3(photo.path).then(response => {
                 counter++;
-                let new_photo = photo;
-                new_photo['url'] = response.body.postResponse.location;
+
+                let new_photo = {
+                    photoUrl: response.body.postResponse.location,
+                    note: photo.note
+                };
                 new_photos.push(new_photo);
+
                 if (counter == photos.length) {
                     console.log('final photos', new_photos);
                     this.props.updatePhotos(new_photos);
@@ -314,8 +345,10 @@ class ResultsView extends Component {
                 <View>
                     <View style={{height: 75, marginTop: 5, marginLeft: 20, marginRight: 20}}>
                         <View style={{flex: 4, flexDirection: 'row', alignItems:'center', justifyContent: 'space-between'}}>
-                        {photos.map(img => {
-                            return <Image style={{width: 70, height: 70}} key={img.step} source={{uri: img.path}} />
+                        {photos.map((img, idx) => {
+                            return <Image style={{width: 70, height: 70}}
+                                          key={idx}
+                                          source={{uri: img.path}} />
                         })}
                         </View>
                     </View>
