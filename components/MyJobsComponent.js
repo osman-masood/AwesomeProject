@@ -458,7 +458,8 @@ export default class MyJobsComponent extends Component {
                     haversineDistance:haversineDistance,
                     cancelJob: this.onCancelJob,
                     cancelRequestFunction: this.props.cancelRequestFunction,
-                    onNavigateToPickUpOrDropOff: this.onNavigateToPickUpOrDropOff
+                    onNavigateToPickUpOrDropOff: this.onNavigateToPickUpOrDropOff,
+                    uploadImageJPGS3: this.props.uploadImageJPGS3
                 }})}>
 
                 {summaryView}

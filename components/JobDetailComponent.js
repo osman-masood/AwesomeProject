@@ -92,7 +92,8 @@ export default class JobDetailComponent extends Component {
             passProps: {
                 title: "Inspect",
                 navigator: this.props.navigator,
-                request: this.state.job
+                request: this.state.job,
+                uploadImageJPGS3: this.props.uploadImageJPGS3
             }
         });
     }

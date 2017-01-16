@@ -153,7 +153,6 @@ export default class NewJobsComponent extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        console.log(`componentWillReceiveProps with nextProps: openNonPreferredRequests: ${nextProps.openNonPreferredRequests.length}, openPreferredRequests: ${nextProps.openPreferredRequests.length}, currentPosition: ${this.props.currentPosition})`);
         // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
         this.setState({
             openNonPreferredRequests: deepcopy(nextProps.openNonPreferredRequests),
@@ -163,7 +162,6 @@ export default class NewJobsComponent extends Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        console.log(`shouldComponentUpdate with nextProps: openNonPreferredRequests: ${nextProps.openNonPreferredRequests.length}, openPreferredRequests: ${nextProps.openPreferredRequests.length}, currentPosition: ${this.props.currentPosition})`);
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
         return true;
     }

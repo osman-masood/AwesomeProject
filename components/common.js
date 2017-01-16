@@ -20,6 +20,9 @@
 
  Status can only increase.
  */
+
+import { RNS3 } from 'react-native-aws3';
+
 const RequestStatusEnum = Object.freeze({
     NEW: 0,
     PROCESSING: 1,
@@ -35,6 +38,14 @@ const DeliveryStatusEnum = Object.freeze({
     DROPPED_OFF: 2,
     RETURNED: 3
 });
+
+const S3Options = {
+    bucket: "stowkapp",
+    region: "us-east-1",
+    accessKey: "AKIAJZ34GVU56YVNFSZA",
+    secretKey: "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",
+    successActionStatus: 201
+};
 
 
 const GRAPHQL_ENDPOINT = "https://stowkapi-staging.herokuapp.com/graphql?";
@@ -256,6 +267,20 @@ const locationRequestsQueryStringLambda = (latitude:number, longitude:number, di
     return genericRequestsQueryStringLambda(rFS);
 };
 
+/**
+ *
+ * */
+const signedUploadURLLambda = (accessToken: string, fileName: string) => {
+  return fetchGraphQlQuery(accessToken,
+      `{viewer {
+            getImageUploadUrl(fileName: "${fileName}") {
+              signedUrl
+            }
+          }
+        }`
+  )
+};
+
 function getAccessTokenFromResponse(response) {
     // Fetch out access token from response header object
     const setCookieHeaderValue = response.headers.get('set-cookie');
@@ -353,18 +378,26 @@ function generateOperableString(request:Request) {
             `${numInoperable} Inoperable, ${numOperable} Operable`));
 }
 
-function uploadImageToS3(s3url, path) {
-    const ajax = new XMLHttpRequest();
-    ajax.onreadystatechange = function() {
-        if (this.status === 200 && this.readyState === 4) {
-            fu['response'].innerHTML = this.responseText;
-        }
+function uploadImageJPGS3(path:string) {
+    let file = {
+        uri: path,
+        name: path.split('/')[path.split('/').length-1],
+        type: "image/jpg"
     };
-    ajax.open('PUR', 'post.php', true);
-    ajax.setRequestHeader('Content-type', 'multipart/form-data');
-    const data = new FormData();
-    data.append('fu-obj[]', fu['ele'].files[0], fu['ele'].files[0].name);
-    ajax.send(data)
+    return RNS3.put(file, S3Options);
 }
 
-export {Request, User, getAccessTokenFromResponse, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, RequestStatusEnum, fetchGraphQlQuery, acceptRequestAndCreateDeliveryFunction, declineRequestFunctionWithAccessToken, cancelRequestFunctionWithAccessToken, generateOperableString}
+export {
+    Request,
+    User,
+    getAccessTokenFromResponse,
+    fetchCurrentUserAndLocationRequests,
+    haversineDistanceToRequest,
+    RequestStatusEnum,
+    fetchGraphQlQuery,
+    acceptRequestAndCreateDeliveryFunction,
+    declineRequestFunctionWithAccessToken,
+    cancelRequestFunctionWithAccessToken,
+    generateOperableString,
+    uploadImageJPGS3
+}

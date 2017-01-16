@@ -52,31 +52,34 @@ export default class VehicleInspectionComponent extends Component {
         this.tookPicture = this.tookPicture.bind(this);
     }
 
+    updatePhotos(photos) {
+        this.setState({
+            photos: photos
+        })
+    }
+
     onReset() {
         console.log('The drawing has been cleared!');
     }
 
     onSave() {
-        console.log(this.state.encodedSignature);
         this.sketch.saveImage(this.state.encodedSignature)
             .then((data) => {
-                console.log(data.path);
+            console.log(data.path);
                 let photos = this.state.photos;
                 photos.push({
                     step: this.state.step,
                     path: data.path,
                     notes: this.state.noteText
                 });
-                console.log('photos:', photos);
 
                 let new_step = this.state.step + 1;
-                let isCameraModalOpen = new_step <= 4;
                 this.setState({
                     photos: photos,
                     step: new_step,
-                    cameraModalOpen: isCameraModalOpen,
+                    cameraModalOpen: new_step <= 4,
                     sketchModalOpen: false,
-                    showResults: true
+                    showResults: new_step == 5
                 });
             })
             .catch((error) => console.error(error));
@@ -96,10 +99,11 @@ export default class VehicleInspectionComponent extends Component {
     signed() {
         this.sketch.saveImage(this.state.encodedSignature)
             .then((data) => {
-                console.log(data.path);
-                this.setState({
-                    customerSign: data.path
-                })
+                this.props.uploadImageJPGS3(data.path).then(response => {
+                    this.setState({
+                        customerSign: response.body.postResponse.location
+                    });
+                });
             })
             .catch((error) => console.error(error));
     }
@@ -117,7 +121,7 @@ export default class VehicleInspectionComponent extends Component {
             customerModelOpen: true,
             cameraModalOpen: false,
             sketchModalOpen: false
-        })
+        });
     }
 
     addCustomerName(event) {
@@ -128,7 +132,13 @@ export default class VehicleInspectionComponent extends Component {
 
     render() {
 
-        let resultView = <ResultsView job={this.props.request} photos={this.state.photos} viewCustomerModal={this.viewCustomerModal.bind(this)}/>;
+        let resultsView = <ResultsView
+            uploadImageJPGS3={this.props.uploadImageJPGS3}
+            job={this.props.request}
+            photos={this.state.photos}
+            viewCustomerModal={this.viewCustomerModal.bind(this)}
+            updatePhotos={this.updatePhotos.bind(this)}
+        />;
 
         let cameraView = (<Modal
             animationType={"fade"}
@@ -204,7 +214,7 @@ export default class VehicleInspectionComponent extends Component {
 
         var moreView = null;
         if (this.state.showResults) {
-            moreView = resultView;
+            moreView = resultsView;
         }
 
         return (<View>
@@ -263,30 +273,39 @@ class ResultsView extends Component {
         super(props);
     }
 
+    componentWillMount() {
+        var photos = this.props.photos;
+
+        // start uploading photos to S3
+        this.setState({
+            buttonText: 'Uploading photos ... wait',
+            buttonDisabled: true
+        });
+        let new_photos = [];
+        var counter = 0;
+
+        photos.map((photo) => {
+            this.props.uploadImageJPGS3(photo.path).then(response => {
+                counter++;
+                let new_photo = photo;
+                new_photo['url'] = response.body.postResponse.location;
+                new_photos.push(new_photo);
+                if (counter == photos.length) {
+                    console.log('final photos', new_photos);
+                    this.props.updatePhotos(new_photos);
+                    this.setState({
+                        buttonText: 'Customer: I agree with inspection',
+                        buttonDisabled: false
+                    });
+                }
+                return new_photo;
+            });
+        });
+    }
+
     render() {
-        var photos = [
-            {
-                path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/E35A87B3-8217-4500-877F-C8D17C1BC0FD/Documents/62B115EA-F99C-45B6-BF0E-9E3A8A8ED814.jpg',
-                step: 1,
-                notes: 'note 1'
-            },
-            {
-                path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/E35A87B3-8217-4500-877F-C8D17C1BC0FD/Documents/62B115EA-F99C-45B6-BF0E-9E3A8A8ED814.jpg',
-                step: 2,
-                notes: 'note 1'
-            },
-            {
-                path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/E35A87B3-8217-4500-877F-C8D17C1BC0FD/Documents/62B115EA-F99C-45B6-BF0E-9E3A8A8ED814.jpg',
-                step: 3,
-                notes: 'note 1'
-            },
-            {
-                path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/E35A87B3-8217-4500-877F-C8D17C1BC0FD/Documents/62B115EA-F99C-45B6-BF0E-9E3A8A8ED814.jpg',
-                step: 4,
-                notes: 'note 1'
-            }
-        ];
-        //var photos = this.props.photos;
+
+        var photos = this.props.photos;
 
         var cars = this.props.job.vehicles.edges;
         return (
@@ -296,7 +315,6 @@ class ResultsView extends Component {
                     <View style={{height: 75, marginTop: 5, marginLeft: 20, marginRight: 20}}>
                         <View style={{flex: 4, flexDirection: 'row', alignItems:'center', justifyContent: 'space-between'}}>
                         {photos.map(img => {
-                            console.log('props.photos', img);
                             return <Image style={{width: 70, height: 70}} key={img.step} source={{uri: img.path}} />
                         })}
                         </View>
@@ -342,8 +360,13 @@ class ResultsView extends Component {
                         </View>
                     </View>
                     <View style={{marginTop: 20}}>
-                        <TouchableHighlight style={{backgroundColor: '#8BC34A', padding: 5, height: 40, margin:20, marginBottom:2}} onPress={this.props.viewCustomerModal}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Customer: I agree with inspection</Text>
+                        <TouchableHighlight
+                            disabled={this.state.buttonDisabled}
+                            style={{backgroundColor: '#8BC34A', padding: 5, height: 40, margin:20, marginBottom:2}}
+                            onPress={this.props.viewCustomerModal}
+
+                        >
+                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>{this.state.buttonText}</Text>
                         </TouchableHighlight>
                         <TouchableHighlight style={{backgroundColor: '#F4511E', padding: 5, height: 30, margin:20}}>
                             <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Customer is not available </Text>

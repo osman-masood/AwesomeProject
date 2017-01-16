@@ -23,7 +23,9 @@ import {
     RequestStatusEnum,
     acceptRequestAndCreateDeliveryFunction,
     declineRequestFunctionWithAccessToken,
-    User, Request, cancelRequestFunctionWithAccessToken
+    User, Request,
+    cancelRequestFunctionWithAccessToken,
+    uploadImageJPGS3
 } from "./common";
 
 const base64Icon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABLCAQAAACSR7JhAAADtUlEQVR4Ac3YA2Bj6QLH0XPT1Fzbtm29tW3btm3bfLZtv7e2ObZnms7d8Uw098tuetPzrxv8wiISrtVudrG2JXQZ4VOv+qUfmqCGGl1mqLhoA52oZlb0mrjsnhKpgeUNEs91Z0pd1kvihA3ULGVHiQO2narKSHKkEMulm9VgUyE60s1aWoMQUbpZOWE+kaqs4eLEjdIlZTcFZB0ndc1+lhB1lZrIuk5P2aib1NBpZaL+JaOGIt0ls47SKzLC7CqrlGF6RZ09HGoNy1lYl2aRSWL5GuzqWU1KafRdoRp0iOQEiDzgZPnG6DbldcomadViflnl/cL93tOoVbsOLVM2jylvdWjXolWX1hmfZbGR/wjypDjFLSZIRov09BgYmtUqPQPlQrPapecLgTIy0jMgPKtTeob2zWtrGH3xvjUkPCtNg/tm1rjwrMa+mdUkPd3hWbH0jArPGiU9ufCsNNWFZ40wpwn+62/66R2RUtoso1OB34tnLOcy7YB1fUdc9e0q3yru8PGM773vXsuZ5YIZX+5xmHwHGVvlrGPN6ZSiP1smOsMMde40wKv2VmwPPVXNut4sVpUreZiLBHi0qln/VQeI/LTMYXpsJtFiclUN+5HVZazim+Ky+7sAvxWnvjXrJFneVtLWLyPJu9K3cXLWeOlbMTlrIelbMDlrLenrjEQOtIF+fuI9xRp9ZBFp6+b6WT8RrxEpdK64BuvHgDk+vUy+b5hYk6zfyfs051gRoNO1usU12WWRWL73/MMEy9pMi9qIrR4ZpV16Rrvduxazmy1FSvuFXRkqTnE7m2kdb5U8xGjLw/spRr1uTov4uOgQE+0N/DvFrG/Jt7i/FzwxbA9kDanhf2w+t4V97G8lrT7wc08aA2QNUkuTfW/KimT01wdlfK4yEw030VfT0RtZbzjeMprNq8m8tnSTASrTLti64oBNdpmMQm0eEwvfPwRbUBywG5TzjPCsdwk3IeAXjQblLCoXnDVeoAz6SfJNk5TTzytCNZk/POtTSV40NwOFWzw86wNJRpubpXsn60NJFlHeqlYRbslqZm2jnEZ3qcSKgm0kTli3zZVS7y/iivZTweYXJ26Y+RTbV1zh3hYkgyFGSTKPfRVbRqWWVReaxYeSLarYv1Qqsmh1s95S7G+eEWK0f3jYKTbV6bOwepjfhtafsvUsqrQvrGC8YhmnO9cSCk3yuY984F1vesdHYhWJ5FvASlacshUsajFt2mUM9pqzvKGcyNJW0arTKN1GGGzQlH0tXwLDgQTurS8eIQAAAABJRU5ErkJggg==';
@@ -676,10 +678,14 @@ class TabBarComponent extends Component {
             .then((userAndLocationRequests) => {
                 const currentUser = userAndLocationRequests['data']['viewer']['me'];
                 const currentCarrierId = currentUser['carrier']['_id'];
+                // console.log('calling uploadImageJPGS3');
+                // uploadImageJPGS3('/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/1D7DBBBD-5D44-4665-BF52-ECD012618C14/Documents/BEE27169-2A39-4FA0-BEED-0AFCC7D7DE7D.jpg').then(res => {
+                //     console.log('uploadImageJPGS3 tab', res);
+                // });
+                // console.log('end calling uploadImageJPGS3');
 
                 // Go through the list of all requests and set the open preferred, open non-preferred, and accepted requests.
                 const locationRequests = userAndLocationRequests['data']['viewer']['locationRequests'];
-                console.log("TabBarComponent.fetchCurrentUserAndLocationRequests: Number of requests", locationRequests.length, "user ID", currentUser._id);
                 let openNonPreferredRequests = [], openPreferredRequests = [], acceptedRequests = [];
                 for (let openRequest of locationRequests) {
                     // If request was declined by this carrier, skip it
@@ -704,10 +710,6 @@ class TabBarComponent extends Component {
                 }
 
                 // Set state variables of current user and requests
-                console.log(`TabBarComponent.fetchCurrentUserAndLocationRequests: 
-                    openNonPreferredRequests: ${openNonPreferredRequests.length}, 
-                    openPreferredRequests: ${openPreferredRequests.length}, 
-                    acceptedRequests: ${acceptedRequests.length}`);
                 this.setState({
                     currentUser: currentUser,
                     openNonPreferredRequests: openNonPreferredRequests,
@@ -742,7 +744,6 @@ class TabBarComponent extends Component {
     };
 
     _renderContent = () => {
-        console.log("TabBarComponent._renderContent called with selectedTab=", this.state.selectedTab);
         let returnComponent;
         if (this.state.selectedTab == 'newJobsTab') {
             returnComponent = <NewJobsComponent title="New Jobs"
@@ -758,7 +759,9 @@ class TabBarComponent extends Component {
                                                currentPosition={this.state.currentPosition}
                                                acceptedRequests={this.state.acceptedRequests}
                                                navigator={this.props.navigator}
-                                               cancelRequestFunction={this.cancelRequestFunction}/>
+                                               cancelRequestFunction={this.cancelRequestFunction}
+                                               uploadImageJPGS3={uploadImageJPGS3}
+            />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
             returnComponent = <DeliveredComponent title="Delivered" navigator={this.props.navigator}
