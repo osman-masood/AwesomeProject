@@ -177,7 +177,7 @@ export default class NewJobsComponent extends Component {
      * http://stackoverflow.com/questions/34986149/how-to-hidden-back-button-of-react-native-navigator
      */
     render() {
-        const rightButtonConfig = {
+        const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
             handler: () => alert('Menu!'),
         };
@@ -197,9 +197,10 @@ export default class NewJobsComponent extends Component {
         return <View style={{flex: 1}}>
             <NavigationBar
                 title={{title: this.props.title}}
-                rightButton={rightButtonConfig}
+                rightButton={undefined}
             />
-            <View style={{marginTop: 40}}>
+            <View>
+                {/*
                 <View style={{borderBottomWidth: 1, borderBottomColor: 'grey'}}>
                     <Tabs selected={this.state.selectedTab}
                           style={{backgroundColor:'white'}}
@@ -210,6 +211,7 @@ export default class NewJobsComponent extends Component {
                         <Text style={{fontWeight: '100'}} name="search_loads" >Search Loads</Text>
                     </Tabs>
                 </View>
+                */}
                 <View>
                     {this.renderAcceptModalIfVisible()}
                     {this.renderDeclineModalIfVisible()}
@@ -453,7 +455,7 @@ export default class NewJobsComponent extends Component {
 
         let returnView;
         if (allContainers.length === 0) {
-            returnView = <View><Text>No jobs found! Try again later!</Text></View>
+            returnView = <View><Text>Loading...</Text></View>
         } else {
             returnView = <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
         }
