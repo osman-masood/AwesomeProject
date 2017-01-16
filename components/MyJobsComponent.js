@@ -111,7 +111,6 @@ export default class MyJobsComponent extends Component {
 
     componentWillMount() {
         this.props.acceptedRequests().then( response => {
-            console.log('got acceptedRequests', response);
             this.setState({
                 acceptedRequests: response['data']['viewer']['locationRequests']
             })

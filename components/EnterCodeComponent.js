@@ -63,6 +63,7 @@ export default class EnterCodeComponent extends Component {
                 }
                 else if (statusCode === 200) {
                     // User is registered: Take to new jobs
+                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken)
                     this.setState({submittingCodeState: 2});
                     this.props.navigator.push({
                         title: 'New Jobs',
@@ -77,7 +78,6 @@ export default class EnterCodeComponent extends Component {
                     throw new Error("Response status code was not 200 or 202, was " + statusCode);
                 }
             })
-            .then((accessToken) => AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken))
             .catch((error) => {
                 this.setState({submittingCodeState: 3});
                 console.error("Error verifying code " + this.state.code, error);
