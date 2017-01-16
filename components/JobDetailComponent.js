@@ -57,8 +57,18 @@ export default class JobDetailComponent extends Component {
         this.callJobAction = this.callJobAction.bind(this);
     }
 
+    componentDidMount() {
+        Linking.addEventListener('url', (event) => {
+            console.log("addEventListener('url", event);
+        });
+    }
+
+    componentWillUnmount() {
+        Linking.removeEventListener('url');
+    }
+
     cancelJobAction() {
-        console.log('cancelJobAction');
+
         const job = this.state.job;
         const self = this;
         Alert.alert(
@@ -92,7 +102,23 @@ export default class JobDetailComponent extends Component {
     }
 
     navigateTo() {
-        this.props.onNavigateToPickUpOrDropOff(true, this.state.job, this.state.job.status === RequestStatusEnum.DISPATCHED)
+        const originOrDestinationKey = (this.state.job.status === RequestStatusEnum.DISPATCHED) ? "origin" : "destination";
+        const latitude = this.state.job[originOrDestinationKey].coordinates[0];
+        const longitude = this.state.job[originOrDestinationKey].coordinates[1];
+
+        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
+        Linking.openURL(directionsRequest).catch(err => {
+            Alert.alert('Could not start navigation', err.message);
+        });
+        // Linking.canOpenURL(directionsRequest).then(supported => {
+        //     if (supported) {
+        //         Linking.openURL(directionsRequest).catch(err => {
+        //             Alert.alert('Could not start navigation', err.message);
+        //         });
+        //     } else {
+        //         Alert.alert('You don\'t have Google maps installed', 'Directions require Google maps application to run');
+        //     }
+        // });
     }
 
     goToInspection() {
@@ -196,7 +222,7 @@ export default class JobDetailComponent extends Component {
                                             onPress={this.goToInspection.bind(this)}>
                             <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13,}}>
                                 TAP TO START
-                                {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? 'PICK UP' : 'DROP OFF'}
+                                {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? ' PICK UP ' : ' DROP OFF '}
                                 INSPECTION
                             </Text>
                         </TouchableHighlight>

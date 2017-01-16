@@ -36,12 +36,12 @@ export default class VehicleInspectionComponent extends Component {
         super(props);
         this.state = {
             job: this.props.request,
-            cameraModalOpen: false,
+            cameraModalOpen: true,
             sketchModalOpen: false,
             customerModelOpen: false,
             photos: [],
             step: 1,
-            showResults: true
+            showResults: false
         };
         this.onReset = this.onReset.bind(this);
         this.onSave = this.onSave.bind(this);
@@ -294,15 +294,8 @@ class ResultsView extends Component {
     }
 
     componentWillMount() {
+        console.warn('componentWillMount for ResultsView');
         var photos = this.props.photos;
-        var photos = [{
-            path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/1D7DBBBD-5D44-4665-BF52-ECD012618C14/Documents/EEAED1ED-BADE-40B6-859F-2B08AEC3F946.jpg',
-            note: 'note 1 blue'
-        }, {
-            path: '/Users/smith/Library/Developer/CoreSimulator/Devices/7A5279DA-9BE6-4807-B267-13E096C6F526/data/Containers/Data/Application/1D7DBBBD-5D44-4665-BF52-ECD012618C14/Documents/63B5E876-F197-4987-B1A3-38CE5DA6DEB4.jpg',
-            note: 'red/brown'
-        }];
-
         // start uploading photos to S3
         this.setState({
             buttonText: 'Uploading photos ... wait',

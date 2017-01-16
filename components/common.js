@@ -125,7 +125,7 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
       }
     }
   
-    locationRequests(latitude: 30.0, longitude:-130, distance:5000) {
+    locationRequests(${requestsFunctionString}) {
       _id,
       orderId,
       status,
@@ -266,8 +266,7 @@ const cancelRequestFunctionWithAccessToken = (accessToken:string, request:Reques
 };
 
 const locationRequestsQueryStringLambda = (latitude:number, longitude:number, distance:number) => {
-    const rFS = `locationRequests(latitude: ${latitude}, longitude: ${longitude}, distance: ${distance})`;
-    console.log("locationRequestsQueryLambda: requestFunctionString=", rFS);
+    const rFS = `latitude: ${latitude}, longitude: ${longitude}, distance: ${distance}`;
     return genericRequestsQueryStringLambda(rFS);
 };
 
@@ -338,6 +337,11 @@ function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string
     return fetchGraphQlQuery(accessToken, query);
 }
 
+function acceptedRequestsQuery(accessToken: string, latitude:string, longitude:string) {
+    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:10000, preferredCarrier:true`)
+    return fetchGraphQlQuery(accessToken, query);
+}
+
 /** Following Haversine implementation taken from:
  * https://github.com/njj/haversine/blob/master/haversine.js#L3 **/
 const toRad = function (num) {
@@ -405,6 +409,7 @@ export {
     User,
     getAccessTokenFromResponse,
     fetchCurrentUserAndLocationRequests,
+    acceptedRequestsQuery,
     haversineDistanceToRequest,
     RequestStatusEnum,
     fetchGraphQlQuery,

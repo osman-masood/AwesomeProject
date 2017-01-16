@@ -50,7 +50,6 @@ export default class MyJobsComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        acceptedRequests: PropTypes.array.isRequired,
         currentPosition: PropTypes.object.isRequired,
         cancelRequestFunction: PropTypes.func.isRequired
     };
@@ -85,7 +84,7 @@ export default class MyJobsComponent extends Component {
         } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            acceptedRequests: deepcopy(this.props.acceptedRequests),
+            acceptedRequests: [],
             mapViewRegion: {
                 latitude: this.props.currentPosition.latitude,
                 longitude: this.props.currentPosition.longitude,
@@ -106,20 +105,19 @@ export default class MyJobsComponent extends Component {
     componentWillReceiveProps(nextProps) {
         // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
         this.setState({
-            acceptedRequests: deepcopy(nextProps.acceptedRequests),
             currentPosition: deepcopy(nextProps.currentPosition)
         });
     }
 
-    componentDidMount() {
-        Linking.addEventListener('url', (event) => {
-            console.log("addEventListener('url", event);
-        });
+    componentWillMount() {
+        this.props.acceptedRequests().then( response => {
+            console.log('got acceptedRequests', response);
+            this.setState({
+                acceptedRequests: response['data']['viewer']['locationRequests']
+            })
+        })
     }
 
-    componentWillUnmount() {
-        Linking.removeEventListener('url');
-    }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -373,14 +371,16 @@ export default class MyJobsComponent extends Component {
         const latitude = request[originOrDestinationKey].coordinates[0];
         const longitude = request[originOrDestinationKey].coordinates[1];
 
-        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&x-success=stowkapp://?resume=true&x-source=stowkapp`;
+        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}%directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
         console.log(latitude, longitude);
         Linking.canOpenURL(directionsRequest).then(supported => {
-            if (!supported) {
-                Linking.openURL('http://maps.apple.com/?saddr=Current%20Location&daddr=' + latitude + ',' + longitude + '&x-callback-url=stowkapp&id=1');
+            if (supported) {
+                //Linking.openURL('http://maps.apple.com/?saddr=Current%20Location&daddr=' + latitude + ',' + longitude + '&x-callback-url=stowkapp&id=1');
+                Linking.openURL(directionsRequest).catch(err => {
+                    Alert.alert('Could not start navigation', err.message);
+                });
             } else {
-                Linking.openURL(directionsRequest).catch(
-                    err => console.error('An error occurred opening directions request' + directionsRequest, err));
+                Alert.alert('You don\'t have Google maps installed', 'Directions require Google maps application to run');
             }
         });
     }
