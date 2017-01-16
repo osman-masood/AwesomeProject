@@ -63,7 +63,9 @@ export default class EnterCodeComponent extends Component {
                 }
                 else if (statusCode === 200) {
                     // User is registered: Take to new jobs
-                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken)
+                    console.warn(ACCESS_TOKEN_STORAGE_KEY);
+                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                    console.warn(accessToken);
                     this.setState({submittingCodeState: 2});
                     this.props.navigator.push({
                         title: 'New Jobs',

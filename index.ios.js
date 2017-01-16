@@ -84,7 +84,7 @@ class MainScreen extends Component {
             retComponent = <WaitScreen/>;
         } else {
             if (this.state.token == null) {
-                retComponent = <EnterPhoneNumberComponent accessTokenKey={ACCESS_TOKEN_STORAGE_KEY} title="Enter phone number" navigator={this.props.navigator}/>;
+                retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
             } else {
                 retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
             }

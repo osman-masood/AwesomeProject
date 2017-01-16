@@ -206,10 +206,10 @@ export default class JobDetailComponent extends Component {
                                                 onPress={this.callJobAction}>
                                 <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Call</Text>
                             </TouchableHighlight>
-                            <TouchableHighlight style={{backgroundColor: '#009688', padding: 5, width: 90, height: 30, marginLeft: 6}}
-                                                onPress={this.messageJobAction.bind(this)}>
-                                <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Message</Text>
-                            </TouchableHighlight>
+                            {/*<TouchableHighlight style={{backgroundColor: '#009688', padding: 5, width: 90, height: 30, marginLeft: 6}}*/}
+                                                {/*onPress={this.messageJobAction.bind(this)}>*/}
+                                {/*<Text style={{color: '#FFFFFF', textAlign: 'center'}}>Message</Text>*/}
+                            {/*</TouchableHighlight>*/}
                             <TouchableHighlight style={{backgroundColor: '#66BB6A', padding: 5, width: 100, height: 30, marginLeft: 6}}
                                                 onPress={this.navigateTo.bind(this)}>
                                 <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 10,}}>Navigate to
