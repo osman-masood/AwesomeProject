@@ -2,6 +2,7 @@
 
 ## Installation
 
+After going through all the React Native Getting Started steps (https://facebook.github.io/react-native/docs/getting-started.html), run `npm install` in this repo's root directory (`AwesomeProject`), and run `react-native run-ios` to run the app on a Simulator.
 
 
 ## Using GraphiQL
