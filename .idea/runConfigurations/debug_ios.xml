@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="debug-ios" type="ReactNative" factoryName="React Native" singleton="true">
+    <node-interpreter value="project" />
+    <react-native value="/usr/local/lib/node_modules/react-native-cli" />
+    <platform value="IOS" />
+    <method />
+  </configuration>
+</component>
