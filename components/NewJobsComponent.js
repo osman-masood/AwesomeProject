@@ -706,11 +706,11 @@ export default class NewJobsComponent extends Component {
             {/* Call, Accept/Decline buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
                 { phoneNumberLambda(request) }
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(true, request)}>
-                    <Text style={{fontSize: 12}}>Accept</Text>
+                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={45} onPress={ () => this.setAcceptModalVisible(true, request)}>
+                    <Text style={{fontSize: 14}}>Accept</Text>
                 </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setDeclineModalVisible(true, request)}>
-                    <Text style={{fontSize: 12}}>Decline</Text>
+                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>
+                    <Text style={{fontSize: 14}}>Decline</Text>
                 </Icon.Button>
                 {/*
                 <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.phoneNumber)}>
