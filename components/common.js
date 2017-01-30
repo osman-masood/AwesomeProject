@@ -125,6 +125,64 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
       }
     }
   
+    carrierRequests(limit: 200) {
+      _id,
+      orderId,
+      status,
+      paymentType,
+      amountDue,
+      amountEstimated,
+      declinedBy {
+        carrierId
+      },
+      deliveries {
+        edges {
+          node {
+            _id,
+            carrierId
+          }
+        }
+      },
+      vehicleIds,
+      vehicles {
+        count,
+        edges {
+          node {
+			year,
+            make,
+            model,
+            type,
+            color,
+            enclosed,
+            running
+          }
+        }
+      },
+      preferredCarrierIds,
+      origin {
+        coordinates,
+        locationName,
+        contactName,
+        contactPhone,
+        address
+      },
+      destination {
+        coordinates,
+        locationName,
+        contactName,
+        contactPhone,
+        address
+      },
+      pickupDate,
+      dropoffDate,
+      createdAt,
+      shipper {
+        name,
+        buyerNumber,
+        phone,
+      }
+    }
+    
     locationRequests(${requestsFunctionString}) {
       _id,
       orderId,
