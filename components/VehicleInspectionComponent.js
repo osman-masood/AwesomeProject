@@ -5,6 +5,7 @@
 
 import React, { Component, PropTypes } from 'react';
 import {generateOperableString, RequestStatusEnum} from "./common";
+import BackgroundTimer from 'react-native-background-timer';
 const ReactNative = require('react-native');
 
 var moment = require('moment');
@@ -95,6 +96,63 @@ export default class VehicleInspectionComponent extends Component {
 
     signed() {
         var that = this;
+
+        that.props.updateDeliveryMutation(
+            that.state.job._id,
+            that.state.photos,
+            that.state.customerName,
+            response.body.postResponse.location
+        ).then(response => {
+            that.setState({
+                customerModelOpen: false
+            });
+            that.props.navigator.popN(2);
+        }).catch(e => {
+            Alert.alert('Could not save request details',
+                e.message,
+                [
+                    {
+                        text: 'Ok',
+                        onPress: () => {
+                            that.setState({
+                                customerModelOpen: false
+                            });
+                        }
+                    }
+                ]);
+        });
+
+        // Start a timer that runs continuous after X milliseconds
+        const intervalId = BackgroundTimer.setInterval(() => {
+            navigator.geolocation.getCurrentPosition(
+                location => {
+                    var coords = location.coords;
+                    console.log(`SHAHLOG: ${that.state.job._id}`);
+
+                    return fetchGraphQlQuery(
+                        accessToken,
+                        `mutation UpdateDeliveryById{
+                                deliveryUpdateById(input:{
+                                    record:{
+                                      _id: ${that.state.job._id},
+                                      currentCoordinates: [${coords.latitude}, ${coords.longitude}]
+                                    }
+                                })
+                                {
+                                    record {
+                                        id
+                                }
+                        }
+                    }`
+                    );
+
+                    console.log(`Position updated at: lat = ${coords.latitude}, long = ${coords.longitude}, accuracy = ${location.coords.accuracy}`);
+                },
+                error => {
+                    console.warn(`ERROR(${error.code}): ${error.message}`);
+                });
+        }, 60000);
+
         this.sketch.saveImage(this.state.encodedSignature)
             .then((data) => {
                 that.props.uploadImageJPGS3(data.path).then(response => {
@@ -126,6 +184,8 @@ export default class VehicleInspectionComponent extends Component {
                 });
             })
             .catch((error) => console.error(error));
+
+
     }
 
     tookPicture(path) {
