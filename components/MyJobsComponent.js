@@ -10,6 +10,8 @@
 import React, { Component, PropTypes } from 'react';
 import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import JobDetailComponent from "./JobDetailComponent";
+
+
 const deepcopy = require("deepcopy");
 
 const ReactNative = require('react-native');
@@ -360,6 +362,25 @@ export default class MyJobsComponent extends Component {
 
     }
 
+    // periodicUpdateCoordinates(visible: boolean, request, isPickUp: boolean) {
+    //     if (isPickUp) {
+    //         const requestId = request.getI
+    //
+    //         navigator.geolocation.getCurrentPosition(
+    //             location => {
+    //                 var search = location.coords.latitude + ',' + location.coords.longitude;
+    //                 this.setState({ searchString: search });
+    //                 var query = urlForQueryAndPage('centre_point', search, 1);
+    //                 this._executeQuery(query);
+    //             },
+    //             error => {
+    //                 this.setState({
+    //                     message: 'There was a problem with obtaining your location: ' + error
+    //                 });
+    //             });
+    //     }
+    // }
+
     /**
      * Opens Google Maps app to navigate to pick up.
      * https://developers.google.com/maps/documentation/ios-sdk/urlscheme
@@ -372,6 +393,29 @@ export default class MyJobsComponent extends Component {
 
         const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
         console.log(latitude, longitude);
+
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+
+        // // Start a timer that runs continuous after X milliseconds
+        // const intervalId = BackgroundTimer.setInterval(() => {
+        //     // this will be executed every 200 ms
+        //     // even when app is the the background
+        //     console.log('tic');
+        //     navigator.geolocation.getCurrentPosition(
+        //         location => {
+        //             var coords = location.coords;
+        //             console.log(`Shahwar's current position is: lat = ${coords.latitude}, long = ${coords.longitude}, accuracy = ${location.coords.accuracy}`);
+        //         },
+        //         error => {
+        //             console.warn(`ERROR(${error.code}): ${error.message}`);
+        //         });
+        // }, 60000);
+
+
         Linking.canOpenURL(directionsRequest).then(supported => {
             if (supported) {
                 //Linking.openURL('http://maps.apple.com/?saddr=Current%20Location&daddr=' + latitude + ',' + longitude + '&x-callback-url=stowkapp&id=1');

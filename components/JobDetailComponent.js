@@ -213,7 +213,7 @@ export default class JobDetailComponent extends Component {
                             <TouchableHighlight style={{backgroundColor: '#66BB6A', padding: 5, width: 100, height: 30, marginLeft: 6}}
                                                 onPress={this.navigateTo.bind(this)}>
                                 <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 10,}}>Navigate to
-                                    {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? 'Pick up' : 'Drop off'}</Text>
+                                    {(request.status === RequestStatusEnum.DISPATCHED) ? 'Pick up' : 'Drop off'}</Text>
                             </TouchableHighlight>
                         </View>
                     </View>
@@ -222,7 +222,7 @@ export default class JobDetailComponent extends Component {
                                             onPress={this.goToInspection.bind(this)}>
                             <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13,}}>
                                 TAP TO START
-                                {(this.state.job.status === RequestStatusEnum.DISPATCHED) ? ' PICK UP ' : ' DROP OFF '}
+                                {(request.status === RequestStatusEnum.DISPATCHED) ? ' PICK UP ' : ' DROP OFF '}
                                 INSPECTION
                             </Text>
                         </TouchableHighlight>
