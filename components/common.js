@@ -380,11 +380,10 @@ function fetchGraphQlQuery(accessToken:string, query:string) {
             "Cookie": "accessToken=" + accessToken
         },
         body: JSON.stringify({"query": query, "variables": null, "operationName": null})
-    })
-        .then((response) => {
+    }).then((response) => {
             console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
             if (response.status !== 200) {
-                throw new Error(`fetchGraphQlQuery: GET had non-200 response: ${response.status}`);
+                throw new Error(`fetchGraphQlQuery: POST had non-200 response: ${response.status}`);
             }
             return response.json();
         })

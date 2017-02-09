@@ -158,37 +158,6 @@ class TabBarComponent extends Component {
                     else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, openRequest)) {
                         acceptedRequests.push(openRequest);
 
-
-                        // Start a timer that runs continuous after X milliseconds
-                    //     const intervalId = BackgroundTimer.setInterval(() => {
-                    //         navigator.geolocation.getCurrentPosition(
-                    //             location => {
-                    //                 var coords = location.coords;
-                    //                 console.log(`SHAHLOG: ${that.state.job._id}`);
-                    //
-                    //                 return fetchGraphQlQuery(
-                    //                     accessToken,
-                    //                     `mutation UpdateDeliveryById{
-                    //             deliveryUpdateById(input:{
-                    //                 record:{
-                    //                   _id: ${that.state.job._id},
-                    //                   currentCoordinates: [${coords.latitude}, ${coords.longitude}]
-                    //                 }
-                    //             })
-                    //             {
-                    //                 record {
-                    //                     id
-                    //             }
-                    //     }
-                    // }`
-                    //                 );
-                    //
-                    //                 console.log(`Position updated at: lat = ${coords.latitude}, long = ${coords.longitude}, accuracy = ${location.coords.accuracy}`);
-                    //             },
-                    //             error => {
-                    //                 console.warn(`ERROR(${error.code}): ${error.message}`);
-                    //             });
-                    //     }, 60000);
                     }
                 }
 
@@ -254,6 +223,7 @@ class TabBarComponent extends Component {
                                                cancelRequestFunction={this.cancelRequestFunction}
                                                uploadImageJPGS3={uploadImageJPGS3}
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
+                                               accessToken={this.props.accessToken}
             />
         }
         else if (this.state.selectedTab == 'deliveredTab') {

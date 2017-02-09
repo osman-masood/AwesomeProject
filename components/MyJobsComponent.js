@@ -8,7 +8,8 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
+import {RequestStatusEnum, fetchGraphQlQuery, generateOperableString, haversineDistanceToRequest, Request} from "./common";
+import BackgroundTimer from 'react-native-background-timer';
 import JobDetailComponent from "./JobDetailComponent";
 
 
@@ -53,7 +54,8 @@ export default class MyJobsComponent extends Component {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
         currentPosition: PropTypes.object.isRequired,
-        cancelRequestFunction: PropTypes.func.isRequired
+        cancelRequestFunction: PropTypes.func.isRequired,
+        accessToken: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -82,7 +84,8 @@ export default class MyJobsComponent extends Component {
             isCancelModalVisible: false,
             jobOfModal: Request,
             cancelReason: string,
-            cancelReasonComments: string
+            cancelReasonComments: string,
+            accessToken: string
         } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
@@ -99,6 +102,7 @@ export default class MyJobsComponent extends Component {
             jobOfModal: null,
             cancelReason: CANCEL_REASONS[0],
             cancelReasonComments: null,
+            accessToken: this.props.accessToken,
             buildPreview: null
         };
         this.state = thisState;
@@ -362,25 +366,6 @@ export default class MyJobsComponent extends Component {
 
     }
 
-    // periodicUpdateCoordinates(visible: boolean, request, isPickUp: boolean) {
-    //     if (isPickUp) {
-    //         const requestId = request.getI
-    //
-    //         navigator.geolocation.getCurrentPosition(
-    //             location => {
-    //                 var search = location.coords.latitude + ',' + location.coords.longitude;
-    //                 this.setState({ searchString: search });
-    //                 var query = urlForQueryAndPage('centre_point', search, 1);
-    //                 this._executeQuery(query);
-    //             },
-    //             error => {
-    //                 this.setState({
-    //                     message: 'There was a problem with obtaining your location: ' + error
-    //                 });
-    //             });
-    //     }
-    // }
-
     /**
      * Opens Google Maps app to navigate to pick up.
      * https://developers.google.com/maps/documentation/ios-sdk/urlscheme
@@ -392,28 +377,36 @@ export default class MyJobsComponent extends Component {
         const longitude = request[originOrDestinationKey].coordinates[1];
 
         const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
-        console.log(latitude, longitude);
 
-        var options = {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-        };
-
-        // // Start a timer that runs continuous after X milliseconds
-        // const intervalId = BackgroundTimer.setInterval(() => {
-        //     // this will be executed every 200 ms
-        //     // even when app is the the background
-        //     console.log('tic');
-        //     navigator.geolocation.getCurrentPosition(
-        //         location => {
-        //             var coords = location.coords;
-        //             console.log(`Shahwar's current position is: lat = ${coords.latitude}, long = ${coords.longitude}, accuracy = ${location.coords.accuracy}`);
-        //         },
-        //         error => {
-        //             console.warn(`ERROR(${error.code}): ${error.message}`);
-        //         });
-        // }, 60000);
+        // Start a timer that runs continuous after 20000 milliseconds
+        if (isPickUp) {
+            const intervalId = BackgroundTimer.setInterval(() => {
+                // this will be executed every 200 ms
+                // even when app is the the background
+                console.log('tic');
+                navigator.geolocation.getCurrentPosition(
+                    location => {
+                        var coords = location.coords;
+                        return fetchGraphQlQuery(
+                            this.props.accessToken,
+                            `mutation UpdateDeliveryById{
+                    deliveryUpdateById(input:{
+                        record:{
+                            _id: "${request.deliveries.edges[0].node._id}",
+                                currentCoordinates: [${coords.longitude}, ${coords.latitude}]
+                        }
+                    }) {
+                        record {
+                            id
+                        }
+                    }
+                }`)
+                    },
+                    error => {
+                        console.warn(`ERROR(${error.code}): ${error.message}`);
+                    });
+            }, 20000);
+        }
 
 
         Linking.canOpenURL(directionsRequest).then(supported => {
