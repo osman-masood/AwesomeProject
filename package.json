@@ -1,5 +1,5 @@
 {
-  "name": "AwesomeProject",
+  "name": "stowk",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,25 +10,22 @@
     "deepcopy": "^0.6.3",
     "immutability-helper": "^2.0.0",
     "moment": "^2.17.1",
-    "react": "~15.4.0-rc.4",
-    "react-native": "0.38.1",
+    "react": "~15.4.0",
+    "react-native": "0.41.2",
     "react-native-aws3": "0.0.3",
-    "react-native-background-timer": "^1.0.0",
-    "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
-    "react-native-maps": "0.12.2",
-    "react-native-material-kit": "^0.3.4",
-    "react-native-navbar": "^1.5.4",
-    "react-native-sketch": "git+https://github.com/stantoncbradley/react-native-sketch.git",
-    "react-native-tabs": "^1.0.9",
-    "react-native-vector-icons": "^3.0.0",
-    "undefined": "^0.1.0"
+    "react-native-camera": "0.6.0",
+    "react-native-image-zoom-viewer": "^1.2.47",
+    "react-native-maps": "0.13.0",
+    "react-native-navbar": "1.6.0",
+    "react-native-sketch": "git@github.com:Janim007/react-native-sketch.git",
+    "react-native-tabs": "1.0.2",
+    "react-native-vector-icons": "4.0.0"
   },
   "devDependencies": {
-    "babel-jest": "17.0.2",
-    "babel-preset-react-native": "1.9.0",
-    "jest": "17.0.3",
-    "jest-react-native": "17.1.0",
-    "react-test-renderer": "~15.4.0-rc.4"
+    "babel-jest": "18.0.0",
+    "babel-preset-react-native": "1.9.1",
+    "jest": "18.1.0",
+    "react-test-renderer": "~15.4.0"
   },
   "jest": {
     "preset": "react-native"

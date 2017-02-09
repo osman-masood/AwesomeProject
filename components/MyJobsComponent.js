@@ -8,29 +8,27 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, fetchGraphQlQuery, generateOperableString, haversineDistanceToRequest, Request} from "./common";
-import BackgroundTimer from 'react-native-background-timer';
+import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import JobDetailComponent from "./JobDetailComponent";
-
-
 const deepcopy = require("deepcopy");
 
-const ReactNative = require('react-native');
-const {
-    StyleSheet,
-    Text,
-    View,
-    Linking,
-    Modal,
-    TouchableHighlight,
-    PickerIOS,
-    TextInput,
-    ScrollView,
-    Button,
-    Dimensions,
-    Image,
-    Alert
-} = ReactNative;
+import {
+  View,
+  Linking,
+  TabBarIOS,
+  Button,
+  ScrollView,
+  Text,
+  Image,
+  Dimensions,
+  StyleSheet,
+  TouchableHighlight,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+  PickerIOS
+} from 'react-native'
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
@@ -54,8 +52,7 @@ export default class MyJobsComponent extends Component {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
         currentPosition: PropTypes.object.isRequired,
-        cancelRequestFunction: PropTypes.func.isRequired,
-        accessToken: PropTypes.string.isRequired
+        cancelRequestFunction: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -84,8 +81,7 @@ export default class MyJobsComponent extends Component {
             isCancelModalVisible: false,
             jobOfModal: Request,
             cancelReason: string,
-            cancelReasonComments: string,
-            accessToken: string
+            cancelReasonComments: string
         } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
@@ -102,7 +98,6 @@ export default class MyJobsComponent extends Component {
             jobOfModal: null,
             cancelReason: CANCEL_REASONS[0],
             cancelReasonComments: null,
-            accessToken: this.props.accessToken,
             buildPreview: null
         };
         this.state = thisState;
@@ -377,38 +372,7 @@ export default class MyJobsComponent extends Component {
         const longitude = request[originOrDestinationKey].coordinates[1];
 
         const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
-
-        // Start a timer that runs continuous after 20000 milliseconds
-        if (isPickUp) {
-            const intervalId = BackgroundTimer.setInterval(() => {
-                // this will be executed every 200 ms
-                // even when app is the the background
-                console.log('tic');
-                navigator.geolocation.getCurrentPosition(
-                    location => {
-                        var coords = location.coords;
-                        return fetchGraphQlQuery(
-                            this.props.accessToken,
-                            `mutation UpdateDeliveryById{
-                    deliveryUpdateById(input:{
-                        record:{
-                            _id: "${request.deliveries.edges[0].node._id}",
-                                currentCoordinates: [${coords.longitude}, ${coords.latitude}]
-                        }
-                    }) {
-                        record {
-                            id
-                        }
-                    }
-                }`)
-                    },
-                    error => {
-                        console.warn(`ERROR(${error.code}): ${error.message}`);
-                    });
-            }, 20000);
-        }
-
-
+        console.log(latitude, longitude);
         Linking.canOpenURL(directionsRequest).then(supported => {
             if (supported) {
                 //Linking.openURL('http://maps.apple.com/?saddr=Current%20Location&daddr=' + latitude + ',' + longitude + '&x-callback-url=stowkapp&id=1');

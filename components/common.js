@@ -7,7 +7,6 @@
  */
 "use strict";
 
-
 /**
  ABOUT REQUEST STATUSES: Taken from https://github.com/yasinarif1/stowk-APIserver/blob/dad8baa308b1bc7e417e4824405a2d2a5c4784de/api/data/models/Request.js
 
@@ -22,6 +21,7 @@
  */
 
 import { RNS3 } from 'react-native-aws3';
+import {AsyncStorage} from 'react-native';
 
 const RequestStatusEnum = Object.freeze({
     NEW: 0,
@@ -115,6 +115,18 @@ class User {
         _id: string
     };
 }
+
+var loadAccessToken = async () => {
+        let retVal;
+        try {
+            retVal = await AsyncStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);            
+        } catch (e) {
+            console.error("loadAccessToken: Error getting stowkAccessToken", e);
+            retVal = null;
+        }
+        return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODc1Yjg0YTNmZTZjMzI3NTFmZjg1MGEiLCJlbWFpbCI6IkVyaWNhX1NtaXRoMjZAeWFob28uY29tIiwiZmlyc3ROYW1lIjoiQWxleGlzIiwibGFzdE5hbWUiOiJIZWlkZW5yZWljaCIsInBob25lIjoiKzE2Njk5MDAyODUxIiwicm9sZSI6InVzZXIiLCJwcm9maWxlIjp7InR5cGUiOiJjYXJyaWVyIiwicm9sZSI6Im93bmVyIiwiY2FycmllciI6IjU4NzViODRhM2ZlNmMzMjc1MWZmODU2MiJ9LCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNDg0MTExMzI3LCJleHAiOjE1MTU2NDczMjd9.Iha0A_KhaREkTvWSWrmKwYDvszyoJeHno2H4BYe1RlA";
+        //return new Promise(resolve => { resolve(retVal) });
+    };
 
 const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
   viewer {
@@ -331,15 +343,19 @@ const locationRequestsQueryStringLambda = (latitude:number, longitude:number, di
 /**
  *
  * */
-const updateDeliveryMutation = (token, _id: string, notes: Array, customerName: string, customerSignature: string) => {
+const updateDeliveryPickup = (request: Request, 
+    notes: Array, 
+    customerName: string, 
+    customerSignature: string) => {
+    
     const mutationQuery = `
             mutation {
           deliveryUpdateById(input:{
             record:{
-              _id: "${_id}",
-              inspectionCustomerName: "${customerName}",
-              inspectionCustomerSignatureUrl: "${customerSignature}",
-              inspectionNotes: ${notes}
+              _id: "${request.deliveries.edges[0].node._id}",
+              pickupInspectionCustomerName: "${customerName}",
+              pickupInspectionCustomerSignatureUrl: "${customerSignature}",
+              pickupInspectionNotes: ${notes}
             }
           }) {
             record {
@@ -347,8 +363,66 @@ const updateDeliveryMutation = (token, _id: string, notes: Array, customerName: 
             }
           }
         }`;
-    return fetchGraphQlQuery(token, mutationQuery);
+    return fetchGraphQlQuery(null, mutationQuery).then( (reeponse) => {
+      return fetchGraphQlQuery(null,  `mutation UpdateRequestById {
+            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status:${RequestStatusEnum.IN_PROGRESS}}}) {
+                recordId
+            }
+        }`);  
+    });
 };
+
+const updateDeliveryDropOff = (request: Request, notes: Array, customerName: string, 
+customerSignature: string, keyPicture: string)  => {
+    
+    const mutationQuery = `
+            mutation {
+          deliveryUpdateById(input:{
+            record:{
+              _id: "${request.deliveries.edges[0].node._id}",
+              dropoffInspectionCustomerName: "${customerName}",
+              dropoffInspectionCustomerSignatureUrl: "${customerSignature}",
+              dropoffInspectionNotes: ${notes},
+              dropoffKeysPicture: ${keyPicture}
+            }
+          }) {
+            record {
+              id
+            }
+          }
+        }`;
+    return fetchGraphQlQuery(null, mutationQuery).then( (reeponse) => {
+      return fetchGraphQlQuery(null,  `mutation UpdateRequestById {
+            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status:${RequestStatusEnum.COMPLETE}}}) {
+                recordId
+            }
+        }`);  
+    });
+};
+
+const updateRequestStatus = (_id: string, status: RequestStatusEnum) => {
+    return fetchGraphQlQuery(null,
+       
+    )
+}
+
+const getDeliveryInspectionNotes = (_id: string) => {
+    const query = `
+            {
+            viewer {
+                delivery(filter :{
+                _id: "${_id}"
+                }) {
+                id,
+                pickupInspectionNotes {
+                    note,photoUrl
+                },
+                pickupInspectionCustomerName
+                }
+            }
+            }`;
+            return fetchGraphQlQuery(null, query);
+}
 
 function getAccessTokenFromResponse(response) {
     // Fetch out access token from response header object
@@ -370,23 +444,26 @@ function getAccessTokenFromResponse(response) {
     return accessToken;
 }
 
-function fetchGraphQlQuery(accessToken:string, query:string) {
-    console.log(`fetchGraphQlQuery(accessToken: ${accessToken}) with body:`, JSON.stringify({"query": query}));
-    return fetch(GRAPHQL_ENDPOINT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Cookie": "accessToken=" + accessToken
-        },
-        body: JSON.stringify({"query": query, "variables": null, "operationName": null})
-    }).then((response) => {
+async function fetchGraphQlQuery(accessToken:string, query:string) {
+        accessToken = await loadAccessToken();         
+        console.log( JSON.stringify({"query": query}));
+        return fetch(GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Cookie": "accessToken=" + accessToken
+            },
+            body: JSON.stringify({"query": query, "variables": null, "operationName": null})
+        }).then((response) => {
             console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
             if (response.status !== 200) {
-                throw new Error(`fetchGraphQlQuery: POST had non-200 response: ${response.status}`);
+                throw new Error(`fetchGraphQlQuery: GET had non-200 response: ${response.status}`);
             }
             return response.json();
-        })
+        }).catch(function(error) {
+            console.log('error', error.message);
+        });    
 }
 
 function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string, longitude:string, distance:number) {
@@ -476,5 +553,9 @@ export {
     generateOperableString,
     uploadImageJPGS3,
     ACCESS_TOKEN_STORAGE_KEY,
-    updateDeliveryMutation
+    updateDeliveryPickup,
+    updateDeliveryDropOff,
+    getDeliveryInspectionNotes,
+    loadAccessToken,
+    updateRequestStatus
 }

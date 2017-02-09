@@ -104,7 +104,7 @@ class TabBarComponent extends Component {
                     longitudeDelta: 0.421,
                 }
             }),
-            (positionError) => console.error("TabBarComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
+            (positionError) => {}
         );
 
         // Continually update current position (marker) as user's location changes
@@ -157,17 +157,43 @@ class TabBarComponent extends Component {
                     }
                     else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, openRequest)) {
                         acceptedRequests.push(openRequest);
-
                     }
                 }
 
-                openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
+
+                const carrierPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
+
+                let carrierPrefferedReq = [];
+
+                for (let req of carrierPreferredRequests) {
+                   /// carrierPrefferedReq.push(carReq);
+
+                    // If request was declined by this carrier, skip it
+                    if (req.declinedBy && req.declinedBy.length > 0 && req.declinedBy.map((db) => db['carrierId']).indexOf(currentCarrierId) !== -1) {
+                        console.log("TabBarComponent constructor: Request ", req, "had current carrier ID ", currentCarrierId, " in its declined list");
+                        continue;
+                    }
+
+                    // Figure out if request is preferred to carrier, not preferred, or already accepted by carrier
+                    if (req.status === RequestStatusEnum.PROCESSING) {
+                        // TODO add logic to support carrier -> carrier reqs. That is, if preferredCarrierIds.length === 2, then preferredCarrierIds[0] recommended the job to preferredCarrierIds[1], and the job should be in the Network Jobs list of preferredCarrierIds[1]
+                        if (req['preferredCarrierIds'].indexOf(currentCarrierId) === -1) {
+                            // If current carrier's ID is within the request's preferred carrier IDs, it is preferred. Otherwise not.
+                            //carrierPrefferedReq.push(req);
+                        } else {
+                            carrierPrefferedReq.push(req);
+                        }
+                    }
+                    else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, req)) {
+                        acceptedRequests.push(req);
+                    }
+                }
 
                 // Set state variables of current user and requests
                 this.setState({
                     currentUser: currentUser,
                     openNonPreferredRequests: openNonPreferredRequests,
-                    openPreferredRequests: openPreferredRequests,
+                    openPreferredRequests: carrierPrefferedReq,
                     acceptedRequests: []
                 });
             });
@@ -203,7 +229,6 @@ class TabBarComponent extends Component {
 
     _renderContent = () => {
         let returnComponent;
-
         if (this.state.selectedTab == 'newJobsTab') {
             returnComponent = <NewJobsComponent title="New Jobs"
                                                 currentPosition={this.state.currentPosition}
@@ -211,9 +236,7 @@ class TabBarComponent extends Component {
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
                                                 acceptRequestFunction={this.acceptRequestFunction}
-                                                declineRequestFunction={this.declineRequestFunction}
-                                                currentUserId={this.state.currentUser.carrier._id}
-            />
+                                                declineRequestFunction={this.declineRequestFunction}/>
         }
         else if (this.state.selectedTab == 'myJobsTab') {
             returnComponent = <MyJobsComponent title="My Jobs"
@@ -223,7 +246,6 @@ class TabBarComponent extends Component {
                                                cancelRequestFunction={this.cancelRequestFunction}
                                                uploadImageJPGS3={uploadImageJPGS3}
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
-                                               accessToken={this.props.accessToken}
             />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
@@ -242,10 +264,6 @@ class TabBarComponent extends Component {
     };
 
     render() {
-        if(!this.state.currentUser)
-        {
-            return <TabBarIOS></TabBarIOS>;
-        }
         return (
             <TabBarIOS>
 
