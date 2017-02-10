@@ -3,6 +3,7 @@ import React, { Component, } from 'react'
 import {getDeliveryInspectionNotes, uploadImageJPGS3, updateDeliveryDropOff} from "./common"
 import Sketch from 'react-native-sketch';
 import Camera from 'react-native-camera';
+import ImageViewer from 'react-native-image-zoom-viewer';
 const moment = require('moment');
 import EventEmitter from 'EventEmitter'
 global.evente = new EventEmitter;
@@ -41,6 +42,7 @@ export default class DropOffObtain extends Component {
         encodedSignature: null,
         customerModelOpen: false,
         keyCameraModalOpen: false,
+        viewImagesOpen: false,
         keysPictureUrl: null,
         dropoffInspectionPhotos: [],
         allPhotos: [],
@@ -125,6 +127,21 @@ export default class DropOffObtain extends Component {
           return new_photo;
       });            
         });    
+  }
+
+  viewImage(img, idx) {
+        this.setState({
+            viewImagesOpen: true,
+            selectedImage: img,
+            selectedImageNumber: idx,
+            footerText: img.note
+        });
+  }
+  unViewImage() {
+      this.setState({
+          viewImagesOpen:false,
+          inspectionOpen: false
+      })
   }
 
   tookPicture(path) {
@@ -308,7 +325,9 @@ export default class DropOffObtain extends Component {
               width: Dimensions.get('window').width - 10
             }}>
             {this.state.inspectionNotes.map((item, idx) => {
-              return <Image
+              return (
+                  <TouchableHighlight key={idx} onPress={() => this.viewImage(item, idx)}>
+                  <Image
                 key={idx}
                 style={{
                   width: 95,
@@ -317,7 +336,7 @@ export default class DropOffObtain extends Component {
                 }}
                 resizeMode={"center"}
                 source={{ uri: item.photoUrl }}
-                />
+                /></TouchableHighlight>)
             })}
           </View>          
           {dropoffInspectionPhotosView}
@@ -370,11 +389,39 @@ export default class DropOffObtain extends Component {
           {dropOffAfterHourButton}
         </ScrollView>);
 
+        var photos_for_viewer = this.state.inspectionNotes.map((img) => {
+                return {'url': img.photoUrl}
+            }) 
+        let viewImages = (
+              <Modal visible={true} transparent={false}>     
+              <TouchableHighlight onPress={this.unViewImage.bind(this)}>
+                    <Text style={{paddingTop:20, backgroundColor:'#000000', color: '#FFFFFF', zIndex:1111}}>Close</Text>
+                </TouchableHighlight>           
+                <ImageViewer 
+                height={400}
+                imageUrls={photos_for_viewer}
+                onChange={(idx) => {this.setState({footerText: this.state.inspectionNotes[idx].note})}}
+                saveToLocalByLongPress={false}
+                index={this.state.selectedImageNumber}
+                />
+                <Text style={{
+                    backgroundColor: '#000000', 
+                    position:'absolute', 
+                    color:'#FFFFFF', 
+                    bottom:0,
+                    width: Dimensions.get("window").width,
+                    height: 30,
+                    textAlign: 'center'}}>{this.state.footerText}</Text>
+            </Modal>
+            )
+
         let mainView = null;
         if (this.state.inspectionOpen) {
           mainView = inspectionPhotos;
+        }else if (this.state.viewImagesOpen){
+          mainView = viewImages;
         }else {
-          mainView = _scrollView;
+          mainView = _scrollView;  
         }
 
     return (
