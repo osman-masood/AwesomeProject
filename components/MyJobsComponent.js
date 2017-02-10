@@ -11,6 +11,8 @@ import React, { Component, PropTypes } from 'react';
 import {RequestStatusEnum, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import JobDetailComponent from "./JobDetailComponent";
 const deepcopy = require("deepcopy");
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 
 import {
   View,
@@ -110,13 +112,22 @@ export default class MyJobsComponent extends Component {
         });
     }
 
-    componentWillMount() {
+    componentWillMount() {        
+        this.getMyjoblist = this.getMyjoblist.bind(this);
+        this.getMyjoblist();
+        var that=this;
+        global.evente.addListener('re-send-request', function(e) {
+            that.getMyjoblist();
+        });
+    }
+
+    getMyjoblist() {
         this.props.acceptedRequests().then( response => {
             this.setState({
                 acceptedRequests: response['data']['viewer']['locationRequests']
             })
-        })
-    }
+        });
+    }    
 
 
     shouldComponentUpdate(nextProps, nextState) {

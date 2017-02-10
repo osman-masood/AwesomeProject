@@ -62,7 +62,7 @@ export default class DropOffObtain extends Component {
     });
   }
   
-  callingRightButton() {
+  callingRightButton() {     
      global.evente.emit('callingRightButton', {showInspection: true});
   }
 
@@ -179,6 +179,8 @@ export default class DropOffObtain extends Component {
                     that.setState({
                         customerModelOpen: false
                     });
+                    // emit event
+                    global.evente.emit('re-send-my-request', {});
                     that.props.navigator.popN(2);
                 }).catch(e => {
                     Alert.alert('Could not save request details',
