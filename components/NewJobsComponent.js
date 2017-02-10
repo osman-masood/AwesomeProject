@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, haversineDistanceToRequest, Request, User} from "./common";
+import {RequestStatusEnum, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, Request, User} from "./common";
 const deepcopy = require("deepcopy");
 
 import {
@@ -113,8 +113,8 @@ export default class NewJobsComponent extends Component {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            openPreferredRequests: deepcopy(this.props.openPreferredRequests),
-            openNonPreferredRequests: deepcopy(this.props.openNonPreferredRequests),
+            openPreferredRequests: [],//deepcopy(this.props.openPreferredRequests),
+            openNonPreferredRequests: [], //deepcopy(this.props.openNonPreferredRequests),
             searchParams: {
                 origin: null,
                 destination: null,
@@ -167,6 +167,21 @@ export default class NewJobsComponent extends Component {
             openPreferredRequests: deepcopy(nextProps.openPreferredRequests),
             currentPosition: deepcopy(nextProps.currentPosition)
         });
+    }
+
+    componentWillMount() {
+        fetchCurrentUserAndLocationRequests(null, this.state.currentPosition.latitude,
+                                                 this.state.currentPosition.longitude, 6000)
+            .then(response => {
+                console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
+
+                let openPreferredRequests = response['data']['viewer']['carrierRequests'];
+                let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
+            this.setState({
+                openNonPreferredRequests: openNonPreferredRequests,
+                openPreferredRequests: openPreferredRequests
+            })
+        })
     }
 
     shouldComponentUpdate(nextProps, nextState) {

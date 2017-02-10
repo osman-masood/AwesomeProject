@@ -136,7 +136,7 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
       }
     }
   
-    carrierRequests(limit: 200) {
+    carrierRequests(limit: 2000) {
       _id,
       orderId,
       status,
@@ -471,7 +471,7 @@ function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string
 }
 
 function acceptedRequestsQuery(accessToken: string, latitude:string, longitude:string) {
-    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:10000, preferredCarrier:true`)
+    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:100000, limit:20000`)
     return fetchGraphQlQuery(accessToken, query);
 }
 

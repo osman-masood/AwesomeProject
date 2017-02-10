@@ -115,13 +115,42 @@ export default class MyJobsComponent extends Component {
     }
 
     componentWillMount() {
+
+        let that = this;
         this.props.acceptedRequests().then( response => {
+
+            let currentCarrierId = response['data']['viewer']['me']['carrier']['_id'];
+            let acceptedRequests = [];
+
+            for (let item in response['data']['viewer']['locationRequests']) {
+                let r = response['data']['viewer']['locationRequests'][item];
+               // console.warn(RequestStatusEnum.DISPATCHED, r.status);
+                console.log(r._id, r);
+                if ( (r.deliveries.edges.length > 0) && (r.status === RequestStatusEnum.IN_PROGRESS || r.status === RequestStatusEnum.DISPATCHED)) {
+                    console.log("LOGS: ", r.status, r.deliveries.edges[0].node.carrierId, currentCarrierId);
+
+                }
+                if (that.hasCarrierAcceptedRequest(currentCarrierId, r)) {
+                    acceptedRequests.push(r);
+                }
+            }
             this.setState({
-                acceptedRequests: response['data']['viewer']['locationRequests']
+                acceptedRequests: acceptedRequests
             })
         })
     }
 
+    hasCarrierAcceptedRequest(carrierId: string, request:Request) {
+        // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.
+        let ret;
+        if ((request.status === RequestStatusEnum.DISPATCHED || request.status === RequestStatusEnum.IN_PROGRESS) &&
+            (request.deliveries && request.deliveries.edges && request.deliveries.edges.length > 0)) {
+
+            const deliveryCarrierIds = request.deliveries.edges.map((edge) => edge.node.carrierId);
+            ret = deliveryCarrierIds.indexOf(carrierId) !== -1;
+        }
+        return ret;
+    }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -198,7 +227,7 @@ export default class MyJobsComponent extends Component {
 
         let returnView;
         if (!allJobsContainer) {
-            returnView = <View><Text>No jobs found! Try again later!</Text></View>
+            returnView = <View><Text style={{textAlign:'center'}}>Loading jobs ...</Text></View>
         } else {
             returnView = <ScrollView>{[subTabs, allJobsContainer]}</ScrollView>;
         }
