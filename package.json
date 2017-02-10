@@ -1,5 +1,5 @@
 {
-  "name": "stowk",
+  "name": "stowk41",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
     "react-native-maps": "0.13.0",
     "react-native-navbar": "1.6.0",
     "react-native-sketch": "git@github.com:Janim007/react-native-sketch.git",
-    "react-native-tabs": "1.0.2",
+    "react-native-tabs": "1.0.9",
     "react-native-vector-icons": "4.0.0"
   },
   "devDependencies": {
