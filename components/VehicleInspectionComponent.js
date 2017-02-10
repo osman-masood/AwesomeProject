@@ -14,6 +14,8 @@ import ImageViewer from 'react-native-image-zoom-viewer';
 var moment = require('moment');
 import Camera from 'react-native-camera';
 import Sketch from 'react-native-sketch';
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 
 import {
   View,
@@ -135,6 +137,7 @@ export default class VehicleInspectionComponent extends Component {
                     that.setState({
                         customerModelOpen: false
                     });
+                    global.evente.emit('re-send-my-request', {reload: true});
                     that.props.navigator.popN(2);
                 }).catch(e => {
                     Alert.alert('Could not save request details',

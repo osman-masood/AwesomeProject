@@ -124,7 +124,8 @@ var loadAccessToken = async () => {
             console.error("loadAccessToken: Error getting stowkAccessToken", e);
             retVal = null;
         }
-        return new Promise(resolve => { resolve(retVal) });
+        return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODc1Yjg0YTNmZTZjMzI3NTFmZjg1MGEiLCJlbWFpbCI6IkVyaWNhX1NtaXRoMjZAeWFob28uY29tIiwiZmlyc3ROYW1lIjoiQWxleGlzIiwibGFzdE5hbWUiOiJIZWlkZW5yZWljaCIsInBob25lIjoiKzE2Njk5MDAyODUxIiwicm9sZSI6InVzZXIiLCJwcm9maWxlIjp7InR5cGUiOiJjYXJyaWVyIiwicm9sZSI6Im93bmVyIiwiY2FycmllciI6IjU4NzViODRhM2ZlNmMzMjc1MWZmODU2MiJ9LCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNDg0MTExMzI3LCJleHAiOjE1MTU2NDczMjd9.Iha0A_KhaREkTvWSWrmKwYDvszyoJeHno2H4BYe1RlA";
+        //return new Promise(resolve => { resolve(retVal) });
     };
 
 const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
@@ -335,7 +336,7 @@ const cancelRequestFunctionWithAccessToken = (accessToken:string, request:Reques
 };
 
 const locationRequestsQueryStringLambda = (latitude:number, longitude:number, distance:number) => {
-    const rFS = `latitude: ${latitude}, longitude: ${longitude}, distance: ${distance}`;
+    const rFS = `latitude: ${latitude}, longitude: ${longitude}, distance: ${distance}, limit:200`;
     return genericRequestsQueryStringLambda(rFS);
 };
 
@@ -471,7 +472,7 @@ function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string
 }
 
 function acceptedRequestsQuery(accessToken: string, latitude:string, longitude:string) {
-    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:100000, limit:20000`)
+    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:100000, limit:200`)
     return fetchGraphQlQuery(accessToken, query);
 }
 

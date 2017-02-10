@@ -9,6 +9,8 @@
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
 import {RequestStatusEnum, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, Request, User} from "./common";
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 const deepcopy = require("deepcopy");
 
 import {
@@ -113,8 +115,8 @@ export default class NewJobsComponent extends Component {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            openPreferredRequests: [],//deepcopy(this.props.openPreferredRequests),
-            openNonPreferredRequests: [], //deepcopy(this.props.openNonPreferredRequests),
+            openPreferredRequests: deepcopy(this.props.openPreferredRequests),
+            openNonPreferredRequests: deepcopy(this.props.openNonPreferredRequests),
             searchParams: {
                 origin: null,
                 destination: null,
@@ -169,20 +171,20 @@ export default class NewJobsComponent extends Component {
         });
     }
 
-    componentWillMount() {
-        fetchCurrentUserAndLocationRequests(null, this.state.currentPosition.latitude,
-                                                 this.state.currentPosition.longitude, 6000)
-            .then(response => {
-                console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
-
-                let openPreferredRequests = response['data']['viewer']['carrierRequests'];
-                let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
-            this.setState({
-                openNonPreferredRequests: openNonPreferredRequests,
-                openPreferredRequests: openPreferredRequests
-            })
-        })
-    }
+    // componentWillMount() {
+    //     fetchCurrentUserAndLocationRequests(null, this.state.currentPosition.latitude,
+    //                                              this.state.currentPosition.longitude, 6000)
+    //         .then(response => {
+    //             console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
+    //
+    //             let openPreferredRequests = response['data']['viewer']['carrierRequests'];
+    //             let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
+    //         this.setState({
+    //             openNonPreferredRequests: openNonPreferredRequests,
+    //             openPreferredRequests: openPreferredRequests
+    //         })
+    //     })
+    // }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -461,6 +463,7 @@ export default class NewJobsComponent extends Component {
 
     listView() {
         // Get list of dealer jobs
+        console.log("--->",this.state.openPreferredRequests, this.state.openNonPreferredRequests);
         let dealerJobsContainer = this.dealerJobsContainer();
 
         // Get list of network jobs
@@ -652,6 +655,7 @@ export default class NewJobsComponent extends Component {
 
         // API call to accept job
         this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
+            global.evente.emit('re-send-my-request', {reload: true});
             console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 

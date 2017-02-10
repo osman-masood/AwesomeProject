@@ -12,6 +12,8 @@ import {RequestStatusEnum, fetchGraphQlQuery, generateOperableString, haversineD
 import BackgroundTimer from 'react-native-background-timer';
 import JobDetailComponent from "./JobDetailComponent";
 const deepcopy = require("deepcopy");
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 
 import {
   View,
@@ -117,6 +119,16 @@ export default class MyJobsComponent extends Component {
     componentWillMount() {
 
         let that = this;
+
+        this.getMyjoblist = this.getMyjoblist.bind(this);
+        this.getMyjoblist();
+        global.evente.addListener('re-send-request', function(e) {
+            that.getMyjoblist();
+        });
+    }
+
+    getMyjoblist() {
+        let that = this;
         this.props.acceptedRequests().then( response => {
 
             let currentCarrierId = response['data']['viewer']['me']['carrier']['_id'];
@@ -137,8 +149,8 @@ export default class MyJobsComponent extends Component {
             this.setState({
                 acceptedRequests: acceptedRequests
             })
-        })
-    }
+        });
+    }    
 
     hasCarrierAcceptedRequest(carrierId: string, request:Request) {
         // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.
