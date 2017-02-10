@@ -458,7 +458,7 @@ async function fetchGraphQlQuery(accessToken:string, query:string) {
         }).then((response) => {
             console.log(`fetchGraphQlQuery: response from ${GRAPHQL_ENDPOINT}`, response);
             if (response.status !== 200) {
-                throw new Error(`fetchGraphQlQuery: GET had non-200 response: ${response.status}`);
+                throw new Error(`fetchGraphQlQuery: POST had non-200 response: ${response.status}`);
             }
             return response.json();
         }).catch(function(error) {

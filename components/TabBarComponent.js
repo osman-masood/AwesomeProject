@@ -221,6 +221,7 @@ class TabBarComponent extends Component {
                                                cancelRequestFunction={this.cancelRequestFunction}
                                                uploadImageJPGS3={uploadImageJPGS3}
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
+                                               accessToken={this.props.accessToken}
             />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
