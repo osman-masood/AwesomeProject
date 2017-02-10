@@ -160,40 +160,13 @@ class TabBarComponent extends Component {
                     }
                 }
 
-
-                const carrierPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
-
-                let carrierPrefferedReq = [];
-
-                for (let req of carrierPreferredRequests) {
-                   /// carrierPrefferedReq.push(carReq);
-
-                    // If request was declined by this carrier, skip it
-                    if (req.declinedBy && req.declinedBy.length > 0 && req.declinedBy.map((db) => db['carrierId']).indexOf(currentCarrierId) !== -1) {
-                        console.log("TabBarComponent constructor: Request ", req, "had current carrier ID ", currentCarrierId, " in its declined list");
-                        continue;
-                    }
-
-                    // Figure out if request is preferred to carrier, not preferred, or already accepted by carrier
-                    if (req.status === RequestStatusEnum.PROCESSING) {
-                        // TODO add logic to support carrier -> carrier reqs. That is, if preferredCarrierIds.length === 2, then preferredCarrierIds[0] recommended the job to preferredCarrierIds[1], and the job should be in the Network Jobs list of preferredCarrierIds[1]
-                        if (req['preferredCarrierIds'].indexOf(currentCarrierId) === -1) {
-                            // If current carrier's ID is within the request's preferred carrier IDs, it is preferred. Otherwise not.
-                            //carrierPrefferedReq.push(req);
-                        } else {
-                            carrierPrefferedReq.push(req);
-                        }
-                    }
-                    else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, req)) {
-                        acceptedRequests.push(req);
-                    }
-                }
+                openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
 
                 // Set state variables of current user and requests
                 this.setState({
                     currentUser: currentUser,
                     openNonPreferredRequests: openNonPreferredRequests,
-                    openPreferredRequests: carrierPrefferedReq,
+                    openPreferredRequests: openPreferredRequests,
                     acceptedRequests: []
                 });
             });
@@ -236,7 +209,9 @@ class TabBarComponent extends Component {
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
                                                 acceptRequestFunction={this.acceptRequestFunction}
-                                                declineRequestFunction={this.declineRequestFunction}/>
+                                                declineRequestFunction={this.declineRequestFunction}
+                                                currentUserId={this.state.currentUser.carrier._id}
+            />
         }
         else if (this.state.selectedTab == 'myJobsTab') {
             returnComponent = <MyJobsComponent title="My Jobs"
@@ -264,6 +239,10 @@ class TabBarComponent extends Component {
     };
 
     render() {
+        if(!this.state.currentUser)
+        {
+            return <TabBarIOS></TabBarIOS>;
+        }
         return (
             <TabBarIOS>
 

@@ -8,7 +8,7 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {haversineDistanceToRequest, Request} from "./common";
+import {RequestStatusEnum, haversineDistanceToRequest, Request, User} from "./common";
 const deepcopy = require("deepcopy");
 
 import {
@@ -56,7 +56,8 @@ export default class NewJobsComponent extends Component {
         openNonPreferredRequests: PropTypes.array.isRequired,
         currentPosition: PropTypes.object.isRequired,
         acceptRequestFunction: PropTypes.func.isRequired,
-        declineRequestFunction: PropTypes.func.isRequired
+        declineRequestFunction: PropTypes.func.isRequired,
+        currentUserId: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -105,7 +106,9 @@ export default class NewJobsComponent extends Component {
             isDeclineModalVisible: boolean,
             jobOfModal: Request,
             declineReason: string,
-            declineReasonComments: string
+            declineReasonComments: string,
+            currentUserId: string
+
         } = {
             selectedTab: "all_jobs",
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
@@ -134,7 +137,8 @@ export default class NewJobsComponent extends Component {
             isAcceptModalVisible: false,
             jobOfModal: null,
             declineReason: DECLINE_REASONS[0],
-            declineReasonComments: null
+            declineReasonComments: null,
+            currentUserId: this.props.currentUserId
         };
         this.state = thisState;
 
@@ -678,21 +682,23 @@ export default class NewJobsComponent extends Component {
 
         const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
 
+        let dealerJobsOrMyJobs = (request.preferredCarrierIds.indexOf(this.state.currentUserId) === -1 )? true : false;
+
+
         return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
-            {/* Job Text */}
-            {/*
-            <TouchableHighlight onPress={() => this.props.navigator.push({
+
+
+            <TouchableHighlight disabled={dealerJobsOrMyJobs} onPress={() => this.props.navigator.push({
                 component: JobDetailComponent,
                 navigationBarHidden: false,
                 navigator: this.props.navigator,
-                passProps: {title: job.name, job:job}
+                passProps: {title: "My Job String", request:request},
             })}>
-            */}
                 <View style={{flexDirection: 'row'}}>
                     <View style={{flex: 3}}>
                         <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                        <Text>Origin: {request.origin.locationName}</Text>
-                        <Text>Destination: {request.destination.locationName}</Text>
+                        <Text>Origin: {request.origin.address}</Text>
+                        <Text>Destination: {request.destination.address}</Text>
                         <Text>Vehicles: {request.vehicles.count}</Text>
                         <Text>Trailer Type: {"TODO"}</Text>
                         <Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
@@ -704,7 +710,7 @@ export default class NewJobsComponent extends Component {
                         <Text>Job Expires: {request.dropoffDate}</Text>
                     </View>
                 </View>
-            {/*</TouchableHighlight>*/}
+            </TouchableHighlight>
 
             {/* Call, Accept/Decline buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>

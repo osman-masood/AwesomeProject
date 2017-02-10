@@ -124,8 +124,7 @@ var loadAccessToken = async () => {
             console.error("loadAccessToken: Error getting stowkAccessToken", e);
             retVal = null;
         }
-        return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODc1Yjg0YTNmZTZjMzI3NTFmZjg1MGEiLCJlbWFpbCI6IkVyaWNhX1NtaXRoMjZAeWFob28uY29tIiwiZmlyc3ROYW1lIjoiQWxleGlzIiwibGFzdE5hbWUiOiJIZWlkZW5yZWljaCIsInBob25lIjoiKzE2Njk5MDAyODUxIiwicm9sZSI6InVzZXIiLCJwcm9maWxlIjp7InR5cGUiOiJjYXJyaWVyIiwicm9sZSI6Im93bmVyIiwiY2FycmllciI6IjU4NzViODRhM2ZlNmMzMjc1MWZmODU2MiJ9LCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNDg0MTExMzI3LCJleHAiOjE1MTU2NDczMjd9.Iha0A_KhaREkTvWSWrmKwYDvszyoJeHno2H4BYe1RlA";
-        //return new Promise(resolve => { resolve(retVal) });
+        return new Promise(resolve => { resolve(retVal) });
     };
 
 const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
