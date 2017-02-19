@@ -160,7 +160,7 @@ export default class JobDetailComponent extends Component {
                 title={titleConfig}
                 leftButton={leftButtonConfig}
             />
-            <ScrollView>
+            <ScrollView style={{height: Dimensions.get('window').height - 80}}>
                 <View style={styles.topBox}>
                     <Image source={require('../assets/profle@3x.png')} />
                     <Text>{request.shipper.name}</Text>
@@ -226,7 +226,7 @@ export default class JobDetailComponent extends Component {
                         </View>
                     </View>
                     <View>
-                        <TouchableHighlight style={{backgroundColor: '#26C6DA', 
+                        <TouchableHighlight style={{backgroundColor: '#26C6DA',
                         padding: 5, 
                         height: 30, 
                         marginLeft: 20,
