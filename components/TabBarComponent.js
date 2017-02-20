@@ -104,7 +104,7 @@ class TabBarComponent extends Component {
                     longitudeDelta: 0.421,
                 }
             }),
-            (positionError) => console.error("TabBarComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
+            (positionError) => {}
         );
 
         // Continually update current position (marker) as user's location changes
@@ -157,7 +157,6 @@ class TabBarComponent extends Component {
                     }
                     else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, openRequest)) {
                         acceptedRequests.push(openRequest);
-
                     }
                 }
 
@@ -203,7 +202,6 @@ class TabBarComponent extends Component {
 
     _renderContent = () => {
         let returnComponent;
-
         if (this.state.selectedTab == 'newJobsTab') {
             returnComponent = <NewJobsComponent title="New Jobs"
                                                 currentPosition={this.state.currentPosition}

@@ -6,13 +6,13 @@
 
 
 import React, { Component, PropTypes } from 'react';
-const ReactNative = require('react-native');
-const {
-    StyleSheet,
-    TabBarIOS,
-    Text,
-    View,
-} = ReactNative;
+
+import {
+  View,  
+  TabBarIOS,
+  Text,  
+  StyleSheet  
+} from 'react-native'
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 

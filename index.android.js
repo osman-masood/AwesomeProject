@@ -24,6 +24,7 @@ import TabBarComponent from "./components/TabBarComponent";
 import {ACCESS_TOKEN_STORAGE_KEY} from "./components/common";
 
 
+
 export default class AwesomeProject extends Component {
 
     constructor(props) {
@@ -105,6 +106,24 @@ class WaitScreen extends Component {
           />
         </View>
     }
+
+export default class stowk extends Component {
+  render() {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.welcome}>
+          Welcome to React Native!
+        </Text>
+        <Text style={styles.instructions}>
+          To get started, edit index.android.js
+        </Text>
+        <Text style={styles.instructions}>
+          Double tap R on your keyboard to reload,{'\n'}
+          Shake or press menu button for dev menu
+        </Text>
+      </View>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

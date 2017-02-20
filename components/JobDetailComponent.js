@@ -6,23 +6,28 @@
 
 
 import React, { Component, PropTypes } from 'react';
-import {generateOperableString, RequestStatusEnum, Request} from "./common";
-const ReactNative = require('react-native');
+import {updateDeliveryMutation, generateOperableString, RequestStatusEnum, Request} from "./common";
 import VehicleInspectionComponent from "./VehicleInspectionComponent";
+import DropOffObtain from "./DropOffObtain"
+
 const moment = require('moment');
 
-const {
-    StyleSheet,
-    TabBarIOS,
-    Text,
-    View,
-    Image,
-    Button,
-    TouchableHighlight,
-    Linking,
-    Alert,
-    ScrollView
-} = ReactNative;
+import {
+  View,
+  Linking,
+  TabBarIOS,
+  Button,
+  ScrollView,
+  Text,
+  Image,
+  Dimensions,
+  StyleSheet,
+  TouchableHighlight,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert
+} from 'react-native'
 
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
@@ -121,11 +126,14 @@ export default class JobDetailComponent extends Component {
         // });
     }
 
-    goToInspection() {
+    goToInspection() {        
+        let isDispatched = this.state.job.status === RequestStatusEnum.DISPATCHED;
         this.props.navigator.push({
-            component: VehicleInspectionComponent,
+            component: isDispatched ? VehicleInspectionComponent : DropOffObtain,
             navigationBarHidden: false,
             navigator: this.props.navigator,
+            rightButtonTitle: isDispatched ? null : 'Add addional Photos',
+            onRightButtonPress: DropOffObtain.prototype.callingRightButton,
             passProps: {
                 title: "Inspect",
                 navigator: this.props.navigator,
@@ -133,7 +141,7 @@ export default class JobDetailComponent extends Component {
                 uploadImageJPGS3: this.props.uploadImageJPGS3,
                 updateDeliveryMutation: this.props.updateDeliveryMutation
             }
-        });
+        });        
     }
 
     render() {
@@ -142,7 +150,7 @@ export default class JobDetailComponent extends Component {
             handler: () => this.props.navigator.pop()
         };
         const titleConfig = {
-            title: 'Inspect',
+            title: 'Inspect'
         };
 
         const request = this.props.request;
@@ -152,7 +160,7 @@ export default class JobDetailComponent extends Component {
                 title={titleConfig}
                 leftButton={leftButtonConfig}
             />
-            <ScrollView>
+            <ScrollView style={{height: Dimensions.get('window').height - 80}}>
                 <View style={styles.topBox}>
                     <Image source={require('../assets/profle@3x.png')} />
                     <Text>{request.shipper.name}</Text>
@@ -218,12 +226,15 @@ export default class JobDetailComponent extends Component {
                         </View>
                     </View>
                     <View>
-                        <TouchableHighlight style={{backgroundColor: '#26C6DA', padding: 5, width: 300, height: 30, marginLeft: 6}}
+                        <TouchableHighlight style={{backgroundColor: '#26C6DA',
+                        padding: 5, 
+                        height: 30, 
+                        marginLeft: 20,
+                         alignItems: "center",
+                        width: Dimensions.get('window').width-40}}
                                             onPress={this.goToInspection.bind(this)}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13,}}>
-                                TAP TO START
-                                {(request.status === RequestStatusEnum.DISPATCHED) ? ' PICK UP ' : ' DROP OFF '}
-                                INSPECTION
+                            <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13}}>
+                                {(request.status === RequestStatusEnum.DISPATCHED) ? 'TAP TO START PICK UP INSPECTION' : 'OBTAIN DROP OFF SIGNATURE'}
                             </Text>
                         </TouchableHighlight>
                     </View>

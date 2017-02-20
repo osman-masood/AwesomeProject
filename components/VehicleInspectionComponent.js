@@ -4,26 +4,36 @@
 
 
 import React, { Component, PropTypes } from 'react';
-import {generateOperableString, RequestStatusEnum} from "./common";
-import BackgroundTimer from 'react-native-background-timer';
-const ReactNative = require('react-native');
-
+import {
+    generateOperableString, 
+    RequestStatusEnum, 
+    DeliveryStatusEnum,
+    updateRequestStatus,
+    updateDeliveryPickup} from "./common";
+import ImageViewer from 'react-native-image-zoom-viewer';
 var moment = require('moment');
 import Camera from 'react-native-camera';
 import Sketch from 'react-native-sketch';
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 
-const {
-    StyleSheet,
-    Text,
-    View,
-    Image,
-    TouchableHighlight,
-    TouchableOpacity,
-    Alert,
-    Dimensions,
-    Modal,
-    TextInput
-} = ReactNative;
+import {
+  View,
+  PickerIOS,
+  Linking,
+  TabBarIOS,
+  Button,
+  ScrollView,
+  Text,
+  Image,
+  Dimensions,
+  StyleSheet,
+  TouchableHighlight,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert
+} from 'react-native'
 
 
 export default class VehicleInspectionComponent extends Component {
@@ -37,18 +47,25 @@ export default class VehicleInspectionComponent extends Component {
         super(props);
         this.state = {
             job: this.props.request,
-            cameraModalOpen: true,
+            cameraModalOpen: true, // <--
             sketchModalOpen: false,
             customerModelOpen: false,
             photos: [],
             step: 1,
-            showResults: false
+            showResults: false, // <-
+            notesModelOpen: false
         };
         this.onReset = this.onReset.bind(this);
         this.onSave = this.onSave.bind(this);
         this.onUpdate = this.onUpdate.bind(this);
         this.tookPicture = this.tookPicture.bind(this);
     }
+
+    componentWillMount() {
+        if (this.state.job.deliveries.edges.length == 0) {
+            console.warn("Can't process your request");
+        }
+    }    
 
     updatePhotos(photos) {
         this.setState({
@@ -60,84 +77,71 @@ export default class VehicleInspectionComponent extends Component {
         console.log('The drawing has been cleared!');
     }
 
+    onUpdate(base64Image) {
+        this.setState({ 
+            encodedSignature: base64Image 
+        });
+    }
+
+    gotSignature(base64Image) {
+        this.setState({
+            signatureImage: base64Image
+        });
+    }
+
     onSave() {
+        let that = this;
         this.sketch.saveImage(this.state.encodedSignature)
-            .then((data) => {
-            console.log(data.path);
+            .then((data) => {            
                 let photos = this.state.photos;
                 photos.push({
-                    step: this.state.step,
+                    step: that.state.step,
                     path: data.path,
-                    notes: this.state.noteText
+                    notes: that.state.noteText
                 });
 
-                let new_step = this.state.step + 1;
-                this.setState({
+                let new_step = that.state.step + 1;                
+                that.sketch.clear();
+                that.setState({
                     photos: photos,
                     step: new_step,
                     cameraModalOpen: new_step <= 4,
                     sketchModalOpen: false,
-                    showResults: new_step == 5
+                    showResults: new_step == 5,
+                    usedPhoto: null
                 });
+                console.log("photos onSave", this.state.photos);
             })
             .catch((error) => console.error(error));
     }
 
-    addNote(event) {
-        console.log('addNoteResult: ', event.nativeEvent.text);
-        this.setState({
-            noteText: event.nativeEvent.text
-        });
-    }
-
-    onUpdate(base64Image) {
-        this.setState({ encodedSignature: base64Image });
-    }
+    addNote(e) {
+        this.noteText = e;
+    }    
 
     signed() {
         var that = this;
-
-        that.props.updateDeliveryMutation(
-            that.state.job._id,
-            that.state.photos,
-            that.state.customerName,
-            response.body.postResponse.location
-        ).then(response => {
-            that.setState({
-                customerModelOpen: false
-            });
-            that.props.navigator.popN(2);
-        }).catch(e => {
-            Alert.alert('Could not save request details',
-                e.message,
-                [
-                    {
-                        text: 'Ok',
-                        onPress: () => {
-                            that.setState({
-                                customerModelOpen: false
-                            });
-                        }
-                    }
-                ]);
-        });
-
-        this.sketch.saveImage(this.state.encodedSignature)
-            .then((data) => {
-                that.props.uploadImageJPGS3(data.path).then(response => {
-                    that.props.updateDeliveryMutation(
-                        that.state.job._id,
-                        that.state.photos,
-                        that.state.customerName,
-                        response.body.postResponse.location
-                    ).then(response => {
-                        that.setState({
-                            customerModelOpen: false
-                        });
-                        that.props.navigator.popN(2);
-                    }).catch(e => {
-                        Alert.alert('Could not save request details',
-                            e.message,
+        this.sketch.saveImage(this.state.signatureImage).then( (data) => {
+            that.props.uploadImageJPGS3(data.path).then(response => {
+                var photos = that.state.photos.map( (item) => {
+                        return {photoUrl: item.photoUrl, note: item.note}; 
+                    } )
+                    photos = JSON.stringify(photos).replace(/\"([^(\")"]+)\":/g, "$1:");
+                    console.log('photos.map', photos);
+                updateDeliveryPickup(
+                    that.state.job,
+                    photos,
+                    that.state.customerName,
+                    response.body.postResponse.location
+                ).then(response => {
+                    that.setState({
+                        customerModelOpen: false
+                    });
+                    global.evente.emit('re-send-my-request', {reload: true});
+                    that.props.navigator.popN(2);
+                }).catch(e => {
+                    Alert.alert('Could not save request details',
+                        e.message,
                         [
                             {
                                 text: 'Ok',
@@ -148,29 +152,37 @@ export default class VehicleInspectionComponent extends Component {
                                 }
                             }
                         ]);
-                    })
-
-                });
-            })
-            .catch((error) => console.error(error));
-
-
+                })
+            });
+        });
     }
 
     tookPicture(path) {
-        console.log('paththing: ', path);
-        this.setState({
-            usedPhoto: path,
-            cameraModalOpen: false,
-            sketchModalOpen: true,
-        });
+        let that = this;
+        that.setState({            
+                usedPhoto: path,
+                cameraModalOpen: false,
+                sketchModalOpen: true,
+                noteText: null
+            });                
+        window.setTimeout(function() {
+            that.sketch.clear();
+            that.setState({
+                encodedSignature: null
+            })
+        }, 200);
     }
     viewCustomerModal() {
+        if (this.sketch) {
+            this.sketch.clear();
+        }
         this.setState({
+            encodedSignature: null,
             customerModelOpen: true,
             cameraModalOpen: false,
-            sketchModalOpen: false
-        });
+            sketchModalOpen: false,
+            usedPhoto:null
+        });        
     }
 
     addCustomerName(event) {
@@ -193,22 +205,16 @@ export default class VehicleInspectionComponent extends Component {
             animationType={"fade"}
             transparent={false}
             visible={this.state.cameraModalOpen}>
-                <CameraView step={this.state.step} takePicture={this.tookPicture}/>
+                <CameraView step={this.state.step} takePicture={this.tookPicture} navigator={this.props.navigator}/>
             </Modal>
         );
 
         let sketchView = (<Modal
+            style={{backgroundColor:'#000'}}
             animationType={"fade"}
             transparent={false}
             visible={this.state.sketchModalOpen}>
                 <View style={styles.container}>
-                    <Text style={styles.instructions}>Mark damages</Text>
-                    <TextInput
-                        onEndEditing={this.addNote.bind(this)}
-                        style={{width: Dimensions.get("window").width-60, height: 40, borderWidth: 1, marginLeft: 30}}
-                        placeholder="Add notes here"
-                        value={this.state.text}
-                    />
                     <Sketch
                         fillColor="#f5f5f5"
                         imageFilePath={this.state.usedPhoto}
@@ -219,20 +225,100 @@ export default class VehicleInspectionComponent extends Component {
                         ref={(sketch) => { this.sketch = sketch; }}
                         style={styles.sketch}
                     />
-                    <TouchableOpacity
-                        disabled={!this.state.encodedSignature}
-                        style={styles.button}
-                        onPress={this.onSave}
-                    >
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
+                    <View style={{
+                        flexDirection: 'row',
+                        marginTop: 20,
+                        borderWidth:0.1,
+                        height: 50,
+                        flexGrow: 0,
+                        backgroundColor:'#000',
+                        justifyContent: 'space-around'
+                    }}>
+                        
+                        <TouchableOpacity 
+                            onPress={() => {
+                                this.setState({
+                                    notesModelOpen: true,
+                                    sketchModalOpen: false
+                                })
+                            }}
+                            style={{width:50, height:50, marginLeft:10}}>
+                            <Image source={require('../assets/notes-icon.png')}/>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                        onPress={()=> {
+                            //
+                            this.setState({
+                                cameraModalOpen: true,
+                                sketchModalOpen: false,
+                                noteText: null
+                            })
+                        }}
+                        style={{width:50, height:50, marginLeft:10}}>
+                            <Image source={require('../assets/retake-icon.png')}/>
+                        </TouchableOpacity>                                                
+                        <TouchableOpacity
+                            disabled={!this.state.encodedSignature}
+                            style={[styles.button, {width: 50, marginLeft:10}]}
+                            onPress={this.onSave}>
+                            <Image source={require('../assets/next-icon.png')}/>
+                        </TouchableOpacity>
+                    </View>
             </View>
         </Modal>);
+
+        let notesView = (<Modal visible={this.state.notesModelOpen}>
+            <View style={{
+                        flexDirection: 'row',
+                        marginTop: 20,
+                        height: 50,
+                        flexGrow: 0,
+                        justifyContent: 'space-between'
+                    }}>
+                        
+                        <TouchableOpacity 
+                            onPress={() => {
+                                this.setState({
+                                    notesModelOpen: false,
+                                    sketchModalOpen:true,
+                                    noteText: ''
+                                })
+                            }}
+                            style={{width:50, height:50, marginLeft:10, marginTop:10}}>
+                            <Image source={require('../assets/back-icon.png')}/>
+                        </TouchableOpacity>                                                                     
+                        <TouchableOpacity
+                            style={[styles.button, {width: 60, marginLeft:10}]}
+                            onPress={() => {                                
+                                this.setState({
+                                    notesModelOpen: false,
+                                    sketchModalOpen:true,
+                                    noteText: this.noteText
+                                })
+                                
+                            }}>
+                            <Text style={{fontSize:18, marginTop:10, marginRight:10}}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{flex:1, flexDirection:'row', justifyContent: 'center',}}>
+                    <TextInput
+                        editable = {true}
+                        maxLength = {400}
+                        multiline={true}
+                        defaultValue={this.state.noteText}
+                        style={{borderWidth:1, width:300, height:240}}
+                        placeholder="Comments Box"
+                        returnKeyType="done"
+                        onChangeText={this.addNote.bind(this)}>
+                    </TextInput>
+                    </View>
+        </Modal>)
 
         let customerView = (<Modal
         animationType={"fade"}
         transparent={false}
         visible={this.state.customerModelOpen}>
+            
             <View style={{height:120, marginTop:200}}>
                 <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'center'}}>
                     <TextInput
@@ -246,16 +332,22 @@ export default class VehicleInspectionComponent extends Component {
                         strokeColor="#000000"
                         strokeThickness={2}
                         onReset={this.onReset}
-                        onUpdate={this.onUpdate}
-                        ref={(sketch) => { this.sketch = sketch; }}
+                        onUpdate={this.gotSignature.bind(this)}
+                        imageFilePath=""
+                        ref={(sketch) => { 
+                            this.sketch = sketch;
+                            if (!this.cleared) {
+                                sketch.clear();
+                                this.cleared = true;
+                            }
+                        }}
                         style={{width: 200, height: 200, marginTop:20, marginBottom:20, marginLeft: (Dimensions.get("window").width/2)-100}} />
                     <Text style={{textAlign:'center', color: '#cccccc', margin:10}}>I agree with the drivers assessment of the vehicle(s). </Text>
                     <TouchableOpacity
-                        disabled={!this.state.encodedSignature}
-                        style={[styles.button, {width: 100, marginLeft: (Dimensions.get("window").width/2)-50}]}
-                        onPress={this.signed.bind(this)}
-                    >
-                        <Text style={styles.buttonText}>Agrees</Text>
+                        disabled={!this.state.signatureImage}
+                        style={{width: 100, marginLeft: (Dimensions.get("window").width/2)-50}}
+                        onPress={this.signed.bind(this)}>
+                        <Text style={[styles.buttonText, {backgroundColor: '#000', textAlign:'center'}]}>Agrees</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -267,6 +359,7 @@ export default class VehicleInspectionComponent extends Component {
         }
 
         return (<View>
+            {notesView}
             {cameraView}
             {sketchView}
             {moreView}
@@ -308,6 +401,13 @@ class CameraView extends Component{
                 style={styles.preview}
                 aspect={Camera.constants.Aspect.fill}
                 captureTarget={Camera.constants.CaptureTarget.temp}>
+                <TouchableOpacity 
+                            style={{marginLeft: 10, marginTop:20, width:30}}
+                            onPress={() => {
+                                this.props.navigator.popN(1);
+                            }}>
+                            <Image source={require('../assets/close-icon.png')}/>
+                </TouchableOpacity>
                 <Image source={imgs[this.props.step]} style={styles.previewOverlay} resizeMode="stretch"/>
                 <Text style={styles.capture} onPress={this.takePicture.bind(this)}>
                     [CAPTURE PHOTO FOR {steps_text[this.props.step]} {this.props.step} OF 4]
@@ -323,54 +423,131 @@ class ResultsView extends Component {
     }
 
     componentWillMount() {
-        console.warn('componentWillMount for ResultsView');
         var photos = this.props.photos;
         // start uploading photos to S3
         this.setState({
             buttonText: 'Uploading photos ... wait',
-            buttonDisabled: true
+            buttonDisabled: true,
+            photos: photos
         });
         let new_photos = [];
         var counter = 0;
+        this.sketch = null;
 
         photos.map((photo) => {
             this.props.uploadImageJPGS3(photo.path).then(response => {
                 counter++;
-
                 let new_photo = {
                     photoUrl: response.body.postResponse.location,
-                    note: photo.note
+                    path:response.body.postResponse.location,
+                    note: photo.notes
                 };
-                new_photos.push(new_photo);
 
+                new_photos.push(new_photo);
                 if (counter == photos.length) {
-                    console.log('final photos', new_photos);
                     this.props.updatePhotos(new_photos);
                     this.setState({
-                        buttonText: 'Customer: I agree with inspection',
-                        buttonDisabled: false
+                        //buttonText: 'Customer: I agree with inspection',
+                        buttonText: 'REVIEW BOL WITH CUSTOMER',
+                        buttonDisabled: false,
+                        buttonAction: this.reviewingBolWithCustomer.bind(this)
                     });
                 }
                 return new_photo;
-            });
+            });            
         });
     }
 
+    viewImage(img, idx) {
+        this.setState({
+            view: 'photo',
+            selectedImage: img,
+            selectedImageNumber: idx,
+            footerText: img.note
+        });
+    }
+
+    unViewImage() {
+        this.setState({
+            view: null
+        })
+    }
+
+    reviewingBolWithCustomer() {
+        let func = this.props.viewCustomerModal;
+        this.setState({
+            customerIsNotHere: true,
+            buttonText: 'Customer: I agree with inspection',
+            buttonAction: func
+        })
+    }
+    
     render() {
-
-        var photos = this.props.photos;
-
+        //var photos = this.props.photos;        
+        var photos = this.state.photos;
         var cars = this.props.job.vehicles.edges;
-        return (
-            <View style={{marginTop: 44}}>
+        var _this = this;
+        if ( this.state.view == 'photo' ) {
+            var photos_for_viewer = this.state.photos.map((img) => {
+                return {'url': img.path}
+            })            
+            return (
+              <Modal visible={true} transparent={false}>     
+              <TouchableHighlight onPress={this.unViewImage.bind(this)}>
+                    <Text style={{paddingTop:20, backgroundColor:'#000000', color: '#FFFFFF', zIndex:1111}}>Close</Text>
+                </TouchableHighlight>           
+                <ImageViewer 
+                height={400}
+                imageUrls={photos_for_viewer}
+                onChange={(idx) => {_this.setState({footerText: _this.state.photos[idx].note})}}
+                saveToLocalByLongPress={false}
+                index={_this.state.selectedImageNumber}
+                />
+                <Text style={{
+                    backgroundColor: '#000000', 
+                    position:'absolute', 
+                    color:'#FFFFFF', 
+                    bottom:0,
+                    width: Dimensions.get("window").width,
+                    height: 30,
+                    textAlign: 'center'}}>{_this.state.footerText}</Text>
+            </Modal>
+            )
+        }
+
+        var NoCustomerButton;
+        var customerReviewingDist;
+        if (this.state.customerIsNotHere) {
+            NoCustomerButton = (<TouchableHighlight style={{backgroundColor: '#F4511E', padding: 5, height: 30, margin:20}}>
+                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Customer is not available </Text>
+                        </TouchableHighlight>);
+            customerReviewingDist =(<View style={{height: 60}}>
+                            <View style={{flex: 2, flexDirection: 'row'}}>
+                                <View style={{marginTop: 10, width: 200}}>
+                                    <Text>Destination Contact:</Text>
+                                    <Text style={styles.textColor}>{this.props.job.destination.contactName}</Text>
+                                    <Text style={styles.textColor}>{this.props.job.destination.contactPhone}</Text>
+                                </View>
+                                <View>
+                                    <Button title="EDIT" onPress={() => {console.warn('is there an endpoint for this?')}} />
+                                </View>
+                            </View>
+                        </View>)
+        }
+
+        return (            
+            <ScrollView style={{height: Dimensions.get("window").height-24}}>
                 <Text style={{fontSize:18, height:25, color: '#CCCCCC', marginTop:35, textAlign: 'center'}}>Review BOL</Text>
                 <View>
                     <View style={{height: 75, marginTop: 5, marginLeft: 20, marginRight: 20}}>
                         <View style={{flex: 4, flexDirection: 'row', alignItems:'center', justifyContent: 'space-between'}}>
                         {photos.map((img, idx) => {
-                            return <Image style={{width: 70, height: 70}}
-                                          key={idx}
-                                          source={{uri: img.path}} />
+                            return (
+                                <TouchableHighlight key={idx} onPress={() => this.viewImage(img, idx)}>
+                                    <Image style={{width: 70, height: 70}}
+                                            key={idx}
+                                            source={{uri: img.path}} />
+                            </TouchableHighlight>)
                         })}
                         </View>
                     </View>
@@ -409,26 +586,23 @@ class ResultsView extends Component {
                             <Text style={styles.textColor}>{this.props.job.destination.address}</Text>
                         </View>
                         <View style={{marginTop: 10}}>
-                            <Text>Origin Contact:</Text>
+                            <Text>Destination Contact:</Text>
                             <Text style={styles.textColor}>{this.props.job.destination.contactName}</Text>
                             <Text style={styles.textColor}>{this.props.job.destination.contactPhone}</Text>
                         </View>
+                        {customerReviewingDist}
                     </View>
                     <View style={{marginTop: 20}}>
                         <TouchableHighlight
                             disabled={this.state.buttonDisabled}
                             style={{backgroundColor: '#8BC34A', padding: 5, height: 40, margin:20, marginBottom:2}}
-                            onPress={this.props.viewCustomerModal}
-
-                        >
+                            onPress={_this.state.buttonAction}>
                             <Text style={{color: '#FFFFFF', textAlign: 'center'}}>{this.state.buttonText}</Text>
                         </TouchableHighlight>
-                        <TouchableHighlight style={{backgroundColor: '#F4511E', padding: 5, height: 30, margin:20}}>
-                            <Text style={{color: '#FFFFFF', textAlign: 'center'}}>Customer is not available </Text>
-                        </TouchableHighlight>
+                        {NoCustomerButton}
                     </View>
                 </View>
-            </View>
+            </ScrollView>
         )
     }
 }
@@ -457,7 +631,8 @@ var styles = StyleSheet.create({
     },
     container: {
         padding: 0,
-        marginTop: 20
+        marginTop: 20,
+        backgroundColor: '#000'
     },
     instructions: {
         fontSize: 16,
@@ -465,16 +640,10 @@ var styles = StyleSheet.create({
         textAlign: 'center',
     },
     sketch: {
-        height: Dimensions.get("window").height-150, // Height needed; Default: 200px
-        width: Dimensions.get("window").width-60,
-        marginLeft: 30,
-        marginBottom: 5
-    },
-    button: {
-        alignItems: 'center',
-        backgroundColor: '#111111',
-        padding: 20,
-    },
+        height: Dimensions.get("window").height-100, // Height needed; Default: 200px
+        width: Dimensions.get("window").width,
+        marginTop:5
+    },    
     buttonText: {
         color: '#ffffff',
         fontSize: 16,

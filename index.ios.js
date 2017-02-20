@@ -21,10 +21,11 @@ import {
 import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 //noinspection JSUnresolvedVariable
 import TabBarComponent from "./components/TabBarComponent";
-import {ACCESS_TOKEN_STORAGE_KEY} from "./components/common";
+import VehicleInspectionComponent from './components/VehicleInspectionComponent'
+import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
 
 
-export default class AwesomeProject extends Component {
+export default class stowk extends Component {
 
     constructor(props) {
         super(props);
@@ -50,12 +51,13 @@ class MainScreen extends Component {
     constructor(props) {
         super(props);
     }
+
     componentWillMount() {
         this.setState({
             token: null,
             wait: true
         });
-        this.loadAccessToken().then((result) => {
+        loadAccessToken().then((result) => {
             this.setState({
                 token: result,
                 wait: false
@@ -65,20 +67,10 @@ class MainScreen extends Component {
 
     componentWillReceiveProps(nextProps) {
 
-    }
-
-    loadAccessToken = async () => {
-        let retVal;
-        try {
-            retVal = await AsyncStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-        } catch (e) {
-            console.error("loadAccessToken: Error getting stowkAccessToken", e);
-            retVal = null;
-        }
-        return retVal;
-    };
+    }    
 
     render() {
+        //if (!this.state) return null;
         let retComponent;
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
@@ -121,4 +113,4 @@ const styles = StyleSheet.create({
     }
 });
 
-AppRegistry.registerComponent('AwesomeProject', () => AwesomeProject);
+AppRegistry.registerComponent('stowk', () => stowk);

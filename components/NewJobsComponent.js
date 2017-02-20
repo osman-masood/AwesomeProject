@@ -8,23 +8,28 @@
 
 //noinspection JSUnresolvedVariable
 import React, { Component, PropTypes } from 'react';
-import {RequestStatusEnum, haversineDistanceToRequest, Request, User} from "./common";
+import {RequestStatusEnum, fetchCurrentUserAndLocationRequests, haversineDistanceToRequest, Request, User} from "./common";
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 const deepcopy = require("deepcopy");
 
-const ReactNative = require('react-native');
-
-const {
-    StyleSheet,
-    Text,
-    View,
-    Linking,
-    Modal,
-    TouchableHighlight,
-    PickerIOS,
-    TextInput,
-    Button,
-    ScrollView,
-} = ReactNative;
+import {
+  View,
+  PickerIOS,
+  Linking,
+  TabBarIOS,
+  Button,
+  ScrollView,
+  Text,
+  Image,
+  Dimensions,
+  StyleSheet,
+  TouchableHighlight,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert
+} from 'react-native'
 
 import JobDetailComponent from './JobDetailComponent';
 //noinspection JSUnresolvedVariable
@@ -165,6 +170,21 @@ export default class NewJobsComponent extends Component {
             currentPosition: deepcopy(nextProps.currentPosition)
         });
     }
+
+    // componentWillMount() {
+    //     fetchCurrentUserAndLocationRequests(null, this.state.currentPosition.latitude,
+    //                                              this.state.currentPosition.longitude, 6000)
+    //         .then(response => {
+    //             console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
+    //
+    //             let openPreferredRequests = response['data']['viewer']['carrierRequests'];
+    //             let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
+    //         this.setState({
+    //             openNonPreferredRequests: openNonPreferredRequests,
+    //             openPreferredRequests: openPreferredRequests
+    //         })
+    //     })
+    // }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -443,6 +463,7 @@ export default class NewJobsComponent extends Component {
 
     listView() {
         // Get list of dealer jobs
+        console.log("--->",this.state.openPreferredRequests, this.state.openNonPreferredRequests);
         let dealerJobsContainer = this.dealerJobsContainer();
 
         // Get list of network jobs
@@ -634,6 +655,7 @@ export default class NewJobsComponent extends Component {
 
         // API call to accept job
         this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
+            global.evente.emit('re-send-my-request', {reload: true});
             console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 
@@ -712,10 +734,10 @@ export default class NewJobsComponent extends Component {
             {/* Call, Accept/Decline buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
                 { phoneNumberLambda(request) }
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.setAcceptModalVisible(true, request)}>
+                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={45} onPress={ () => this.setAcceptModalVisible(true, request)}>
                     <Text style={{fontSize: 14}}>Accept</Text>
                 </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30   } onPress={ () => this.setDeclineModalVisible(true, request)}>
+                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>
                     <Text style={{fontSize: 14}}>Decline</Text>
                 </Icon.Button>
                 {/*

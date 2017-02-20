@@ -11,26 +11,27 @@ import React, { Component, PropTypes } from 'react';
 import {RequestStatusEnum, fetchGraphQlQuery, generateOperableString, haversineDistanceToRequest, Request} from "./common";
 import BackgroundTimer from 'react-native-background-timer';
 import JobDetailComponent from "./JobDetailComponent";
-
-
 const deepcopy = require("deepcopy");
+import EventEmitter from 'EventEmitter'
+global.evente = new EventEmitter;
 
-const ReactNative = require('react-native');
-const {
-    StyleSheet,
-    Text,
-    View,
-    Linking,
-    Modal,
-    TouchableHighlight,
-    PickerIOS,
-    TextInput,
-    ScrollView,
-    Button,
-    Dimensions,
-    Image,
-    Alert
-} = ReactNative;
+import {
+  View,
+  Linking,
+  TabBarIOS,
+  Button,
+  ScrollView,
+  Text,
+  Image,
+  Dimensions,
+  StyleSheet,
+  TouchableHighlight,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+  PickerIOS
+} from 'react-native'
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
@@ -116,13 +117,52 @@ export default class MyJobsComponent extends Component {
     }
 
     componentWillMount() {
-        this.props.acceptedRequests().then( response => {
-            this.setState({
-                acceptedRequests: response['data']['viewer']['locationRequests']
-            })
-        })
+
+        let that = this;
+
+        this.getMyjoblist = this.getMyjoblist.bind(this);
+        this.getMyjoblist();
+        global.evente.addListener('re-send-request', function(e) {
+            that.getMyjoblist();
+        });
     }
 
+    getMyjoblist() {
+        let that = this;
+        this.props.acceptedRequests().then( response => {
+
+            let currentCarrierId = response['data']['viewer']['me']['carrier']['_id'];
+            let acceptedRequests = [];
+
+            for (let item in response['data']['viewer']['locationRequests']) {
+                let r = response['data']['viewer']['locationRequests'][item];
+               // console.warn(RequestStatusEnum.DISPATCHED, r.status);
+                console.log(r._id, r);
+                if ( (r.deliveries.edges.length > 0) && (r.status === RequestStatusEnum.IN_PROGRESS || r.status === RequestStatusEnum.DISPATCHED)) {
+                    console.log("LOGS: ", r.status, r.deliveries.edges[0].node.carrierId, currentCarrierId);
+
+                }
+                if (that.hasCarrierAcceptedRequest(currentCarrierId, r)) {
+                    acceptedRequests.push(r);
+                }
+            }
+            this.setState({
+                acceptedRequests: acceptedRequests
+            })
+        });
+    }    
+
+    hasCarrierAcceptedRequest(carrierId: string, request:Request) {
+        // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.
+        let ret;
+        if ((request.status === RequestStatusEnum.DISPATCHED || request.status === RequestStatusEnum.IN_PROGRESS) &&
+            (request.deliveries && request.deliveries.edges && request.deliveries.edges.length > 0)) {
+
+            const deliveryCarrierIds = request.deliveries.edges.map((edge) => edge.node.carrierId);
+            ret = deliveryCarrierIds.indexOf(carrierId) !== -1;
+        }
+        return ret;
+    }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -199,7 +239,7 @@ export default class MyJobsComponent extends Component {
 
         let returnView;
         if (!allJobsContainer) {
-            returnView = <View><Text>No jobs found! Try again later!</Text></View>
+            returnView = <View><Text style={{textAlign:'center'}}>Loading jobs ...</Text></View>
         } else {
             returnView = <ScrollView>{[subTabs, allJobsContainer]}</ScrollView>;
         }
@@ -378,6 +418,11 @@ export default class MyJobsComponent extends Component {
 
         const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
 
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 0
+        };
         // Start a timer that runs continuous after 20000 milliseconds
         if (isPickUp) {
             const intervalId = BackgroundTimer.setInterval(() => {
