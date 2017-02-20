@@ -67,7 +67,7 @@ export default class EnterCodeComponent extends Component {
                     AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
                     console.warn(accessToken);
                     this.setState({submittingCodeState: 2});
-                    this.props.navigator.push({
+                    this.props.navigator.push({ // push the next screen
                         title: 'New Jobs',
                         component: TabBarComponent,
                         navigator: this.props.navigator,

@@ -63,7 +63,7 @@ class TabBarComponent extends Component {
     constructor(props) {
         super(props);
         //noinspection UnnecessaryLocalVariableJS
-        let thisState: {
+        let thisState: { // flow syntax
             selectedTab: string,
             notificationCount: number,
             presses: number,
@@ -207,7 +207,7 @@ class TabBarComponent extends Component {
         if (this.state.selectedTab == 'newJobsTab') {
             returnComponent = <NewJobsComponent title="New Jobs"
                                                 currentPosition={this.state.currentPosition}
-                                                openNonPreferredRequests={this.state.openNonPreferredRequests}
+                                                openNonPreferredRequests={this.state.openNonPreferredRequests} // requests are shipments
                                                 openPreferredRequests={this.state.openPreferredRequests}
                                                 navigator={this.props.navigator}
                                                 acceptRequestFunction={this.acceptRequestFunction}

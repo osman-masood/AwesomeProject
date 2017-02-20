@@ -36,7 +36,7 @@ export default class EnterPhoneNumberComponent extends Component {
             submittingPhoneNumberState: 0};  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
     }
 
-    _onForward() {
+    _onForward() { // convention: _ = private
         // Prepend +1 to phone number if not there
         let phoneNumber = this.state.phone;
         if (phoneNumber.substring(0, 2) !== "+1") {
