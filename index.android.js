@@ -11,7 +11,7 @@ import {
     StyleSheet,
     Text,
     View,
-    NavigatorIOS,
+    Navigator,
     TextInput,
     Button,
     AsyncStorage,
@@ -21,11 +21,12 @@ import {
 import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 //noinspection JSUnresolvedVariable
 import TabBarComponent from "./components/TabBarComponent";
-import {ACCESS_TOKEN_STORAGE_KEY} from "./components/common";
+import VehicleInspectionComponent from './components/VehicleInspectionComponent'
+import TabViewComponent from "./components/TabViewComponent";
+import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
 
 
-
-export default class AwesomeProject extends Component {
+export default class stowk extends Component {
 
     constructor(props) {
         super(props);
@@ -33,13 +34,17 @@ export default class AwesomeProject extends Component {
 
     render() {
         return (
-            <NavigatorIOS
+            <Navigator
                 initialRoute={{
                     component: MainScreen,
                     title: '',
                     navigationBarHidden: true,
                     passProps: {title: ""}
                     }}
+                renderScene={ (route, navigator) =>
+                    // WHAT TO PUT HERE?
+                    <MainScreen navigator={navigator} />
+                }
                 style={{flex: 1}}
             />
         );
@@ -51,12 +56,13 @@ class MainScreen extends Component {
     constructor(props) {
         super(props);
     }
+
     componentWillMount() {
         this.setState({
             token: null,
             wait: true
         });
-        this.loadAccessToken().then((result) => { // if logged in before, set token
+        loadAccessToken().then((result) => {
             this.setState({
                 token: result,
                 wait: false
@@ -68,27 +74,18 @@ class MainScreen extends Component {
 
     }
 
-    loadAccessToken = async () => {
-        let retVal;
-        try {
-            retVal = await AsyncStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-        } catch (e) {
-            console.error("loadAccessToken: Error getting stowkAccessToken", e);
-            retVal = null;
-        }
-        return retVal;
-    };
-
-    render() { // login
+    render() {
+        //if (!this.state) return null;
         let retComponent;
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
         } else {
-            if (this.state.token == null) {
-                retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
-            } else {
-                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
-            }
+            retComponent = <TabViewComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
+            // if (this.state.token == null) {
+            //     retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
+            // } else {
+            //     retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
+            // }
         }
         return retComponent;
     }
@@ -98,32 +95,14 @@ class WaitScreen extends Component {
 
     render() {
         return <View style={styles.screenOverlay}>
-          <Text style={{textAlign:'center'}}>Loading Stowk</Text>
-          <ActivityIndicator
-              animating={true}
-              style={[styles.centering, {height: 80}]}
-              size="large"
-          />
+            <Text style={{textAlign:'center'}}>Loading Stowk</Text>
+            <ActivityIndicator
+                animating={true}
+                style={[styles.centering, {height: 80}]}
+                size="large"
+            />
         </View>
     }
-
-export default class stowk extends Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.android.js
-        </Text>
-        <Text style={styles.instructions}>
-          Double tap R on your keyboard to reload,{'\n'}
-          Shake or press menu button for dev menu
-        </Text>
-      </View>
-    );
-  }
 }
 
 const styles = StyleSheet.create({
@@ -140,4 +119,4 @@ const styles = StyleSheet.create({
     }
 });
 
-AppRegistry.registerComponent('AwesomeProject', () => AwesomeProject);
+AppRegistry.registerComponent('stowk', () => stowk);

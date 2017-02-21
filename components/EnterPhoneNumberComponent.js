@@ -10,7 +10,7 @@ import {
     StyleSheet,
     Text,
     View,
-    NavigatorIOS,
+    Navigator,
     TextInput,
     Button
 } from 'react-native';
