@@ -23,6 +23,7 @@ import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import TabBarComponent from "./components/TabBarComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
 import TabViewComponent from "./components/TabViewComponent";
+import BottomBarComponent from "./components/BottomBarComponent";
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
 
 
@@ -42,8 +43,8 @@ export default class stowk extends Component {
                     passProps: {title: ""}
                     }}
                 renderScene={ (route, navigator) =>
-                    // WHAT TO PUT HERE?
-                    <MainScreen navigator={navigator} />
+                    // CHECK IF THIS IS CORRECT
+                    <MainScreen navigator={navigator} {...route.passProps} />
                 }
                 style={{flex: 1}}
             />
@@ -80,7 +81,7 @@ class MainScreen extends Component {
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
         } else {
-            retComponent = <TabViewComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
+            retComponent = <BottomBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
             // if (this.state.token == null) {
             //     retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
             // } else {
