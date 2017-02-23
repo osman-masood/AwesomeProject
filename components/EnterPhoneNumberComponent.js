@@ -18,6 +18,7 @@ import {
 import { getAccessTokenFromResponse } from './common';
 
 import EnterCodeComponent from "./EnterCodeComponent";
+import { Actions } from 'react-native-router-flux';
 
 
 export default class EnterPhoneNumberComponent extends Component {
@@ -61,12 +62,14 @@ export default class EnterPhoneNumberComponent extends Component {
                 const accessToken = responseJsonAndAccessToken[1];
 
                 this.setState({submittingPhoneNumberState: 2});
+                window.console.log("before pushing enter code component");
                 this.props.navigator.push({
                     title: 'Enter Code',
                     component: EnterCodeComponent,
                     navigator: this.props.navigator,
                     navigationBarHidden: true,
-                    passProps: {accessToken: accessToken, title: 'Enter Code'}
+                    passProps: {accessToken: accessToken, title: 'Enter Code'},
+
                 });
             })
             .catch((error) => {
@@ -78,6 +81,7 @@ export default class EnterPhoneNumberComponent extends Component {
     render() {
         // TODO add states for loading & failed
         return (
+
             <View style={styles.container}>
                 <Text style={styles.welcome}>
                     Enter Phone Number
@@ -99,6 +103,7 @@ export default class EnterPhoneNumberComponent extends Component {
                     accessibilityLabel="Send code through SMS to log in"
                 />
             </View>
+
         );
     }
 }

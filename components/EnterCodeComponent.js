@@ -18,6 +18,7 @@ import {
 
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
+import TabAndroidComponent from './TabAndroidComponent';
 
 import { getAccessTokenFromResponse, ACCESS_TOKEN_STORAGE_KEY} from './common';
 
@@ -31,6 +32,7 @@ export default class EnterCodeComponent extends Component {
     };
 
     constructor(props) {
+        window.console.log("enter code constructor");
         super(props);
         console.info("EnterCodeComponent constructor with accessToken", props.accessToken, "title", props.title);
         this._onForward = this._onForward.bind(this);
@@ -69,7 +71,7 @@ export default class EnterCodeComponent extends Component {
                     this.setState({submittingCodeState: 2});
                     this.props.navigator.push({ // push the next screen
                         title: 'New Jobs',
-                        component: TabBarComponent,
+                        component: TabAndroidComponent,
                         navigator: this.props.navigator,
                         navigationBarHidden: true,
                         passProps: {accessToken: accessToken}
@@ -88,6 +90,7 @@ export default class EnterCodeComponent extends Component {
 
     render() {
         // TODO add states for loading & failed
+        window.console.log("inside enter code render");
         return (
             <View style={styles.container}>
                 <Text style={styles.welcome}>

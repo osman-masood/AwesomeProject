@@ -18,7 +18,9 @@
     "react-native-image-zoom-viewer": "^1.2.47",
     "react-native-maps": "0.13.0",
     "react-native-navbar": "1.6.0",
+    "react-native-router-flux": "^3.37.0",
     "react-native-sketch": "git+http://git@github.com/Janim007/react-native-sketch.git",
+    "react-native-tab-navigator": "^0.3.3",
     "react-native-tab-view": "0.0.56",
     "react-native-tabs": "1.0.9",
     "react-native-vector-icons": "4.0.0"

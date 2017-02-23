@@ -30,7 +30,8 @@ import {
   Modal,
   TextInput,
   Alert,
-  PickerIOS
+  PickerIOS,
+    Picker
 } from 'react-native'
 //noinspection JSUnresolvedVariable
 import NavigationBar from 'react-native-navbar';
@@ -344,18 +345,18 @@ export default class MyJobsComponent extends Component {
                 </View>
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
-                    <PickerIOS
-                        itemStyle={{fontSize: 25}}
+                    <Picker
+                        style={{fontSize: 25}}
                         selectedValue={this.state.cancelReason}
                         onValueChange={(cancelReason) => this.setState({cancelReason})}>
                         {CANCEL_REASONS.map((cancelReason) => (
-                            <PickerItemIOS
-                                key={cancelReason}
+                            <Picker.Item
+                                // key={cancelReason}
                                 value={cancelReason}
                                 label={cancelReason}
                             />
                         ))}
-                    </PickerIOS>
+                    </Picker>
                     <TextInput
                         style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
                         editable = {true}

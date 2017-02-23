@@ -24,8 +24,10 @@ import TabBarComponent from "./components/TabBarComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
 import TabViewComponent from "./components/TabViewComponent";
 import BottomBarComponent from "./components/BottomBarComponent";
+import EnterCodeComponent from "./components/EnterCodeComponent";
+import TabAndroidComponent from "./components/TabAndroidComponent";
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
-
+import {Scene, Router} from 'react-native-router-flux';
 
 export default class stowk extends Component {
 
@@ -34,6 +36,7 @@ export default class stowk extends Component {
     }
 
     render() {
+        //window.console.log("inside stowk render func");
         return (
             <Navigator
                 initialRoute={{
@@ -42,10 +45,7 @@ export default class stowk extends Component {
                     navigationBarHidden: true,
                     passProps: {title: ""}
                     }}
-                renderScene={ (route, navigator) =>
-                    // CHECK IF THIS IS CORRECT
-                    <MainScreen navigator={navigator} {...route.passProps} />
-                }
+                renderScene={this.renderScene.bind(this)}
                 style={{flex: 1}}
             />
         );
@@ -76,17 +76,21 @@ class MainScreen extends Component {
     }
 
     render() {
-        //if (!this.state) return null;
+        window.console.log("inside mainscreen render func");
+        if (!this.state) return null;
         let retComponent;
         if (this.state.wait) {
+            window.console.log("state is waiting");
             retComponent = <WaitScreen/>;
         } else {
-            retComponent = <BottomBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
-            // if (this.state.token == null) {
-            //     retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
-            // } else {
-            //     retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
-            // }
+            window.console.log("state token: " + this.state.token);
+            if (this.state.token == null) {
+                window.console.log("state token is null");
+                retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
+            } else {
+                window.console.log("calling tab android");
+                retComponent = <TabAndroidComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
+            }
         }
         return retComponent;
     }

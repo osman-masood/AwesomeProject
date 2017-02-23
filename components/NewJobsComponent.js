@@ -16,6 +16,7 @@ const deepcopy = require("deepcopy");
 import {
   View,
   PickerIOS,
+    Picker,
   Linking,
   TabBarIOS,
   Button,
@@ -548,18 +549,18 @@ export default class NewJobsComponent extends Component {
                 </View>
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
-                    <PickerIOS
-                        itemStyle={{fontSize: 25}}
+                    <Picker
+                        style={{fontSize: 25}}
                         selectedValue={this.state.cancelReason}
                         onValueChange={(declineReason:string) => this.setState({declineReason})}>
                         {DECLINE_REASONS.map((declineReason) => (
-                            <PickerItemIOS
-                                key={declineReason}
+                            <Picker.Item
+                                // key={declineReason}
                                 value={declineReason}
                                 label={declineReason}
                             />
                         ))}
-                    </PickerIOS>
+                    </Picker>
                     <TextInput
                         style={{fontSize: 24, height: 60, borderColor: 'gray', borderWidth: 1}}
                         editable = {true}
