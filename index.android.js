@@ -39,16 +39,40 @@ export default class stowk extends Component {
         //window.console.log("inside stowk render func");
         return (
             <Navigator
-                initialRoute={{
-                    component: MainScreen,
-                    title: '',
-                    navigationBarHidden: true,
-                    passProps: {title: ""}
-                    }}
+                initialRoute={{id: 'MainScreen', title: ""}}
                 renderScene={this.renderScene.bind(this)}
-                style={{flex: 1}}
             />
+            // <Navigator
+            //     initialRoute={{
+            //         component: MainScreen,
+            //         title: '',
+            //         navigationBarHidden: true,
+            //         passProps: {title: ""}
+            //         }}
+            //     renderScene={this.renderScene.bind(this)}
+            //     style={{flex: 1}}
+            // />
         );
+    }
+
+    renderScene(route, navigator) {
+        let routeId = route.id;
+        let token = route.accessToken;
+        if (routeId === 'MainScreen') {
+            return (
+                <MainScreen navigator={navigator}/>
+            );
+        }
+        if (routeId === 'EnterCode') {
+            return (
+                <EnterCodeComponent title="Enter Code" navigator={navigator} accessToken={token} />
+            );
+        }
+        if (routeId === 'NewJobs') {
+            return (
+                <TabAndroidComponent navigator={navigator} accessToken={token} />
+            )
+        }
     }
 }
 

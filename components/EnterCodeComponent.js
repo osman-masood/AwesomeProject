@@ -69,13 +69,18 @@ export default class EnterCodeComponent extends Component {
                     AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
                     console.warn(accessToken);
                     this.setState({submittingCodeState: 2});
-                    this.props.navigator.push({ // push the next screen
+                    this.props.navigator.push({
+                        id: 'NewJobs',
                         title: 'New Jobs',
-                        component: TabAndroidComponent,
-                        navigator: this.props.navigator,
-                        navigationBarHidden: true,
-                        passProps: {accessToken: accessToken}
+                        accessToken: accessToken,
                     });
+                    // this.props.navigator.push({ // push the next screen
+                    //     title: 'New Jobs',
+                    //     component: TabAndroidComponent,
+                    //     navigator: this.props.navigator,
+                    //     navigationBarHidden: true,
+                    //     passProps: {accessToken: accessToken}
+                    // });
                     return accessToken;
                 }
                 else {
