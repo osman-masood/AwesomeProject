@@ -163,6 +163,8 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
     
     locationRequests(${requestsFunctionString}) {
       _id,
+      paymentType,
+      amountDue,
       orderId,
       shipperId,
       consumerId,
@@ -306,13 +308,44 @@ const carrierAcceptedDeliveriesQueryStringLambda = (requestsFunctionString:strin
       request {
         _id,
         orderId,
-        status,
-        paymentType,
         amountDue,
-        amountEstimated,
+        paymentType,
+        shipperId,
+        consumerId,
+        preferredCarrierIds,
+        originId,
+        origin {
+            locationName,
+            address,
+            city,
+            state,
+            zip,
+            countryCode,
+            coordinates,
+            contactName,
+            contactPhone,
+            contactEmail
+        },
+        destination {
+            locationName,
+            address,
+            city,
+            state,
+            zip,
+            countryCode,
+            coordinates,
+            contactName,
+            contactPhone,
+            contactEmail
+        },
+        destinationId,
+      
         declinedBy {
             carrierId
         },
+        status,
+        originCoordinates,
+        destinationCoordinates,
         deliveries {
             edges {
                 node {
@@ -324,35 +357,18 @@ const carrierAcceptedDeliveriesQueryStringLambda = (requestsFunctionString:strin
         vehicleIds,
         vehicles {
             count,
-                edges {
-                     node {
-			            year,
-                        make,
-                        model,
-                        type,
-                        color,
-                        enclosed,
-                        running
-                     }
+            edges {
+                node {
+			       year,
+                    make,
+                    model,
+                    type,
+                    color,
+                    enclosed,
+                    running
                 }
+            }
         },
-        preferredCarrierIds,
-        origin {
-            coordinates,
-            locationName,
-            contactName,
-            contactPhone,
-            address
-        },
-        
-        destination {
-            coordinates,
-            locationName,
-            contactName,
-            contactPhone,
-            address
-        },
-        
         pickupDate,
         dropoffDate,
         createdAt,

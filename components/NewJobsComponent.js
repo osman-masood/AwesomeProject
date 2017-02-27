@@ -725,10 +725,10 @@ export default class NewJobsComponent extends Component {
                         <Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
                     </View>
                     <View style={{flex: 1}}>
-                        <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "10.00"}`}</Text>
+                        <Text>{`${request.paymentType}: $${request.amountDue}`}</Text>
                         <Text>Distance: {haversineDistance}</Text>
-                        <Text>Pickup: {request.pickupDate}</Text>
-                        <Text>Job Expires: {request.dropoffDate}</Text>
+                        <Text>Pickup: {request.pickupDate.substring(0,10)}</Text>
+                        <Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
                     </View>
                 </View>
             </TouchableHighlight>

@@ -510,10 +510,10 @@ export default class MyJobsComponent extends Component {
                 <Text>{generateOperableString(request)}</Text>
             </View>
             <View style={{flex: 1}}>
-                <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "100.00"}`}</Text>
+                <Text>{`${request.paymentType}: $${request.amountDue}`}</Text>
                 <Text>Distance: {haversineDistance}</Text>
-                <Text>Pickup: {request.pickupDate}</Text>
-                <Text>Job Expires: {request.dropoffDate}</Text>
+                <Text>Pickup: {request.pickupDate.substring(0,10)}</Text>
+                <Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
             </View>
         </View>;
 
