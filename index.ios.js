@@ -23,6 +23,7 @@ import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import TabBarComponent from "./components/TabBarComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
+import WelcomeComponent from "./components/WelcomeComponent";
 
 
 export default class stowk extends Component {
@@ -76,7 +77,7 @@ class MainScreen extends Component {
             retComponent = <WaitScreen/>;
         } else {
             if (this.state.token == null) {
-                retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
+                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator}/>;
             } else {
                 retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
             }

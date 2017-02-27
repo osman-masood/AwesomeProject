@@ -97,7 +97,7 @@ export default class JobDetailComponent extends Component {
     }
 
     callJobAction() {
-        let phoneNumber = this.state.job.shipper.phone;
+        let phoneNumber = this.state.job.shipper.phoneNumber;
         Linking.openURL("tel:" + phoneNumber).catch(er => {
             Alert.alert('Could not make call to ', phoneNumber);
         });
@@ -164,7 +164,7 @@ export default class JobDetailComponent extends Component {
                 <View style={styles.topBox}>
                     <Image source={require('../assets/profle@3x.png')} />
                     <Text>{request.shipper.name}</Text>
-                    <Text>{request.phone}</Text>
+                    <Text>{request.phoneNumber}</Text>
                 </View>
                 <View style={{height: 1, backgroundColor: '#CCCCCC'}}></View>
                 <View style={{padding:10}}>

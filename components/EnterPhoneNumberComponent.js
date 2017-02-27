@@ -19,12 +19,16 @@ import { getAccessTokenFromResponse } from './common';
 
 import EnterCodeComponent from "./EnterCodeComponent";
 
+import NavigationBar from 'react-native-navbar';
+
 
 export default class EnterPhoneNumberComponent extends Component {
     //noinspection JSUnusedGlobalSymbols,JSUnresolvedVariable
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
+        loginOrAccount: PropTypes.number.isRequired
+
     };
 
     constructor(props) {
@@ -33,17 +37,22 @@ export default class EnterPhoneNumberComponent extends Component {
         this._onForward = this._onForward.bind(this);
         this.state = {
             phone: null,
-            submittingPhoneNumberState: 0};  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
+            submittingPhoneNumberState: 0, // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
+            loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
+        };
+    }
+
+    verifyPhone() {
+
     }
 
     _onForward() {
-        // Prepend +1 to phone number if not there
         let phoneNumber = this.state.phone;
         if (phoneNumber.substring(0, 2) !== "+1") {
             phoneNumber = "+1" + phoneNumber;
         }
 
-        // Send POST to verify the phone number
+        // Send POST to verify the phoneNumber number
         this.setState({submittingPhoneNumberState: 1});
         fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/code", {
             method: "POST",
@@ -60,13 +69,14 @@ export default class EnterPhoneNumberComponent extends Component {
                 const responseJson = responseJsonAndAccessToken[0];
                 const accessToken = responseJsonAndAccessToken[1];
 
-                this.setState({submittingPhoneNumberState: 2});
+                this.setState({submittingPhoneNumberState: 2, phone: phoneNumber});
+
                 this.props.navigator.push({
                     title: 'Enter Code',
                     component: EnterCodeComponent,
                     navigator: this.props.navigator,
                     navigationBarHidden: true,
-                    passProps: {accessToken: accessToken, title: 'Enter Code'}
+                    passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,  phone: this.state.phone}
                 });
             })
             .catch((error) => {
@@ -77,7 +87,21 @@ export default class EnterPhoneNumberComponent extends Component {
 
     render() {
         // TODO add states for loading & failed
+        const leftButtonConfig = {
+            title: 'Back',
+            handler: () => this.props.navigator.pop()
+        };
+
         return (
+
+
+            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+
+                <NavigationBar
+                    style={{backgroundColor: '#F5FCFF'}}
+                    leftButton={leftButtonConfig}
+
+                />
             <View style={styles.container}>
                 <Text style={styles.welcome}>
                     Enter Phone Number
@@ -92,12 +116,14 @@ export default class EnterPhoneNumberComponent extends Component {
                     keyboardType="phone-pad"
                 />
                 <Button
+                    style={styles.buttonStyle}
                     disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
                     onPress={this._onForward}
                     title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
                     color="#841584"
                     accessibilityLabel="Send code through SMS to log in"
                 />
+            </View>
             </View>
         );
     }
@@ -107,19 +133,26 @@ export default class EnterPhoneNumberComponent extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#F5FCFF',
+        marginTop: 150,
+        height: 100
     },
     welcome: {
         fontSize: 20,
         textAlign: 'center',
-        margin: 10,
+        marginTop: 10,
+        backgroundColor: '#F5FCFF',
+        height: 40
     },
     instructions: {
         textAlign: 'center',
         color: '#333333',
         marginBottom: 5,
     },
+    buttonStyle: {
+        textAlign: 'center',
+        height: 40
+    }
 });

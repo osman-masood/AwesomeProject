@@ -56,11 +56,52 @@ const ACCESS_TOKEN_STORAGE_KEY = 'stowkAccessToken';
 class Request {
     _id: string;
     orderId: number;
+    shipperId: number;
+    consumerId: number;
+    preferredCarrierIds: Array<String>;
+    originId: number;
+    origin: {
+
+        locationName: string;
+        address: string;
+        city: string;
+        state: string;
+        zip: string;
+        countryCode: string;
+        coordinates: Array<number>;
+        contactName: string;
+        contactPhone: string;
+        contactEmail: string;
+    };
+
+    destination: {
+        locationName: string;
+        address: string;
+        city: string;
+        state: string;
+        zip: string;
+        countryCode: string;
+        coordinates: Array<number>;
+        contactName: string;
+        contactPhone: string;
+        contactEmail: string;
+    };
+
+    destinationId: number;
+    declinedBy: Array<string>;
+
     status: number;
-    paymentType: string;
+
+    originCoordinates: Array<number>; // Not required now
+    destinationCoordinates: Array<number>; // Not required now
     amountDue: number;
     amountEstimated: number;
-    declinedBy: Array<string>;
+    pickupDate: string;
+    dropoffDate: string;
+    vehicleIds: Array<String>;
+
+    paymentType: string;
+
     deliveries: {
         edges: [{
             node: {
@@ -69,7 +110,7 @@ class Request {
             }
         }]
     };
-    vehicleIds: Array<String>;
+
     vehicles: {
         count: number;
         edges: [{
@@ -84,23 +125,7 @@ class Request {
             }
         }]
     };
-    preferredCarrierIds: Array<String>;
-    origin: {
-        coordinates: Array<number>;
-        locationName: string;
-        contactName: string;
-        contactPhone: string;
-        address: string;
-    };
-    destination: {
-        coordinates: Array<number>;
-        locationName: string;
-        contactName: string;
-        contactPhone: string;
-        address: string;
-    };
-    pickupDate: string;
-    dropoffDate: string;
+
     createdAt: string;
     shipper: {
         name: string;
@@ -124,8 +149,7 @@ var loadAccessToken = async () => {
             console.error("loadAccessToken: Error getting stowkAccessToken", e);
             retVal = null;
         }
-        return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1ODc1Yjg0YTNmZTZjMzI3NTFmZjg1MGEiLCJlbWFpbCI6IkVyaWNhX1NtaXRoMjZAeWFob28uY29tIiwiZmlyc3ROYW1lIjoiQWxleGlzIiwibGFzdE5hbWUiOiJIZWlkZW5yZWljaCIsInBob25lIjoiKzE2Njk5MDAyODUxIiwicm9sZSI6InVzZXIiLCJwcm9maWxlIjp7InR5cGUiOiJjYXJyaWVyIiwicm9sZSI6Im93bmVyIiwiY2FycmllciI6IjU4NzViODRhM2ZlNmMzMjc1MWZmODU2MiJ9LCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNDg0MTExMzI3LCJleHAiOjE1MTU2NDczMjd9.Iha0A_KhaREkTvWSWrmKwYDvszyoJeHno2H4BYe1RlA";
-        //return new Promise(resolve => { resolve(retVal) });
+        return new Promise(resolve => { resolve(retVal) });
     };
 
 const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
@@ -136,75 +160,46 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
         _id
       }
     }
-  
-    carrierRequests(limit: 2000) {
-      _id,
-      orderId,
-      status,
-      paymentType,
-      amountDue,
-      amountEstimated,
-      declinedBy {
-        carrierId
-      },
-      deliveries {
-        edges {
-          node {
-            _id,
-            carrierId
-          }
-        }
-      },
-      vehicleIds,
-      vehicles {
-        count,
-        edges {
-          node {
-			year,
-            make,
-            model,
-            type,
-            color,
-            enclosed,
-            running
-          }
-        }
-      },
-      preferredCarrierIds,
-      origin {
-        coordinates,
-        locationName,
-        contactName,
-        contactPhone,
-        address
-      },
-      destination {
-        coordinates,
-        locationName,
-        contactName,
-        contactPhone,
-        address
-      },
-      pickupDate,
-      dropoffDate,
-      createdAt,
-      shipper {
-        name,
-        buyerNumber,
-        phone,
-      }
-    }
     
     locationRequests(${requestsFunctionString}) {
       _id,
       orderId,
-      status,
-      paymentType,
-      amountDue,
-      amountEstimated,
+      shipperId,
+      consumerId,
+      preferredCarrierIds,
+      originId,
+      origin {
+        locationName,
+        address,
+        city,
+        state,
+        zip,
+        countryCode,
+        coordinates,
+        contactName,
+        contactPhone,
+        contactEmail
+      },
+      destination {
+        locationName,
+        address,
+        city,
+        state,
+        zip,
+        countryCode,
+        coordinates,
+        contactName,
+        contactPhone,
+        contactEmail
+      },
+      destinationId,
+      
       declinedBy {
         carrierId
       },
+      status,
+      originCoordinates,
+      destinationCoordinates,
       deliveries {
         edges {
           node {
@@ -227,21 +222,6 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
             running
           }
         }
-      },
-      preferredCarrierIds,
-      origin {
-        coordinates,
-        locationName,
-        contactName,
-        contactPhone,
-        address
-      },
-      destination {
-        coordinates,
-        locationName,
-        contactName,
-        contactPhone,
-        address
       },
       pickupDate,
       dropoffDate,
@@ -254,6 +234,138 @@ const genericRequestsQueryStringLambda = (requestsFunctionString:string) => `{
     }
   }
 }`;
+
+const carrierRequestQueryStringLambda = (requestsFunctionString:string)=> `
+
+
+carrierRequests(${requestsFunctionString}) {
+      _id,
+      orderId,
+      status,
+      paymentType,
+      amountDue,
+      amountEstimated,
+      declinedBy {
+        carrierId
+      },
+      deliveries {
+        edges {
+          node {
+            _id,
+            carrierId
+          }
+        }
+      },
+      vehicleIds,
+      vehicles {
+        count,
+        edges {
+          node {
+			year,
+            make,
+            model,
+            type,
+            color,
+            enclosed,
+            running
+          }
+        }
+      },
+      preferredCarrierIds,
+      origin {
+        coordinates,
+        locationName,
+        contactName,
+        contactPhone,
+        address
+      },
+      destination {
+        coordinates,
+        locationName,
+        contactName,
+        contactPhone,
+        address
+      },
+      pickupDate,
+      dropoffDate,
+      createdAt,
+      shipper {
+        name,
+        buyerNumber,
+        phone,
+      }
+    }`;
+
+const carrierAcceptedDeliveriesQueryStringLambda = (requestsFunctionString:string)=> `{
+
+ viewer {
+
+   carrierAcceptedDeliveries(${requestsFunctionString}) {
+      _id,
+      
+      request {
+        _id,
+        orderId,
+        status,
+        paymentType,
+        amountDue,
+        amountEstimated,
+        declinedBy {
+            carrierId
+        },
+        deliveries {
+            edges {
+                node {
+                   _id,
+                   carrierId
+                }
+            }
+        },
+        vehicleIds,
+        vehicles {
+            count,
+                edges {
+                     node {
+			            year,
+                        make,
+                        model,
+                        type,
+                        color,
+                        enclosed,
+                        running
+                     }
+                }
+        },
+        preferredCarrierIds,
+        origin {
+            coordinates,
+            locationName,
+            contactName,
+            contactPhone,
+            address
+        },
+        
+        destination {
+            coordinates,
+            locationName,
+            contactName,
+            contactPhone,
+            address
+        },
+        
+        pickupDate,
+        dropoffDate,
+        createdAt,
+        shipper {
+            name,
+            buyerNumber,
+            phone,
+        }
+      }
+    }
+ }
+}`;
+
 
 const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
     return fetchGraphQlQuery(
@@ -471,8 +583,8 @@ function fetchCurrentUserAndLocationRequests(accessToken:string, latitude:string
     return fetchGraphQlQuery(accessToken, query);
 }
 
-function acceptedRequestsQuery(accessToken: string, latitude:string, longitude:string) {
-    const query = genericRequestsQueryStringLambda(`latitude: ${latitude}, longitude: ${longitude}, distance:100000, limit:200`)
+function acceptedRequestsQuery(accessToken: string) {
+    const query = carrierAcceptedDeliveriesQueryStringLambda(`limit:200`)
     return fetchGraphQlQuery(accessToken, query);
 }
 

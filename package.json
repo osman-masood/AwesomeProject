@@ -15,6 +15,7 @@
     "react-native-aws3": "0.0.4",
     "react-native-background-timer": "^1.0.0",
     "react-native-camera": "0.6.0",
+    "react-native-datepicker": "^1.4.4",
     "react-native-image-zoom-viewer": "^1.2.47",
     "react-native-maps": "0.13.0",
     "react-native-navbar": "1.6.0",

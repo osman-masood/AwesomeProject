@@ -59,7 +59,8 @@ export default class NewJobsComponent extends Component {
         currentPosition: PropTypes.object.isRequired,
         acceptRequestFunction: PropTypes.func.isRequired,
         declineRequestFunction: PropTypes.func.isRequired,
-        currentUserId: PropTypes.string.isRequired
+        currentUserId: PropTypes.string.isRequired,
+        accessToken: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -109,7 +110,8 @@ export default class NewJobsComponent extends Component {
             jobOfModal: Request,
             declineReason: string,
             declineReasonComments: string,
-            currentUserId: string
+            currentUserId: string,
+            accessToken: string
 
         } = {
             selectedTab: "all_jobs",
@@ -140,7 +142,8 @@ export default class NewJobsComponent extends Component {
             jobOfModal: null,
             declineReason: DECLINE_REASONS[0],
             declineReasonComments: null,
-            currentUserId: this.props.currentUserId
+            currentUserId: this.props.currentUserId,
+            accessToken: this.props.accessToken
         };
         this.state = thisState;
 
@@ -165,26 +168,24 @@ export default class NewJobsComponent extends Component {
     componentWillReceiveProps(nextProps) {
         // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
         this.setState({
-            openNonPreferredRequests: deepcopy(nextProps.openNonPreferredRequests),
-            openPreferredRequests: deepcopy(nextProps.openPreferredRequests),
             currentPosition: deepcopy(nextProps.currentPosition)
         });
     }
 
-    // componentWillMount() {
-    //     fetchCurrentUserAndLocationRequests(null, this.state.currentPosition.latitude,
-    //                                              this.state.currentPosition.longitude, 6000)
-    //         .then(response => {
-    //             console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
-    //
-    //             let openPreferredRequests = response['data']['viewer']['carrierRequests'];
-    //             let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
-    //         this.setState({
-    //             openNonPreferredRequests: openNonPreferredRequests,
-    //             openPreferredRequests: openPreferredRequests
-    //         })
-    //     })
-    // }
+    componentWillMount() {
+        // fetchCurrentUserAndLocationRequests(this.state.accessToken, this.state.currentPosition.latitude,
+        //     this.state.currentPosition.longitude, 12000)
+        //     .then(response => {
+        //         console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
+        //
+        //         let openPreferredRequests = response['data']['viewer']['carrierRequests'];
+        //         let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
+        //         this.setState({
+        //             openNonPreferredRequests: openNonPreferredRequests,
+        //             openPreferredRequests: openPreferredRequests
+        //         })
+        //     })
+    }
 
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
@@ -480,6 +481,7 @@ export default class NewJobsComponent extends Component {
 
         let returnView;
         if (allContainers.length === 0) {
+            this.renderAllJobsSubTabs();
             returnView = <View><Text>Loading...</Text></View>
         } else {
             returnView = <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
@@ -655,7 +657,7 @@ export default class NewJobsComponent extends Component {
 
         // API call to accept job
         this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
-            global.evente.emit('re-send-my-request', {reload: true});
+            global.evente.emit('re-send-request', {reload: true});
             console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 
@@ -692,7 +694,7 @@ export default class NewJobsComponent extends Component {
 
         let phoneNumberLambda = null;
         if (showPhoneNumber) {
-            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phone)}>
+            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
                 <Text style={{fontSize: 12}}>Call</Text>
             </Icon.Button>;
         } else {
@@ -716,8 +718,8 @@ export default class NewJobsComponent extends Component {
                 <View style={{flexDirection: 'row'}}>
                     <View style={{flex: 3}}>
                         <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                        <Text>Origin: {request.origin.address}</Text>
-                        <Text>Destination: {request.destination.address}</Text>
+                        <Text>Origin: {request.origin.city}, {request.origin.state}</Text>
+                        <Text>Destination: {request.destination.city}, {request.destination.state}</Text>
                         <Text>Vehicles: {request.vehicles.count}</Text>
                         <Text>Trailer Type: {"TODO"}</Text>
                         <Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
@@ -751,7 +753,7 @@ export default class NewJobsComponent extends Component {
 
     callPhone(phoneNumber: string) {
         Linking.openURL("tel:1-408-555-5555").catch(
-            err => console.error('An error occurred opening phone number ' + phoneNumber, err));
+            err => console.error('An error occurred opening phoneNumber number ' + phoneNumber, err));
     }
 }
 
