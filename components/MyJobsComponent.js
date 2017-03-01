@@ -132,12 +132,16 @@ export default class MyJobsComponent extends Component {
         this.props.acceptedRequests().then( response => {
 
             let deliveries = response['data']['viewer']['carrierAcceptedDeliveries'];
-             let acceptedRequests = [];
-            //
+            let acceptedRequests = [];
+
             for (let item in deliveries) {
                 let r = deliveries[item]['request'];
                 acceptedRequests.push(r);
             }
+
+
+
+
             this.setState({
                 acceptedRequests: acceptedRequests
             })
