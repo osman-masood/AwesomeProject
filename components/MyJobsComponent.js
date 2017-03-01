@@ -132,20 +132,12 @@ export default class MyJobsComponent extends Component {
         let that = this;
         this.props.acceptedRequests().then( response => {
 
-            let currentCarrierId = response['data']['viewer']['me']['carrier']['_id'];
-            let acceptedRequests = [];
-
-            for (let item in response['data']['viewer']['locationRequests']) {
-                let r = response['data']['viewer']['locationRequests'][item];
-               // console.warn(RequestStatusEnum.DISPATCHED, r.status);
-                console.log(r._id, r);
-                if ( (r.deliveries.edges.length > 0) && (r.status === RequestStatusEnum.IN_PROGRESS || r.status === RequestStatusEnum.DISPATCHED)) {
-                    console.log("LOGS: ", r.status, r.deliveries.edges[0].node.carrierId, currentCarrierId);
-
-                }
-                if (that.hasCarrierAcceptedRequest(currentCarrierId, r)) {
-                    acceptedRequests.push(r);
-                }
+            let deliveries = response['data']['viewer']['carrierAcceptedDeliveries'];
+             let acceptedRequests = [];
+            //
+            for (let item in deliveries) {
+                let r = deliveries[item]['request'];
+                acceptedRequests.push(r);
             }
             this.setState({
                 acceptedRequests: acceptedRequests
@@ -471,7 +463,7 @@ export default class MyJobsComponent extends Component {
         // Whether to show Call Phone button
         let phoneNumberLambda = null;
         if (showPhoneNumber) {
-            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phone)}>
+            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
                 <Text style={{fontSize: 12}}>Call</Text>
             </Icon.Button>;
         } else {
@@ -512,17 +504,17 @@ export default class MyJobsComponent extends Component {
         const summaryView = <View style={{flexDirection: 'row'}}>
             <View style={{flex: 3}}>
                 <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                <Text>Origin: {request.origin.locationName}</Text>
-                <Text>Destination: {request.destination.locationName}</Text>
+                <Text>Origin: {request.origin.address}, {request.origin.city}, {request.origin.state}</Text>
+                <Text>Destination: {request.destination.address}, {request.destination.city}, {request.destination.state}</Text>
                 <Text>Vehicles: {request.vehicles.count}</Text>
                 <Text>Trailer Type: {"TODO"}</Text>
                 <Text>{generateOperableString(request)}</Text>
             </View>
             <View style={{flex: 1}}>
-                <Text>{`${request.paymentType || 'COD'}: $${request.amountDue || "100.00"}`}</Text>
+                <Text>{`${request.paymentType}: $${request.amountDue}`}</Text>
                 <Text>Distance: {haversineDistance}</Text>
-                <Text>Pickup: {request.pickupDate}</Text>
-                <Text>Job Expires: {request.dropoffDate}</Text>
+                <Text>Pickup: {request.pickupDate.substring(0,10)}</Text>
+                <Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
             </View>
         </View>;
 
@@ -555,7 +547,7 @@ export default class MyJobsComponent extends Component {
 
     callPhone(phoneNumber: string) {
         Linking.openURL("tel:" + phoneNumber).catch(
-            err => console.error('An error occurred opening phone number ' + phoneNumber, err));
+            err => console.error('An error occurred opening phoneNumber number ' + phoneNumber, err));
     }
 }
 

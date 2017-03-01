@@ -160,7 +160,7 @@ class TabBarComponent extends Component {
                     }
                 }
 
-                openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
+               // openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
 
                 // Set state variables of current user and requests
                 this.setState({
@@ -211,6 +211,7 @@ class TabBarComponent extends Component {
                                                 acceptRequestFunction={this.acceptRequestFunction}
                                                 declineRequestFunction={this.declineRequestFunction}
                                                 currentUserId={this.state.currentUser.carrier._id}
+                                                accessToken={this.props.accessToken}
             />
         }
         else if (this.state.selectedTab == 'myJobsTab') {
