@@ -129,6 +129,8 @@ export default class MyJobsComponent extends Component {
     }
 
     getMyjoblist() {
+        window.console.log("inside getmyjoblist");
+        window.console.log("accepted requests: " + this.props.acceptedRequests());
         let that = this;
         this.props.acceptedRequests().then( response => {
 
@@ -138,12 +140,13 @@ export default class MyJobsComponent extends Component {
             for (let item in response['data']['viewer']['locationRequests']) {
                 let r = response['data']['viewer']['locationRequests'][item];
                // console.warn(RequestStatusEnum.DISPATCHED, r.status);
-                console.log(r._id, r);
+                window.console.log(r._id, r);
                 if ( (r.deliveries.edges.length > 0) && (r.status === RequestStatusEnum.IN_PROGRESS || r.status === RequestStatusEnum.DISPATCHED)) {
-                    console.log("LOGS: ", r.status, r.deliveries.edges[0].node.carrierId, currentCarrierId);
+                    window.console.log("LOGS: ", r.status, r.deliveries.edges[0].node.carrierId, currentCarrierId);
 
                 }
                 if (that.hasCarrierAcceptedRequest(currentCarrierId, r)) {
+                    window.console.log("pushing request");
                     acceptedRequests.push(r);
                 }
             }
@@ -151,6 +154,8 @@ export default class MyJobsComponent extends Component {
                 acceptedRequests: acceptedRequests
             })
         });
+        window.console.log("state accepted requests: " + this.state.acceptedRequests);
+
     }    
 
     hasCarrierAcceptedRequest(carrierId: string, request:Request) {
@@ -210,6 +215,9 @@ export default class MyJobsComponent extends Component {
 
     allJobsContainer() {
         const allJobs = this.state.acceptedRequests;
+        window.console.log("inside all jobs container");
+        window.console.log("all jobs: " + allJobs);
+        window.console.log("all jobs length: " + allJobs.length);
         let allJobsContainer = null;
         if (allJobs.length > 0) {
             const allJobsViews = [];
@@ -228,6 +236,8 @@ export default class MyJobsComponent extends Component {
                 {allJobsViews}
             </View>;
         }
+        window.console.log("end of jobs container func");
+        window.console.log("alljobscontainer: " + allJobsContainer);
         return allJobsContainer;
     }
 
@@ -240,8 +250,10 @@ export default class MyJobsComponent extends Component {
 
         let returnView;
         if (!allJobsContainer) {
+            window.console.log("loading jobs");
             returnView = <View><Text style={{textAlign:'center'}}>Loading jobs ...</Text></View>
         } else {
+            window.console.log("return view");
             returnView = <ScrollView>{[subTabs, allJobsContainer]}</ScrollView>;
         }
         return returnView;
@@ -346,12 +358,12 @@ export default class MyJobsComponent extends Component {
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
                     <Picker
-                        style={{fontSize: 25}}
+                        // style={{fontSize: 25}}
                         selectedValue={this.state.cancelReason}
                         onValueChange={(cancelReason) => this.setState({cancelReason})}>
                         {CANCEL_REASONS.map((cancelReason) => (
                             <Picker.Item
-                                // key={cancelReason}
+                                key={cancelReason}
                                 value={cancelReason}
                                 label={cancelReason}
                             />

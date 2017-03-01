@@ -555,7 +555,7 @@ export default class NewJobsComponent extends Component {
                         onValueChange={(declineReason:string) => this.setState({declineReason})}>
                         {DECLINE_REASONS.map((declineReason) => (
                             <Picker.Item
-                                // key={declineReason}
+                                key={declineReason}
                                 value={declineReason}
                                 label={declineReason}
                             />
@@ -657,7 +657,7 @@ export default class NewJobsComponent extends Component {
         // API call to accept job
         this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
             global.evente.emit('re-send-my-request', {reload: true});
-            console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
+            window.console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 
         // Set state to hide accepted job & modal
