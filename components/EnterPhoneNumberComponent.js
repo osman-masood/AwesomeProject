@@ -77,14 +77,17 @@ export default class EnterPhoneNumberComponent extends Component {
                 this.setState({submittingPhoneNumberState: 2, phone: phoneNumber});
 
 
+
                 this.props.navigator.push({
                     id: 'EnterCode',
                     title: 'Enter Code',
                     accessToken: accessToken,
-                    component: EnterCodeComponent,
-                    navigator: this.props.navigator,
-                    navigationBarHidden: true,
-                    passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,  phone: this.state.phone}
+                    loginOrAccount: this.props.loginOrAccount,
+                    phone: phoneNumber,
+                    // component: EnterCodeComponent,
+                    // navigator: this.props.navigator,
+                    // navigationBarHidden: true,
+                    // passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,  phone: this.state.phone}
                 });
                 // this.props.navigator.push({
                 //     title: 'Enter Code',

@@ -4,7 +4,7 @@ import {
     StyleSheet,
     Text,
     View,
-    NavigatorIOS,
+    Navigator,
     TextInput,
     Button
 } from 'react-native';
@@ -27,11 +27,13 @@ class  WelcomeComponent extends Component{
 
     openEnterPhoneNumberComponent = (loginOrAccount) => {
         this.props.navigator.push({
+            id: 'EnterPhoneNumber',
+            loginOrAccount: loginOrAccount,
             title: 'Enter phoneNumber number',
-            component: EnterPhoneNumberComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator, loginOrAccount: loginOrAccount}
+            // component: EnterPhoneNumberComponent,
+            // navigator: this.props.navigator,
+            // navigationBarHidden: true,
+            // passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator, loginOrAccount: loginOrAccount}
         });
     }
 

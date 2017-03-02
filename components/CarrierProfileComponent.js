@@ -21,7 +21,7 @@ import {
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 import WelcomeComponent from './WelcomeComponent';
-import InformationBar from './InformationBar';
+// import InformationBar from './InformationBar';
 
 import { getAccessTokenFromResponse } from './common';
 

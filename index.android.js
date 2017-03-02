@@ -18,16 +18,18 @@ import {
     ActivityIndicator,
     Dimensions
 } from 'react-native';
-import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
+
 //noinspection JSUnresolvedVariable
-import TabBarComponent from "./components/TabBarComponent";
+import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
-import TabViewComponent from "./components/TabViewComponent";
-import BottomBarComponent from "./components/BottomBarComponent";
 import EnterCodeComponent from "./components/EnterCodeComponent";
 import TabAndroidComponent from "./components/TabAndroidComponent";
+import WelcomeComponent from "./components/WelcomeComponent";
+import SignUpPersonalProfileComponent from "./components/SignUpPersonalProfileComponent";
+import CarrierProfileComponent from "./components/CarrierProfileComponent";
+import JobDetailComponent from "./components/JobDetailComponent";
+import DropOffObtain from "./components/DropOffObtain";
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
-import {Scene, Router} from 'react-native-router-flux';
 
 export default class stowk extends Component {
 
@@ -42,36 +44,66 @@ export default class stowk extends Component {
                 initialRoute={{id: 'MainScreen', title: ""}}
                 renderScene={this.renderScene.bind(this)}
             />
-            // <Navigator
-            //     initialRoute={{
-            //         component: MainScreen,
-            //         title: '',
-            //         navigationBarHidden: true,
-            //         passProps: {title: ""}
-            //         }}
-            //     renderScene={this.renderScene.bind(this)}
-            //     style={{flex: 1}}
-            // />
         );
     }
 
     renderScene(route, navigator) {
+        let title = route.title;
         let routeId = route.id;
         let token = route.accessToken;
+        let login = route.loginOrAccount;
+        let phone = route.phone;
+        let request = route.request;
+        let haversineDistance = route.haversineDistance;
         if (routeId === 'MainScreen') {
             return (
                 <MainScreen navigator={navigator}/>
             );
         }
+        if (routeId === 'Welcome') {
+            return (
+                <WelcomeComponent title={title} navigator={navigator}/>
+            );
+        }
+        if (routeId === 'EnterPhoneNumber') {
+            return (
+                <EnterPhoneNumberComponent title={title} navigator={navigator} loginOrAccount={login}/>
+            );
+        }
         if (routeId === 'EnterCode') {
             return (
-                <EnterCodeComponent title="Enter Code" navigator={navigator} accessToken={token} />
+                <EnterCodeComponent title={title} navigator={navigator} accessToken={token} loginOrAccount={login} phone={phone}/>
+            );
+        }
+        if (routeId === 'SignUp') {
+            return (
+                <SignUpPersonalProfileComponent title={title} navigator={navigator} accessToken={token}/>
+            );
+        }
+        if (routeId === 'CarrierProfile') {
+            return (
+                <CarrierProfileComponent title={title} navigator={navigator} accessToken={token}/>
             );
         }
         if (routeId === 'NewJobs') {
             return (
                 <TabAndroidComponent navigator={navigator} accessToken={token} />
-            )
+            );
+        }
+        if (routeId === 'JobDetail') {
+            return (
+                <JobDetailComponent title={title} request={request} navigator={navigator} haversineDistance={haversineDistance}/>
+            );
+        }
+        if (routeId === 'VehicleInspection') {
+            return (
+                <VehicleInspectionComponent title={title} request={request} navigator={navigator}/>
+            );
+        }
+        if (routeId === 'DropOffObtain') {
+            return (
+                <DropOffObtain/>
+            );
         }
     }
 }
@@ -100,19 +132,20 @@ class MainScreen extends Component {
     }
 
     render() {
-        window.console.log("inside mainscreen render func");
-        if (!this.state) return null;
+        //window.console.log("inside mainscreen render func");
+        //if (!this.state) return null;
         let retComponent;
         if (this.state.wait) {
-            window.console.log("state is waiting");
+            //window.console.log("state is waiting");
             retComponent = <WaitScreen/>;
         } else {
-            window.console.log("state token: " + this.state.token);
+            //window.console.log("state token: " + this.state.token);
             if (this.state.token == null) {
-                window.console.log("state token is null");
-                retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
+                //window.console.log("state token is null");
+                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator}/>;
+                //retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
             } else {
-                window.console.log("calling tab android");
+                //window.console.log("calling tab android");
                 retComponent = <TabAndroidComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
             }
         }

@@ -57,21 +57,24 @@ export default class EnterCodeComponent extends Component {
 
     openSignUpPersonalProfileComponent = (accessToken) => {
         this.props.navigator.push({
+            id: 'SignUp',
             title: 'Sign up details',
-            component: SignUpPersonalProfileComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken}
+            accessToken: accessToken,
+            // component: SignUpPersonalProfileComponent,
+            // navigator: this.props.navigator,
+            // navigationBarHidden: true,
+            // passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken}
         });
     }
 
     openWelcomeComponent = () => {
         this.props.navigator.push({
+            id: 'Welcome',
             title: 'Welcome Screen',
-            component: WelcomeComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: { title: "Welcome Screen", navigator: this.props.navigator}
+            // component: WelcomeComponent,
+            // navigator: this.props.navigator,
+            // navigationBarHidden: true,
+            // passProps: { title: "Welcome Screen", navigator: this.props.navigator}
         });
     }
 
@@ -146,11 +149,13 @@ export default class EnterCodeComponent extends Component {
                                     text: 'Sign in',
                                     onPress: () => {
                                     this.props.navigator.push({
+                                        id: 'EnterPhoneNumber',
                                         title: 'Enter phoneNumber number',
-                                        component: EnterPhoneNumberComponent,
-                                        navigator: this.props.navigator,
-                                        navigationBarHidden: true,
-                                        passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator}
+                                        loginOrAccount: this.props.loginOrAccount,
+                                        // component: EnterPhoneNumberComponent,
+                                        // navigator: this.props.navigator,
+                                        // navigationBarHidden: true,
+                                        // passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator}
                                     });
                                 }
                                 },

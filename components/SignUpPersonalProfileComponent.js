@@ -10,7 +10,7 @@ import {
     StyleSheet,
     Text,
     View,
-    NavigatorIOS,
+    Navigator,
     TextInput,
     Button,
     Alert,
@@ -22,7 +22,7 @@ import DatePicker from 'react-native-datepicker';
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 import WelcomeComponent from './WelcomeComponent';
-import InformationBar from './InformationBar';
+// import InformationBar from './InformationBar';
 
 import { getAccessTokenFromResponse } from './common';
 import CarrierProfileComponent from './CarrierProfileComponent';
@@ -58,11 +58,12 @@ export default class SignUpPersonalProfileComponent extends Component {
 
     openWelcomeComponent = () => {
         this.state.navigator.push({
+            id: 'Welcome',
             title: 'Welcome Screen',
-            component: WelcomeComponent,
-            navigator: this.state.navigator,
-            navigationBarHidden: true,
-            passProps: { title: "Welcome Screen", navigator: this.state.navigator}
+            // component: WelcomeComponent,
+            // navigator: this.state.navigator,
+            // navigationBarHidden: true,
+            // passProps: { title: "Welcome Screen", navigator: this.state.navigator}
         });
     }
 
@@ -75,11 +76,12 @@ export default class SignUpPersonalProfileComponent extends Component {
             Alert.alert("All fields are required", "Please fill the complete information");
         } else {
             this.props.navigator.push({
+                id: 'CarrierProfile',
                 title: 'Sign up details',
-                component: CarrierProfileComponent,
-                navigator: this.props.navigator,
-                navigationBarHidden: true,
-                passProps: {title: 'Carrier Company details', navigator: this.props.navigator, accessToken: accessToken}
+                // component: CarrierProfileComponent,
+                // navigator: this.props.navigator,
+                // navigationBarHidden: true,
+                // passProps: {title: 'Carrier Company details', navigator: this.props.navigator, accessToken: accessToken}
             });
         }
     }
