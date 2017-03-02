@@ -338,7 +338,7 @@ export default class MyJobsComponent extends Component {
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
                     <Picker
-                        style={{fontSize: 25}}
+                        //style={{fontSize: 25}}
                         selectedValue={this.state.cancelReason}
                         onValueChange={(cancelReason) => this.setState({cancelReason})}>
                         {CANCEL_REASONS.map((cancelReason) => (

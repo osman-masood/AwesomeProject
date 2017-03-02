@@ -10,7 +10,7 @@
 //noinspection JSUnresolvedVariable
 import React, {Component, PropTypes} from "react";
 //noinspection JSUnresolvedVariable
-import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput} from "react-native";
+import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput, Image} from "react-native";
 
 import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
@@ -250,7 +250,12 @@ export default class TabAndroidComponent extends Component {
             <TabNavigator>
                 <TabNavigator.Item
                     title="New Jobs"
-                    icon={{uri: base64Icon, scale: 3}}
+                    renderIcon={() =>
+                        <Image
+                            source={{uri: base64Icon}}
+                        />
+                    }
+                    //icon={{uri: base64Icon, scale: 3}}
                     selected={this.state.selectedTab === 'newJobsTab'}
                     onPress={() => this.setState({ selectedTab: 'newJobsTab'})}>
                     {this._renderContent()}
@@ -258,7 +263,10 @@ export default class TabAndroidComponent extends Component {
 
                 <TabNavigator.Item
                     title="My Jobs"
-                    icon={require('../flux.png')}
+                    renderIcon={() =>
+                        <Image source={require('../flux@3x.png')} />
+                    }
+                    // icon={require('../flux.png')}
                     selected={this.state.selectedTab === 'myJobsTab'}
                     onPress={() => this.setState({
                         selectedTab: 'myJobsTab',
