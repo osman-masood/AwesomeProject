@@ -11,6 +11,8 @@ import {
     Text,
     View,
     NavigatorIOS,
+    TouchableHighlight,
+    Image,
     TextInput,
     Button,
     Alert,
@@ -22,10 +24,10 @@ import DatePicker from 'react-native-datepicker';
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 import WelcomeComponent from './WelcomeComponent';
-import InformationBar from './InformationBar';
 
 import { getAccessTokenFromResponse } from './common';
 import CarrierProfileComponent from './CarrierProfileComponent';
+import LicensePhotoComponent from './LicensePhotoComponent';
 
 import NavigationBar from 'react-native-navbar';
 
@@ -35,7 +37,8 @@ export default class SignUpPersonalProfileComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        phone: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -47,13 +50,14 @@ export default class SignUpPersonalProfileComponent extends Component {
             accessToken: this.props.accessToken,
             firstName: null,
             lastName: null,
-            licenseNumber: null,
-            countryState: null,
-            expirationDate: "2016-05-01"
-        }
-        // console.info("SignUpPersonalProfileComponent constructor with accessToken", props.accessToken, "title", props.title);
-        // this._onForward = this._onForward.bind(this);
-        // this.state = { code: null, submittingCodeState: 0 };  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
+            driversLicense: null,
+            driversLicenseState: null,
+            driversLicenseExpiry: "2016-05-01",
+            usedPhoto: null,
+            cameraModalOpen: true, // <--
+        };
+
+        this.tookPicture = this.tookPicture.bind(this);
     }
 
     openWelcomeComponent = () => {
@@ -68,22 +72,45 @@ export default class SignUpPersonalProfileComponent extends Component {
 
     openCarrierProfileComponent = (accessToken) => {
 
-        if (this.state.firstName == null || this.state.lastName == null || this.state.licenseNumber == null
-            || this.state.countryState == null || this.state.expirationDate === "Invalid Date"
+        if (this.state.firstName == null || this.state.lastName == null || this.state.driversLicense == null
+            || this.state.driversLicenseState == null || this.state.driversLicenseExpiry === "Invalid Date" || this.state.usedPhoto === null
         )
         {
-            Alert.alert("All fields are required", "Please fill the complete information");
+            Alert.alert("All fields are required", "Please fill all fields");
         } else {
             this.props.navigator.push({
                 title: 'Sign up details',
                 component: CarrierProfileComponent,
                 navigator: this.props.navigator,
                 navigationBarHidden: true,
-                passProps: {title: 'Carrier Company details', navigator: this.props.navigator, accessToken: accessToken}
+                passProps: {title: 'Carrier Company details', navigator: this.props.navigator, accessToken: accessToken, phone: this.props.phone,
+                            firstName: this.state.firstName, lastName: this.state.lastName, driversLicense: this.state.driversLicense,
+                            driversLicenseState: this.state.driversLicenseState, driversLicenseExpiry: this.state.driversLicenseExpiry
+                            }
             });
         }
     }
+
     _onForward() {
+
+    }
+
+    tookPicture(path) {
+        let that = this;
+        that.setState({
+            usedPhoto: path,
+            cameraModalOpen: false,
+        });
+    }
+
+    openLicensePhotoComponent() {
+            this.props.navigator.push({
+                title: 'License photo',
+                component: LicensePhotoComponent,
+                navigator: this.props.navigator,
+                navigationBarHidden: true,
+                passProps: {title: 'License photo', navigator: this.props.navigator, accessToken: this.props.accessToken, takePicture: this.tookPicture}
+            });
 
     }
 
@@ -106,6 +133,14 @@ export default class SignUpPersonalProfileComponent extends Component {
                     <Text style={styles.textStyle}>Personal Profile</Text>
                 </View>
 
+                    <TouchableHighlight
+                        style={styles.pictureStyle} onPress={() => {this.openLicensePhotoComponent()}}>
+                        <Image
+                            //defaultSource={require('../assets/sign.jpeg')}
+                            style={styles.imageStyle}
+                            source={ this.state.usedPhoto === null? require('../assets/sign.jpeg'): { uri : this.state.usedPhoto}}
+                        />
+                    </TouchableHighlight>
 
                     <TextInput
                         style={styles.textInputStyle}
@@ -133,8 +168,8 @@ export default class SignUpPersonalProfileComponent extends Component {
 
                     <TextInput
                         style={styles.textInputStyle}
-                        onChangeText={(licenseNumber) => this.setState({licenseNumber})}
-                        value={this.state.licenseNumber}
+                        onChangeText={(driversLicense) => this.setState({driversLicense})}
+                        value={this.state.driversLicense}
                         placeholder="Driver's License Number"
                         multiline={false}
                         autoFocus={true}
@@ -145,8 +180,8 @@ export default class SignUpPersonalProfileComponent extends Component {
 
                     <TextInput
                         style={styles.textInputStyle}
-                        onChangeText={(countryState) => this.setState({countryState})}
-                        value={this.state.countryState}
+                        onChangeText={(driversLicenseState) => this.setState({driversLicenseState})}
+                        value={this.state.driversLicenseState}
                         placeholder="State"
                         multiline={false}
                         autoFocus={true}
@@ -156,13 +191,13 @@ export default class SignUpPersonalProfileComponent extends Component {
 
                 <DatePicker
                     style={styles.dateStyle}
-                    date={this.state.expirationDate}
+                    date={this.state.driversLicenseExpiry}
                     mode="date"
                     placeholder="select date"
                     format="YYYY-MM-DD"
                     confirmBtnText="Confirm"
                     cancelBtnText="Cancel"
-                    onDateChange={(expirationDate) => this.setState({expirationDate})}
+                    onDateChange={(driversLicenseExpiry) => this.setState({driversLicenseExpiry})}
                 />
 
 
@@ -230,6 +265,16 @@ const styles = StyleSheet.create({
         marginLeft: 5,
         marginRight: 5
     },
+
+    pictureStyle: {
+        alignItems: 'center'
+    },
+
+    imageStyle: {
+        height: 200,
+        width: 200,
+    },
+
 
     buttonStyle: {
         textAlign: 'center',

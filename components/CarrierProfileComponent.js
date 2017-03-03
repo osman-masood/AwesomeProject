@@ -15,13 +15,13 @@ import {
     View,
     NavigatorIOS,
     TextInput,
-    Button
+    Button,
+    Alert
 } from 'react-native';
 
 //noinspection JSUnresolvedVariable
 import TabBarComponent from './TabBarComponent';
 import WelcomeComponent from './WelcomeComponent';
-import InformationBar from './InformationBar';
 
 import { getAccessTokenFromResponse } from './common';
 
@@ -33,7 +33,8 @@ export default class CarrierProfileComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        phone: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -43,16 +44,16 @@ export default class CarrierProfileComponent extends Component {
             title: this.props.title,
             navigator: this.props.navigator,
             accessToken: this.props.accessToken,
+            phone: this.props.phone,
             companyName: null,
             address1: null,
-            address2: null,
             city: null,
             countryState: null,
             zipCode: null,
-            emailAddress: null,
+            email: null,
             mcNumber: null,
             usDotNumber: null,
-            vehicleAmount: null
+            vehicleCount: null
         }
         // console.info("SignUpPersonalProfileComponent constructor with accessToken", props.accessToken, "title", props.title);
         // this._onForward = this._onForward.bind(this);
@@ -69,12 +70,64 @@ export default class CarrierProfileComponent extends Component {
         });
     }
 
-    _onForward() {
+    submitRequest() {
 
+        if ( this.state.companyName === null || this.state.address1 === null || this.state.city === null
+              || this.state.zipCode === null || this.state.email === null || this.state.mcNumber === null
+            || this.state.usDotNumber === null || this.state.vehicleCount === null) {
 
+            Alert.alert("All fields are required", "Please fill all fields");
+        } else {
+
+            fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                body: JSON.stringify({
+                    "firstName": `${this.props.firstName}`,
+                    "lastName": `${this.props.lastName}`,
+                    "phone": `${this.props.phone}`,
+                    "email": `${this.props.email}`,
+                    "driversLicense": `${this.props.driversLicense}`,
+                    "driversLicenseState": `${this.props.driversLicenseState}`,
+                    "driversLicenseExpiry": `${this.props.driversLicenseExpiry}`,
+                    "dob" : `1991-08-08`,
+                    "role": 'user',
+                    "strategy" : 'sms',
+                    "profile" : {
+                        "type": "carrier",
+                        "role": "owner",
+                    },
+                    "name": `${this.state.companyName}`,
+                    "mcNumber": `${this.state.mcNumber}`,
+                    "udDot": `${this.state.usDotNumber}`,
+                    "address": `${this.state.address1}`,
+                    "email": `${this.state.email}`
+                })
+            }).then((response) => {
+                    console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
+                    if (response.status === 201) {
+                        Alert.alert("User created successfully. Please login to proceed.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error Adding user " + this.props.phone, error);
+                });
+
+            this.props.navigator.push({
+                    title: 'Welcome Screen',
+                    component: WelcomeComponent,
+                    navigator: this.props.navigator,
+                    navigationBarHidden: true,
+                    passProps: { title: "Welcome Screen", navigator: this.props.navigator}
+            });
+        }
     }
 
-    render() {
+
+
+    render(){
 
         const leftButtonConfig = {
             title: 'Back',
@@ -131,7 +184,7 @@ export default class CarrierProfileComponent extends Component {
                     <TextInput
                         style={styles.textInputStyle}
                         onChangeText={(countryState) => this.setState({countryState})}
-                        value={this.state.countryState}
+                        value={this.state.driversLicenseState}
                         placeholder="State"
                         multiline={false}
                         autoFocus={true}
@@ -150,8 +203,8 @@ export default class CarrierProfileComponent extends Component {
 
                 <TextInput
                     style={styles.textInputStyle}
-                    onChangeText={(emailAddress) => this.setState({emailAddress})}
-                    value={this.state.emailAddress}
+                    onChangeText={(email) => this.setState({email})}
+                    value={this.state.email}
                     placeholder="Email Address"
                     multiline={false}
                     autoFocus={true}
@@ -184,8 +237,8 @@ export default class CarrierProfileComponent extends Component {
 
                     <TextInput
                         style={styles.textInputStyle}
-                        onChangeText={(vehicleAmount) => this.setState({vehicleAmount})}
-                        value={this.state.vehicleAmount}
+                        onChangeText={(vehicleCount) => this.setState({vehicleCount})}
+                        value={this.state.vehicleCount}
                         placeholder="How many vehicles can you carry?"
                         multiline={false}
                         autoFocus={true}
@@ -194,7 +247,7 @@ export default class CarrierProfileComponent extends Component {
 
                 <Button
                     style={styles.buttonStyle}
-                    onPress={this._onForward}
+                    onPress={() => {this.submitRequest()}}
                     title="Submit"
                     color="#841584"
                     accessibilityLabel="Go to Carrier Information"
