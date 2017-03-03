@@ -251,9 +251,7 @@ export default class TabAndroidComponent extends Component {
                 <TabNavigator.Item
                     title="New Jobs"
                     renderIcon={() =>
-                        <Image
-                            source={{uri: base64Icon}}
-                        />
+                        <Image source={require('../relay@3x.png')} />
                     }
                     //icon={{uri: base64Icon, scale: 3}}
                     selected={this.state.selectedTab === 'newJobsTab'}

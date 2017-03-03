@@ -711,10 +711,10 @@ export default class NewJobsComponent extends Component {
 
 
             <TouchableHighlight disabled={dealerJobsOrMyJobs} onPress={() => this.props.navigator.push({
-                component: JobDetailComponent,
-                navigationBarHidden: false,
-                navigator: this.props.navigator,
-                passProps: {title: "My Job String", request:request},
+                id: 'JobDetail',
+                title: "My Job String",
+                request: request,
+                haversineDistance: haversineDistance,
             })}>
                 <View style={{flexDirection: 'row'}}>
                     <View style={{flex: 3}}>
