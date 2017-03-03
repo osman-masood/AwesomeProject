@@ -57,7 +57,7 @@ export default class EnterCodeComponent extends Component {
             component: SignUpPersonalProfileComponent,
             navigator: this.props.navigator,
             navigationBarHidden: true,
-            passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken}
+            passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken, phone: this.props.phone}
         });
     }
 
@@ -160,6 +160,11 @@ export default class EnterCodeComponent extends Component {
                 }
                 else if (statusCode === 200) {
                     // User is registered: Take to new jobs
+
+                    if(this.props.loginOrAccount === 2) {
+                        Alert.alert("User Already Registered!", "User is already registered with phone entered. Loging in ...");
+                    }
+
                     console.warn(ACCESS_TOKEN_STORAGE_KEY);
                     AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
                     console.warn(accessToken);

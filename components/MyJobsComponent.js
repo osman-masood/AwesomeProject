@@ -500,6 +500,52 @@ export default class MyJobsComponent extends Component {
     }
 
     renderJobListElementSummary(request, isTouchable?: boolean) {
+
+        let carCount = 0, suvCount = 0, vanCount = 0, trucksCount = 0;
+
+        if(request.vehicles.count > 0) {
+
+            for (let e of request.vehicles.edges){
+
+                switch(e.node.type){
+                    case "car":
+                        carCount++;
+                        break;
+                    case "suv":
+                        suvCount++;
+                        break;
+                    case "van":
+                        vanCount++;
+                        break;
+                    case "truck":
+                        trucksCount++;
+                        break;
+                }
+            }
+        }
+
+        let vehicleTypeString = "";
+
+        if (carCount > 0) {
+
+            vehicleTypeString+= `Cars: ${carCount}`
+        }
+        if (suvCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `SUVs: ${suvCount}`
+        }
+        if (vanCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `Vans: ${vanCount}`
+        }
+        if (trucksCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `Trucks: ${trucksCount}`
+        }
+
         // Calculate straight-line distance between current location and ending point
         const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
 
@@ -509,8 +555,8 @@ export default class MyJobsComponent extends Component {
                 <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
                 <Text>Origin: {request.origin.address}, {request.origin.city}, {request.origin.state}</Text>
                 <Text>Destination: {request.destination.address}, {request.destination.city}, {request.destination.state}</Text>
-                <Text>Vehicles: {request.vehicles.count}</Text>
-                <Text>Trailer Type: {"TODO"}</Text>
+                <Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>
+                <Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
                 <Text>{generateOperableString(request)}</Text>
             </View>
             <View style={{flex: 1}}>
