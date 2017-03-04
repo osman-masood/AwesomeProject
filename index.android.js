@@ -23,7 +23,7 @@ import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import TabBarComponent from "./components/TabBarComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
 import TabViewComponent from "./components/TabViewComponent";
-import BottomBarComponent from "./components/BottomBarComponent";
+//import BottomBarComponent from "./components/BottomBarComponent";
 import EnterCodeComponent from "./components/EnterCodeComponent";
 import TabAndroidComponent from "./components/TabAndroidComponent";
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
