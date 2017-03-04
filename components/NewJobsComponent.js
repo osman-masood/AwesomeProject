@@ -34,6 +34,7 @@ import {
 
 import JobDetailComponent from './JobDetailComponent';
 //noinspection JSUnresolvedVariable
+//import ButtonIcon from 'react-native-icon-button';
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
 import Tabs from 'react-native-tabs';
@@ -51,6 +52,9 @@ const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
 
 
 export default class NewJobsComponent extends Component {
+
+
+
     //noinspection JSUnusedGlobalSymbols,JSUnresolvedVariable
     static propTypes = {
         title: PropTypes.string.isRequired,
@@ -164,6 +168,8 @@ export default class NewJobsComponent extends Component {
             }),
             (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
         );
+
+
     }
 
     componentWillReceiveProps(nextProps) {
@@ -744,10 +750,18 @@ export default class NewJobsComponent extends Component {
         }
 
         let phoneNumberLambda = null;
+        //let ButtonIcon = require('../node_modules/react-native-icon-button');
         if (showPhoneNumber) {
-            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
-                <Text style={{fontSize: 12}}>Call</Text>
-            </Icon.Button>;
+            phoneNumberLambda = (r) =>
+                //<Text style={{fontSize: 12}}> Call </Text>
+                //<ButtonIcon icon={require("../assets/phonebuttonios@3x.png")} onPress={ () => this.callPhone(r.shipper.phoneNumber)} />;
+                //<Icon.Button name="phone" color="white" backgroundColor="#0AC318" borderRadius={50} size={30} iconStyle={{margin: 5}} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                //</Icon.Button>;
+                <TouchableHighlight onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                    <View >
+                        <Image style={{width: 40, height: 40}} source={require('../assets/phonebuttonios@3x.png')} />
+                    </View>
+                </TouchableHighlight>
         } else {
             phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
         }
@@ -757,8 +771,10 @@ export default class NewJobsComponent extends Component {
         let dealerJobsOrMyJobs = (request.preferredCarrierIds.indexOf(this.state.currentUserId) === -1 )? true : false;
 
 
-        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+        let originStateAbbr = this.abbrState(r.origin.state, 'abbr');
+        let destStateAbbr = this.abbrState(r.destination.state, 'abbr');
 
+        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
 
             <TouchableHighlight disabled={dealerJobsOrMyJobs} onPress={() => this.props.navigator.push({
                 component: JobDetailComponent,
@@ -766,33 +782,94 @@ export default class NewJobsComponent extends Component {
                 navigator: this.props.navigator,
                 passProps: {title: "My Job String", request:request},
             })}>
-                <View style={{flexDirection: 'row'}}>
-                    <View style={{flex: 3}}>
-                        <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                        <Text>Origin: {request.origin.city}, {request.origin.state}</Text>
-                        <Text>Destination: {request.destination.city}, {request.destination.state}</Text>
-                        <Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>
-                        <Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
-                        <Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
+                <View>
+                    <View style={{margin: 2, alignItems: 'flex-end'}}>
+                        <Text style={{marginBottom: 2, marginRight: 5}}>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
+                        <Text style={{marginRight: 5}}>{`${request.paymentType}: $${request.amountDue}`}</Text>
                     </View>
-                    <View style={{flex: 1}}>
-                        <Text>{`${request.paymentType}: $${request.amountDue}`}</Text>
-                        <Text>Distance: {haversineDistance}</Text>
-                        <Text>Pickup: {request.pickupDate.substring(0,10)}</Text>
-                        <Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
+                    <View style={{flexDirection: 'row', margin: 2}}>
+                        <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
+                        <Text style={{margin: 5}}>{request.origin.city}, {originStateAbbr}</Text>
+                        <Image style={{margin: 5}} source={require('../assets/arrow@3x.png')} />
+                        <Image style={{margin: 5}}source={require('../assets/enddot@3x.png')} />
+                        <Text style={{margin: 5}}>{request.destination.city}, {destStateAbbr}</Text>
                     </View>
+                    <View style={{flexDirection: 'row', margin: 5}}>
+                        <View style={{flexDirection: 'row'}}>
+                            <Text>{carCount} x </Text>
+                            <Image source={require('../assets/car@3x.png')} />
+                        </View>
+                        <View><Text> | </Text></View>
+                        <View style={{flexDirection: 'row'}}>
+                            <Text>{trucksCount} x </Text>
+                            <Image source={require('../assets/truck@3x.png')} />
+                        </View>
+                        <View><Text> | </Text></View>
+                        <View style={{flexDirection: 'row'}}>
+                            <Text>{vanCount} x </Text>
+                            <Image source={require('../assets/van@3x.png')} />
+                        </View>
+                        <View><Text> | </Text></View>
+                        <View style={{flexDirection: 'row'}}>
+                            <Text>{suvCount} x </Text>
+                            <Image source={require('../assets/suv@3x.png')} />
+                        </View>
+                    </View>
+
+                    <View style={styles.details}>
+                        <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Trailer Type: </Text>{request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
+                        <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Distance: </Text>{haversineDistance}</Text>
+                    </View>
+
+                    <View style={styles.details}>
+                        <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Running: </Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
+                        <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Pickup: </Text>{request.pickupDate.substring(0,10)}</Text>
+                    </View>
+
+
+                    {/*<View style={{flex: 3}}>*/}
+                        {/*<Text style={{fontWeight: 'bold'}}>{request.name}</Text>*/}
+                        {/*<Text>Origin: {request.origin.city}, {request.origin.state}</Text>*/}
+                        {/*<Text>Destination: {request.destination.city}, {request.destination.state}</Text>*/}
+                        {/*<Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>*/}
+                        {/*<Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>*/}
+                        {/*<Text>{NewJobsComponent.generateIsOperableString(request)}</Text>*/}
+                    {/*</View>*/}
+                    {/*<View style={{flex: 1}}>*/}
+                        {/*<Text>{`${request.paymentType}: $${request.amountDue}`}</Text>*/}
+                        {/*<Text>Distance: {haversineDistance}</Text>*/}
+                        {/*<Text>Pickup: {request.pickupDate.substring(0,10)}</Text>*/}
+                        {/*<Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>*/}
+                    {/*</View>*/}
                 </View>
             </TouchableHighlight>
 
             {/* Call, Accept/Decline buttons */}
-            <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+            <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 5}}>
                 { phoneNumberLambda(request) }
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={45} onPress={ () => this.setAcceptModalVisible(true, request)}>
-                    <Text style={{fontSize: 14}}>Accept</Text>
-                </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>
-                    <Text style={{fontSize: 14}}>Decline</Text>
-                </Icon.Button>
+                <TouchableHighlight onPress={ () => this.props.navigator.push({
+                    component: JobDetailComponent,
+                    navigationBarHidden: false,
+                    navigator: this.props.navigator,
+                    passProps: {title: "My Job String", request:request},
+                })}>
+                    <View >
+                        <Image source={require('../assets/jobdetails@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                <TouchableHighlight onPress={ () => this.setDeclineModalVisible(true, request)}>
+                    <View>
+                        <Image source={require('../assets/decline@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                <TouchableHighlight onPress={ () => this.setAcceptModalVisible(true, request)}>
+                    <View >
+                        <Image source={require('../assets/accept@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>*/}
+                    {/*<Text style={{fontSize: 14}}>Decline</Text>*/}
+                {/*</Icon.Button>*/}
                 {/*
                 <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.phoneNumber)}>
                     <Text style={{fontSize: 12}}>Forward</Text>
@@ -806,7 +883,83 @@ export default class NewJobsComponent extends Component {
         Linking.openURL("tel:1-408-555-5555").catch(
             err => console.error('An error occurred opening phoneNumber number ' + phoneNumber, err));
     }
+
+    abbrState(input, to){
+
+        let states = [
+            ['Arizona', 'AZ'],
+            ['Alabama', 'AL'],
+            ['Alaska', 'AK'],
+            ['Arizona', 'AZ'],
+            ['Arkansas', 'AR'],
+            ['California', 'CA'],
+            ['Colorado', 'CO'],
+            ['Connecticut', 'CT'],
+            ['Delaware', 'DE'],
+            ['Florida', 'FL'],
+            ['Georgia', 'GA'],
+            ['Hawaii', 'HI'],
+            ['Idaho', 'ID'],
+            ['Illinois', 'IL'],
+            ['Indiana', 'IN'],
+            ['Iowa', 'IA'],
+            ['Kansas', 'KS'],
+            ['Kentucky', 'KY'],
+            ['Kentucky', 'KY'],
+            ['Louisiana', 'LA'],
+            ['Maine', 'ME'],
+            ['Maryland', 'MD'],
+            ['Massachusetts', 'MA'],
+            ['Michigan', 'MI'],
+            ['Minnesota', 'MN'],
+            ['Mississippi', 'MS'],
+            ['Missouri', 'MO'],
+            ['Montana', 'MT'],
+            ['Nebraska', 'NE'],
+            ['Nevada', 'NV'],
+            ['New Hampshire', 'NH'],
+            ['New Jersey', 'NJ'],
+            ['New Mexico', 'NM'],
+            ['New York', 'NY'],
+            ['North Carolina', 'NC'],
+            ['North Dakota', 'ND'],
+            ['Ohio', 'OH'],
+            ['Oklahoma', 'OK'],
+            ['Oregon', 'OR'],
+            ['Pennsylvania', 'PA'],
+            ['Rhode Island', 'RI'],
+            ['South Carolina', 'SC'],
+            ['South Dakota', 'SD'],
+            ['Tennessee', 'TN'],
+            ['Texas', 'TX'],
+            ['Utah', 'UT'],
+            ['Vermont', 'VT'],
+            ['Virginia', 'VA'],
+            ['Washington', 'WA'],
+            ['West Virginia', 'WV'],
+            ['Wisconsin', 'WI'],
+            ['Wyoming', 'WY'],
+        ];
+
+        if (to == 'abbr'){
+            input = input.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+            for(i = 0; i < states.length; i++){
+                if(states[i][0] == input){
+                    return(states[i][1]);
+                }
+            }
+        } else if (to == 'name'){
+            input = input.toUpperCase();
+            for(i = 0; i < states.length; i++){
+                if(states[i][1] == input){
+                    return(states[i][0]);
+                }
+            }
+        }
+    }
 }
+
+
 
 const styles = StyleSheet.create({
     tabContent: {
@@ -818,13 +971,16 @@ const styles = StyleSheet.create({
         margin: 50,
     },
     listViewHeader: {
+        alignItems: 'center',
     },
     listViewHeaderText: {
         color: '#000000',
         fontFamily: 'Helvetica Neue',
         textShadowColor: '#DDDDDD',
         textShadowOffset: {width: 0, height: 3},
-        textShadowRadius: 6
+        textShadowRadius: 6,
+        fontSize: 16,
+
     },
     button: {
         borderRadius: 5,
@@ -839,4 +995,14 @@ const styles = StyleSheet.create({
         margin: 5,
         textAlign: 'center',
     },
+
+    details: {
+        flexDirection: 'row',
+        margin: 5,
+        padding: 5,
+    },
+    detailText: {
+        marginLeft: 20,
+    },
+
 });

@@ -138,7 +138,7 @@ export default class SignUpPersonalProfileComponent extends Component {
                         <Image
                             //defaultSource={require('../assets/sign.jpeg')}
                             style={styles.imageStyle}
-                            source={ this.state.usedPhoto === null? require('../assets/sign.jpeg'): { uri : this.state.usedPhoto}}
+                            source={ this.state.usedPhoto === null? require('../assets/sign-bg.png'): { uri : this.state.usedPhoto}}
                         />
                     </TouchableHighlight>
 

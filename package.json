@@ -24,7 +24,8 @@
     "react-native-tab-navigator": "^0.3.3",
     "react-native-tab-view": "0.0.56",
     "react-native-tabs": "1.0.9",
-    "react-native-vector-icons": "4.0.0"
+    "react-native-vector-icons": "4.0.0",
+    "react-native-icon-button": "1.0.0"
   },
   "devDependencies": {
     "babel-jest": "18.0.0",
