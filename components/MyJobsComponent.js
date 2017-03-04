@@ -16,21 +16,21 @@ import EventEmitter from 'EventEmitter'
 global.evente = new EventEmitter;
 
 import {
-  View,
-  Linking,
-  TabBarIOS,
-  Button,
-  ScrollView,
-  Text,
-  Image,
-  Dimensions,
-  StyleSheet,
-  TouchableHighlight,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  Alert,
-  PickerIOS,
+    View,
+    Linking,
+    TabBarIOS,
+    Button,
+    ScrollView,
+    Text,
+    Image,
+    Dimensions,
+    StyleSheet,
+    TouchableHighlight,
+    TouchableOpacity,
+    Modal,
+    TextInput,
+    Alert,
+    PickerIOS,
     Picker
 } from 'react-native'
 //noinspection JSUnresolvedVariable
@@ -147,7 +147,7 @@ export default class MyJobsComponent extends Component {
                 acceptedRequests: acceptedRequests
             })
         });
-    }    
+    }
 
     hasCarrierAcceptedRequest(carrierId: string, request:Request) {
         // Must be Dispatched or In Progress, and deliveries.edges[i].node must contain carrierId.
@@ -268,34 +268,34 @@ export default class MyJobsComponent extends Component {
         const subTabs = this.renderAllJobsSubTabs();
         return [subTabs, <View key="mapview">
             <MapView
-            region={this.state.mapViewRegion}
-            //onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
-            style={{height: Dimensions.get("window").height-160}}>
+                region={this.state.mapViewRegion}
+                //onRegionChange={(mapViewRegion) => this.setState({mapViewRegion})}
+                style={{height: Dimensions.get("window").height-160}}>
 
-            {this.state.acceptedRequests.map(request => (
-                <MapView.Polyline
-                    key={request._id}
-                    strokeColor={this.randomColor()}
-                    coordinates={[{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]},
+                {this.state.acceptedRequests.map(request => (
+                    <MapView.Polyline
+                        key={request._id}
+                        strokeColor={this.randomColor()}
+                        coordinates={[{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]},
                     {latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}]}
-                    strokeWidth={1}
-                />
+                        strokeWidth={1}
+                    />
 
-            ))}
-            {this.state.acceptedRequests.map(request => (
-                <MapView.Marker key={request._id}
-                                coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}>
-                    <MarkerCustomView letter="O" bgColor={styles.redBackground} request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
-                </MapView.Marker>
-            ))}
-            {this.state.acceptedRequests.map(request => (
-                <MapView.Marker
-                    key={request._id}
-                    coordinate={{latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}}>
-                    <MarkerCustomView bgColor={styles.greenBackground} letter="D" request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
-                </MapView.Marker>
-            ))}
-        </MapView>
+                ))}
+                {this.state.acceptedRequests.map(request => (
+                    <MapView.Marker key={request._id}
+                                    coordinate={{latitude: request.origin.coordinates[0], longitude: request.origin.coordinates[1]}}>
+                        <MarkerCustomView letter="O" bgColor={styles.redBackground} request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
+                    </MapView.Marker>
+                ))}
+                {this.state.acceptedRequests.map(request => (
+                    <MapView.Marker
+                        key={request._id}
+                        coordinate={{latitude: request.destination.coordinates[0], longitude: request.destination.coordinates[1]}}>
+                        <MarkerCustomView bgColor={styles.greenBackground} letter="D" request={request} onMarkerPress={this.pressedMarker.bind(this)}/>
+                    </MapView.Marker>
+                ))}
+            </MapView>
             <JobMapPreview
                 buildPreview={this.state.buildPreview}
                 cancelRequestFunction={this.props.cancelRequestFunction}
@@ -466,10 +466,24 @@ export default class MyJobsComponent extends Component {
     renderJobListElement(request, showPhoneNumber: boolean, marginBottom?: number) {
         // Whether to show Call Phone button
         let phoneNumberLambda = null;
+        // if (showPhoneNumber) {
+        //     phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+        //         <Text style={{fontSize: 12}}>Call</Text>
+        //     </Icon.Button>;
+        // } else {
+        //     phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
+        // }
         if (showPhoneNumber) {
-            phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
-                <Text style={{fontSize: 12}}>Call</Text>
-            </Icon.Button>;
+            phoneNumberLambda = (r) =>
+                //<Text style={{fontSize: 12}}> Call </Text>
+                //<ButtonIcon icon={require("../assets/phonebuttonios@3x.png")} onPress={ () => this.callPhone(r.shipper.phoneNumber)} />;
+                //<Icon.Button name="phone" color="white" backgroundColor="#0AC318" borderRadius={50} size={30} iconStyle={{margin: 5}} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                //</Icon.Button>;
+                <TouchableHighlight onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                    <View >
+                        <Image style={{width: 40, height: 40}} source={require('../assets/phonebuttonios@3x.png')} />
+                    </View>
+                </TouchableHighlight>
         } else {
             phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
         }
@@ -483,19 +497,29 @@ export default class MyJobsComponent extends Component {
         if (marginBottom === null || marginBottom === undefined) {
             marginBottom = 5;
         }
-        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+        return <View key={request._id} style={styles.cardBottom}>
             {/* Job View */}
             { summaryView }
 
             {/* Navigate and Cancel buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
                 { phoneNumberLambda(request) }
-                <Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
-                    <Text style={{fontSize: 12}}>Navigate to {isPickUp ? "Pick up" : "Drop off"}</Text>
-                </Icon.Button>
-                <Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(true, request)}>
-                    <Text style={{fontSize: 12}}>Cancel</Text>
-                </Icon.Button>
+                <TouchableHighlight onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
+                    <View >
+                        <Image source={isPickUp ? require('../assets/navpickup@3x.png') : require('../assets/navdropoff.png')} />
+                    </View>
+                </TouchableHighlight>
+                {/*<Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>*/}
+                    {/*<Text style={{fontSize: 12}}>Navigate to {isPickUp ? "Pick up" : "Drop off"}</Text>*/}
+                {/*</Icon.Button>*/}
+                <TouchableHighlight onPress={ () => this.setCancelModalVisible(true, request)}>
+                    <View >
+                        <Image source={require('../assets/cancel@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(true, request)}>*/}
+                    {/*<Text style={{fontSize: 12}}>Cancel</Text>*/}
+                {/*</Icon.Button>*/}
             </View>
         </View>
     }
@@ -550,22 +574,69 @@ export default class MyJobsComponent extends Component {
         // Calculate straight-line distance between current location and ending point
         const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
 
+        let originStateAbbr = this.abbrState(request.origin.state, 'abbr');
+        let destStateAbbr = this.abbrState(request.destination.state, 'abbr');
+
         // View which displays request info
-        const summaryView = <View style={{flexDirection: 'row'}}>
-            <View style={{flex: 3}}>
-                <Text style={{fontWeight: 'bold'}}>{request.name}</Text>
-                <Text>Origin: {request.origin.address}, {request.origin.city}, {request.origin.state}</Text>
-                <Text>Destination: {request.destination.address}, {request.destination.city}, {request.destination.state}</Text>
-                <Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>
-                <Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
-                <Text>{generateOperableString(request)}</Text>
+        const summaryView = <View style={{flexDirection: 'column', margin: 10}}>
+            <View style={{margin: 2, alignItems: 'flex-end'}}>
+                <Text style={{marginBottom: 2, marginRight: 5}}>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
+                <Text style={{marginRight: 5}}>{`${request.paymentType}: $${request.amountDue}`}</Text>
             </View>
-            <View style={{flex: 1}}>
-                <Text>{`${request.paymentType}: $${request.amountDue}`}</Text>
-                <Text>Distance: {haversineDistance}</Text>
-                <Text>Pickup: {request.pickupDate.substring(0,10)}</Text>
-                <Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
+            <View style={{flex: 1, flexDirection: 'row', margin: 2}}>
+                <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
+                <Text style={{margin: 5}}>{request.origin.city}, {originStateAbbr}</Text>
+                <Image style={{margin: 5}} source={require('../assets/arrow@3x.png')} />
+                <Image style={{margin: 5}}source={require('../assets/enddot@3x.png')} />
+                <Text>{request.destination.city}, {destStateAbbr}</Text>
             </View>
+            <View style={{flexDirection: 'row', margin: 5}}>
+                <View style={{flexDirection: 'row'}}>
+                    <Text>{carCount} x </Text>
+                    <Image source={require('../assets/car@3x.png')} />
+                </View>
+                <View><Text> | </Text></View>
+                <View style={{flexDirection: 'row'}}>
+                    <Text>{trucksCount} x </Text>
+                    <Image source={require('../assets/truck@3x.png')} />
+                </View>
+                <View><Text> | </Text></View>
+                <View style={{flexDirection: 'row'}}>
+                    <Text>{vanCount} x </Text>
+                    <Image source={require('../assets/van@3x.png')} />
+                </View>
+                <View><Text> | </Text></View>
+                <View style={{flexDirection: 'row'}}>
+                    <Text>{suvCount} x </Text>
+                    <Image source={require('../assets/suv@3x.png')} />
+                </View>
+            </View>
+
+            <View style={styles.details}>
+                <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Trailer Type: </Text>{request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Distance: </Text>{haversineDistance}</Text>
+            </View>
+
+            <View style={styles.details}>
+                <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Running: </Text>{generateOperableString(request)}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Pickup: </Text>{request.pickupDate.substring(0,10)}</Text>
+            </View>
+
+
+            {/*<View style={{flex: 3}}>*/}
+                {/*<Text style={{fontWeight: 'bold'}}>{request.name}</Text>*/}
+                {/*<Text>Origin: {request.origin.address}, {request.origin.city}, {request.origin.state}</Text>*/}
+                {/*<Text>Destination: {request.destination.address}, {request.destination.city}, {request.destination.state}</Text>*/}
+                {/*<Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>*/}
+                {/*<Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>*/}
+                {/*<Text>{generateOperableString(request)}</Text>*/}
+            {/*</View>*/}
+            {/*<View style={{flex: 1}}>*/}
+                {/*<Text>{`${request.paymentType}: $${request.amountDue}`}</Text>*/}
+                {/*<Text>Distance: {haversineDistance}</Text>*/}
+                {/*<Text>Pickup: {request.pickupDate.substring(0,10)}</Text>*/}
+                {/*<Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>*/}
+            {/*</View>*/}
         </View>;
 
         // If it's touchable, wrap it with a TouchableHighlight
@@ -598,6 +669,80 @@ export default class MyJobsComponent extends Component {
     callPhone(phoneNumber: string) {
         Linking.openURL("tel:" + phoneNumber).catch(
             err => console.error('An error occurred opening phoneNumber number ' + phoneNumber, err));
+    }
+
+    abbrState(input, to){
+
+        let states = [
+            ['Arizona', 'AZ'],
+            ['Alabama', 'AL'],
+            ['Alaska', 'AK'],
+            ['Arizona', 'AZ'],
+            ['Arkansas', 'AR'],
+            ['California', 'CA'],
+            ['Colorado', 'CO'],
+            ['Connecticut', 'CT'],
+            ['Delaware', 'DE'],
+            ['Florida', 'FL'],
+            ['Georgia', 'GA'],
+            ['Hawaii', 'HI'],
+            ['Idaho', 'ID'],
+            ['Illinois', 'IL'],
+            ['Indiana', 'IN'],
+            ['Iowa', 'IA'],
+            ['Kansas', 'KS'],
+            ['Kentucky', 'KY'],
+            ['Kentucky', 'KY'],
+            ['Louisiana', 'LA'],
+            ['Maine', 'ME'],
+            ['Maryland', 'MD'],
+            ['Massachusetts', 'MA'],
+            ['Michigan', 'MI'],
+            ['Minnesota', 'MN'],
+            ['Mississippi', 'MS'],
+            ['Missouri', 'MO'],
+            ['Montana', 'MT'],
+            ['Nebraska', 'NE'],
+            ['Nevada', 'NV'],
+            ['New Hampshire', 'NH'],
+            ['New Jersey', 'NJ'],
+            ['New Mexico', 'NM'],
+            ['New York', 'NY'],
+            ['North Carolina', 'NC'],
+            ['North Dakota', 'ND'],
+            ['Ohio', 'OH'],
+            ['Oklahoma', 'OK'],
+            ['Oregon', 'OR'],
+            ['Pennsylvania', 'PA'],
+            ['Rhode Island', 'RI'],
+            ['South Carolina', 'SC'],
+            ['South Dakota', 'SD'],
+            ['Tennessee', 'TN'],
+            ['Texas', 'TX'],
+            ['Utah', 'UT'],
+            ['Vermont', 'VT'],
+            ['Virginia', 'VA'],
+            ['Washington', 'WA'],
+            ['West Virginia', 'WV'],
+            ['Wisconsin', 'WI'],
+            ['Wyoming', 'WY'],
+        ];
+
+        if (to == 'abbr'){
+            input = input.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+            for(i = 0; i < states.length; i++){
+                if(states[i][0] == input){
+                    return(states[i][1]);
+                }
+            }
+        } else if (to == 'name'){
+            input = input.toUpperCase();
+            for(i = 0; i < states.length; i++){
+                if(states[i][1] == input){
+                    return(states[i][0]);
+                }
+            }
+        }
     }
 }
 
@@ -655,7 +800,7 @@ class JobMapPreview extends Component {
                 }},
                 {
                     text: 'NO', onPress: () => {
-                        console.log('cancel')
+                    console.log('cancel')
                 }
                 }
             ]
@@ -810,4 +955,38 @@ const styles = StyleSheet.create({
         margin: 5,
         textAlign: 'center',
     },
+    details: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        margin: 5,
+        padding: 5,
+    },
+    detailText: {
+        marginLeft: 20,
+    },
+    job: {
+        flexDirection: 'column',
+        marginTop: 5,
+        marginBottom: 5,
+        padding: 10,
+        borderBottomWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#EEEEEE',
+        shadowOffset: {width: 5, height: 5},
+        shadowRadius: 5,
+        shadowOpacity: 5,
+    },
+    cardBottom: {
+        marginTop: 5,
+        marginBottom: 5,
+        paddingLeft: 5,
+        paddingTop: 5,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#EEEEEE',
+        shadowOffset: {width: 5, height: 5},
+        shadowRadius: 5,
+        shadowOpacity: 5,
+    }
 });

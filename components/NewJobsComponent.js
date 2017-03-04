@@ -774,7 +774,7 @@ export default class NewJobsComponent extends Component {
         let originStateAbbr = this.abbrState(r.origin.state, 'abbr');
         let destStateAbbr = this.abbrState(r.destination.state, 'abbr');
 
-        return <View key={request._id} style={{ marginTop: 5, marginBottom: marginBottom, paddingLeft: 5, paddingTop: 5}}>
+        return <View key={request._id} style={styles.job}>
 
             <TouchableHighlight disabled={dealerJobsOrMyJobs} onPress={() => this.props.navigator.push({
                 component: JobDetailComponent,
@@ -1004,5 +1004,16 @@ const styles = StyleSheet.create({
     detailText: {
         marginLeft: 20,
     },
+    job: {
+        marginTop: 5,
+        marginBottom: 5,
+        padding: 10,
+        borderBottomWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowColor: '#EEEEEE',
+        shadowOffset: {width: 5, height: 5},
+        shadowRadius: 5,
+        shadowOpacity: 5,
+    }
 
 });

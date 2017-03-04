@@ -16,7 +16,6 @@ import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
 import DeliveredComponent from "./DeliveredComponent";
 import MyNetworkComponent from "./MyNetworkComponent";
-import BottomBarComponent from "./BottomBarComponent";
 import TabNavigator from 'react-native-tab-navigator';
 
 import {
