@@ -18,6 +18,8 @@ import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
 import DeliveredComponent from "./DeliveredComponent";
 import MyNetworkComponent from "./MyNetworkComponent";
+import SettingsComponent from "./SettingsComponent";
+
 import {
     fetchCurrentUserAndLocationRequests,
     RequestStatusEnum,
@@ -41,7 +43,8 @@ class TabBarComponent extends Component {
     //noinspection JSUnresolvedVariable,JSUnusedGlobalSymbols
     static propTypes = {
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        //logoutFunction: PropTypes.object.isRequired
     };
 
      acceptRequestAndCreateDelivery (request) {
@@ -121,6 +124,10 @@ class TabBarComponent extends Component {
         this.fetchUserAndRequests();
     }
 
+    shouldComponentUpdate(nextProps, nextState) {
+        // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
+        return true;
+    }
     /**
      * Get User and all nearby Requests from GraphQL endpoint, and set state vars based on response.
      */
@@ -224,6 +231,13 @@ class TabBarComponent extends Component {
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
                                                accessToken={this.props.accessToken}
             />
+        }else if (this.state.selectedTab == 'settingsTab') {
+            returnComponent = <SettingsComponent title="Settings"
+                                               currentPosition={this.state.currentPosition}
+                                               navigator={this.props.navigator}
+                                               accessToken={this.props.accessToken}
+                                                 logoutFunction={this.props.logoutFunction}
+            />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
             returnComponent = <DeliveredComponent title="Delivered" navigator={this.props.navigator}
@@ -241,6 +255,8 @@ class TabBarComponent extends Component {
     };
 
     render() {
+
+        console.log(`TabBarComponent: ${this.state}`);
         if(!this.state.currentUser)
         {
             return <TabBarIOS></TabBarIOS>;
@@ -250,7 +266,7 @@ class TabBarComponent extends Component {
 
                 <TabBarIOS.Item
                     title="New Jobs"
-                    icon={{uri: base64Icon, scale: 3}}
+                    icon={require('../assets/newjobsbutton.png')}
                     selected={this.state.selectedTab === 'newJobsTab'}
                     onPress={() => {
                     this.setState({
@@ -262,7 +278,7 @@ class TabBarComponent extends Component {
 
                 <TabBarIOS.Item
                     title="My Jobs"
-                    icon={require('../flux.png')}
+                    icon={require('../assets/myjobsbutton.png')}
                     selected={this.state.selectedTab === 'myJobsTab'}
                     onPress={() => {
                     this.setState({
@@ -273,6 +289,18 @@ class TabBarComponent extends Component {
                     {this._renderContent()}
                 </TabBarIOS.Item>
 
+                <TabBarIOS.Item
+                    title="Settings"
+                    icon={{uri: base64Icon, scale: 3}}
+                    selected={this.state.selectedTab === 'settingsTab'}
+                    onPress={() => {
+                    this.setState({
+                        selectedTab: 'settingsTab',
+                        presses: this.state.presses + 2
+                    });
+                }}>
+                    {this._renderContent()}
+                </TabBarIOS.Item>
                 {/*
                  <TabBarIOS.Item
                  title="Delivered"

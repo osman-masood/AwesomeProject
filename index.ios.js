@@ -30,6 +30,19 @@ export default class stowk extends Component {
 
     constructor(props) {
         super(props);
+
+        this.state = { maniplulator: true};
+        this.changeSt = this.changeSt.bind(this);
+
+    }
+
+    changeSt() {
+        if(this.state.maniplulator){
+            this.setState({manipulator: false});
+        }
+        else{
+            this.setState({manipulator: true});
+        }
     }
 
     render() {
@@ -39,7 +52,7 @@ export default class stowk extends Component {
                     component: MainScreen,
                     title: '',
                     navigationBarHidden: true,
-                    passProps: {title: ""}
+                    passProps: {title: "", changeSt: this.changeSt}
                     }}
                 style={{flex: 1}}
             />
@@ -51,6 +64,9 @@ class MainScreen extends Component {
 
     constructor(props) {
         super(props);
+
+        this.logoutFunction = this.logoutFunction.bind(this);
+        this.loginFunction  = this.loginFunction.bind(this);
     }
 
     componentWillMount() {
@@ -66,6 +82,28 @@ class MainScreen extends Component {
         });
     }
 
+    logoutFunction() {
+
+
+        AsyncStorage.setItem('stowkAccessToken', "")
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+        this.props.changeSt();
+    }
+
+    loginFunction() {
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+        this.props.changeSt();
+    }
     componentWillReceiveProps(nextProps) {
 
     }    
@@ -76,10 +114,10 @@ class MainScreen extends Component {
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
         } else {
-            if (this.state.token == null) {
-                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator}/>;
+            if (this.state.token == null || this.state.token == "") {
+                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator} logoutFunction= {this.logoutFunction} loginFunction={this.loginFunction}/>;
             } else {
-                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
+                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator} logoutFunction={this.logoutFunction}/>;
             }
         }
         return retComponent;

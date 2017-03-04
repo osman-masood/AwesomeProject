@@ -39,7 +39,8 @@ export default class EnterCodeComponent extends Component {
         navigator: PropTypes.object.isRequired,
         accessToken: PropTypes.string.isRequired,
         loginOrAccount: PropTypes.number.isRequired,
-        phone: PropTypes.string.isRequired
+        phone: PropTypes.string.isRequired,
+       //s logoutFunction: PropTypes.object.isRequired,
     };
 
     constructor(props) {
@@ -51,7 +52,8 @@ export default class EnterCodeComponent extends Component {
             code: null,
             submittingCodeState: 0,  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
             loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
-            phone: this.props.phone
+            phone: this.props.phone,
+            accessToken: this.props.accessToken
         };
     }
 
@@ -83,7 +85,7 @@ export default class EnterCodeComponent extends Component {
             }
 
             //Send POST to verify the phoneNumber number
-            this.setState({submittingCodeState: 0});
+            this.setState({submittingCodeState: 1});
             fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/code", {
                 method: "POST",
                 headers: {
@@ -96,6 +98,7 @@ export default class EnterCodeComponent extends Component {
                     return [response.json(), getAccessTokenFromResponse(response)];
                 })
                 .then((responseJsonAndAccessToken) => {
+                    this.setState({submittingCodeState: 2});
                     const responseJson = responseJsonAndAccessToken[0];
                     const accessToken = responseJsonAndAccessToken[1];
 
@@ -103,9 +106,13 @@ export default class EnterCodeComponent extends Component {
 
                 })
                 .catch((error) => {
-                    this.setState({submittingPhoneNumberState: 3});
+                    this.setState({submittingCodeState: 3});
                     console.error("Error fetching code for phone number " + phoneNumber, error);
                 });
+    }
+
+    onSignUp() {
+        this.props.logoutFunction();
     }
 
     _onForward() {
@@ -140,7 +147,7 @@ export default class EnterCodeComponent extends Component {
                             [
                                 {
                                     text: 'Sign up',
-                                    onPress: () => {this.openWelcomeComponent()}
+                                    onPress: () => {this.onSignUp()}
                                 },
                                 {
                                     text: 'Sign in',
@@ -169,22 +176,25 @@ export default class EnterCodeComponent extends Component {
                         Alert.alert("User Already Registered!", "User is already registered with phone entered. Loging in ...");
                     }
 
-                    console.warn(ACCESS_TOKEN_STORAGE_KEY);
+                    //console.warn(ACCESS_TOKEN_STORAGE_KEY);
                     AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-                    console.warn(accessToken);
-                    this.setState({submittingCodeState: 2});
-                    this.props.navigator.push({
-                        id: 'NewJobs',
-                        title: 'New Jobs',
-                        accessToken: accessToken,
-                    });
+                    //console.warn(accessToken);
+                    this.setState({submittingCodeState: 2, accessToken: accessToken});
+                    //this.props.loginFunction();
+                    // this.props.navigator.push({
+                    //     id: 'NewJobs',
+                    //     title: 'New Jobs',
+                    //     accessToken: accessToken,
+                    // });
                     // this.props.navigator.push({ // push the next screen
                     //     title: 'New Jobs',
-                    //     component: TabAndroidComponent,
+                    //     component: TabBarComponent,
                     //     navigator: this.props.navigator,
                     //     navigationBarHidden: true,
-                    //     passProps: {accessToken: accessToken}
+                    //     passProps: {accessToken:this.state.accessToken, navigator:this.props.navigator,
+                    //         logoutFunction:this.props.logoutFunction}
                     // });
+
                     return accessToken;
                 }
                 else {
@@ -203,6 +213,7 @@ export default class EnterCodeComponent extends Component {
         // TODO add states for loading & failed
 
         window.console.log("inside enter code render");
+        console.log("Enter CC State", this.state);
 
         const leftButtonConfig = {
             title: 'Back',

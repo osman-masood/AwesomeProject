@@ -28,7 +28,9 @@ export default class EnterPhoneNumberComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        loginOrAccount: PropTypes.number.isRequired
+        loginOrAccount: PropTypes.number.isRequired,
+
+      //  logoutFunction: PropTypes.object.isRequired
 
     };
 
@@ -40,13 +42,9 @@ export default class EnterPhoneNumberComponent extends Component {
             phone: null,
             submittingPhoneNumberState: 0, // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
             loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
+            accessToken: null
         };
     }
-
-    verifyPhone() {
-
-    }
-
 
     _onForward() { // convention: _ = private
         // Prepend +1 to phone number if not there
@@ -74,26 +72,20 @@ export default class EnterPhoneNumberComponent extends Component {
                 const responseJson = responseJsonAndAccessToken[0];
                 const accessToken = responseJsonAndAccessToken[1];
 
-                this.setState({submittingPhoneNumberState: 2, phone: phoneNumber});
+                this.setState({submittingPhoneNumberState: 2, phone: phoneNumber, accessToken: accessToken});
 
 
-                this.props.navigator.push({
-                    id: 'EnterCode',
-                    title: 'Enter Code',
-                    accessToken: accessToken,
-                    component: EnterCodeComponent,
-                    navigator: this.props.navigator,
-                    navigationBarHidden: true,
-                    passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,  phone: this.state.phone}
-                });
                 // this.props.navigator.push({
+                //     id: 'EnterCode',
                 //     title: 'Enter Code',
+                //     accessToken: accessToken,
                 //     component: EnterCodeComponent,
                 //     navigator: this.props.navigator,
                 //     navigationBarHidden: true,
-                //     passProps: {accessToken: accessToken, title: 'Enter Code'},
-                //
+                //     passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,
+                //         phone: this.state.phone, logoutFunction: this.props.logoutFunction, loginFunction: this.props.loginFunction}
                 // });
+
             })
             .catch((error) => {
                 this.setState({submittingPhoneNumberState: 3});
@@ -108,41 +100,57 @@ export default class EnterPhoneNumberComponent extends Component {
             handler: () => this.props.navigator.pop()
         };
 
-        return (
+        let returnComponent;
+
+        if (this.state.submittingPhoneNumberState === 2) {
+            returnComponent = <EnterCodeComponent title="Enter Code Component"
+                                                  navigator={this.props.navigator}
+                                                  accessToken={this.state.accessToken}
+                                                  loginOrAccount={this.props.loginOrAccount}
+                                                  phone={this.state.phone}
+                                                  loginFunction={this.props.loginFunction}
+                                                  logoutFunction={this.props.logoutFunction}
+
+            />
+        }
+        else {
+            returnComponent = (
 
 
-            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+                <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
 
-                <NavigationBar
-                    style={{backgroundColor: '#F5FCFF'}}
-                    leftButton={leftButtonConfig}
+                    <NavigationBar
+                        style={{backgroundColor: '#F5FCFF'}}
+                        leftButton={leftButtonConfig}
+                    />
+                    <View style={styles.container}>
+                        <Text style={styles.welcome}>
+                            Enter Phone Number
+                        </Text>
+                        <TextInput
+                            style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+                            onChangeText={(phone) => this.setState({phone})}
+                            value={this.state.phone}
+                            placeholder="(510)555-1234"
+                            multiline={false}
+                            autoFocus={true}
+                            keyboardType="phone-pad"
+                        />
+                        <Button
+                            style={styles.buttonStyle}
+                            disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
+                            onPress={this._onForward}
+                            title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
+                            color="#841584"
+                            accessibilityLabel="Send code through SMS to log in"
+                        />
+                    </View>
 
-                />
-            <View style={styles.container}>
-                <Text style={styles.welcome}>
-                    Enter Phone Number
-                </Text>
-                <TextInput
-                    style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-                    onChangeText={(phone) => this.setState({phone})}
-                    value={this.state.phone}
-                    placeholder="(510)555-1234"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="phone-pad"
-                />
-                <Button
-                    style={styles.buttonStyle}
-                    disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
-                    onPress={this._onForward}
-                    title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
-                    color="#841584"
-                    accessibilityLabel="Send code through SMS to log in"
-                />
-            </View>
+                </View>
+            );
+        }
 
-            </View>
-        );
+        return returnComponent;
     }
 }
 

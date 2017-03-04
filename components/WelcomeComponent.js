@@ -17,6 +17,7 @@ class  WelcomeComponent extends Component{
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
+      //  logoutFunction: PropTypes.object.isRequired
     };
 
     constructor(props) {
@@ -28,10 +29,10 @@ class  WelcomeComponent extends Component{
     openEnterPhoneNumberComponent = (loginOrAccount) => {
         this.props.navigator.push({
            title: 'Enter phoneNumber number',
-           component: EnterPhoneNumberComponent,
-            navigator: this.props.navigator,
+           component: EnterPhoneNumberComponent, navigator: this.props.navigator,
             navigationBarHidden: true,
-            passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator, loginOrAccount: loginOrAccount}
+            passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator, loginOrAccount: loginOrAccount, logoutFunction: this.props.logoutFunction, loginFunction: this.props.loginFunction}
+
         });
     }
 

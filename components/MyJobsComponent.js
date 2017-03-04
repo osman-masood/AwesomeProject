@@ -934,6 +934,7 @@ const styles = StyleSheet.create({
         margin: 50,
     },
     listViewHeader: {
+        alignItems: 'center',
     },
     listViewHeaderText: {
         color: '#000000',

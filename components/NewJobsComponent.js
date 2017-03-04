@@ -33,6 +33,7 @@ import {
 } from 'react-native'
 
 import JobDetailComponent from './JobDetailComponent';
+
 //noinspection JSUnresolvedVariable
 //import ButtonIcon from 'react-native-icon-button';
 import NavigationBar from 'react-native-navbar';
@@ -42,6 +43,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 //noinspection JSUnresolvedVariable
 import MapView from 'react-native-maps';
 import update from 'immutability-helper';
+
 
 const PickerItemIOS = PickerIOS.Item;
 
@@ -194,6 +196,8 @@ export default class NewJobsComponent extends Component {
         //     })
     }
 
+
+
     shouldComponentUpdate(nextProps, nextState) {
         // TODO: For better perf, return true on any state change, or when the prop's requests or currentPosition changes
         return true;
@@ -211,7 +215,7 @@ export default class NewJobsComponent extends Component {
     render() {
         const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
-            handler: () => alert('Menu!'),
+            //handler: () => this.openMenuComponent(),
         };
 
         let mainView = <Text>Not defined yet!</Text>;
@@ -229,7 +233,7 @@ export default class NewJobsComponent extends Component {
         return <View style={{flex: 1}}>
             <NavigationBar
                 title={{title: this.props.title}}
-                rightButton={undefined}
+                //rightButton={rightButtonConfig}
             />
             <View>
                 {/*
@@ -780,7 +784,7 @@ export default class NewJobsComponent extends Component {
                 component: JobDetailComponent,
                 navigationBarHidden: false,
                 navigator: this.props.navigator,
-                passProps: {title: "My Job String", request:request},
+                passProps: {title: "My Job String", request:request, haversineDistance: haversineDistance},
             })}>
                 <View>
                     <View style={{margin: 2, alignItems: 'flex-end'}}>
@@ -851,7 +855,7 @@ export default class NewJobsComponent extends Component {
                     component: JobDetailComponent,
                     navigationBarHidden: false,
                     navigator: this.props.navigator,
-                    passProps: {title: "My Job String", request:request},
+                    passProps: {title: "My Job String", request:request, haversineDistance: haversineDistance},
                 })}>
                     <View >
                         <Image source={require('../assets/jobdetails@3x.png')} />
