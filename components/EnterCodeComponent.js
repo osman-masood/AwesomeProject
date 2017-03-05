@@ -221,10 +221,10 @@ export default class EnterCodeComponent extends Component {
         };
         return (
 
-        <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+        <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
 
             <NavigationBar
-                style={{backgroundColor: '#F5FCFF'}}
+                style={{backgroundColor: '#6AB0FC'}}
                 leftButton={leftButtonConfig}
 
             />
@@ -236,7 +236,7 @@ export default class EnterCodeComponent extends Component {
                     Enter Code
                 </Text>
                 <TextInput
-                    style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+                    style={styles.textInput}
                     onChangeText={(code) => this.setState({code})}
                     value={this.state.code}
                     placeholder="Enter code"
@@ -247,24 +247,37 @@ export default class EnterCodeComponent extends Component {
 
             </View>
 
-
-            <Button
-                style={styles.buttonStyle}
+            <TouchableHighlight
+                style={styles.button}
                 onPress={this._onForward}
-                title="Sign In"
-                color="#841584"
-                accessibilityLabel="Send code through SMS to log in"
+                accessibilityLabel="Send code through SMS to log in">
+                <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>Sign In</Text>
+            </TouchableHighlight>
 
-            />
-
-            <Button
-                style={styles.buttonStyle}
+            <TouchableHighlight
+                style={styles.button}
                 onPress={ () => {this.resendCode()}}
-                title="Resend Code"
-                color="#841584"
-                accessibilityLabel="Send code again through SMS to log in"
+                accessibilityLabel="Send code again through SMS to log in">
+                <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>Resend Code</Text>
+            </TouchableHighlight>
 
-            />
+            {/*<Button*/}
+                {/*style={styles.buttonStyle}*/}
+                {/*onPress={this._onForward}*/}
+                {/*title="Sign In"*/}
+                {/*color="#841584"*/}
+                {/*accessibilityLabel="Send code through SMS to log in"*/}
+
+            {/*/>*/}
+
+            {/*<Button*/}
+                {/*style={styles.buttonStyle}*/}
+                {/*onPress={ () => {this.resendCode()}}*/}
+                {/*title="Resend Code"*/}
+                {/*color="#841584"*/}
+                {/*accessibilityLabel="Send code again through SMS to log in"*/}
+
+            {/*/>*/}
         </View>
 
         );
@@ -285,8 +298,8 @@ const styles = StyleSheet.create({
         fontSize: 20,
         textAlign: 'center',
         marginTop: 10,
-        backgroundColor: '#F5FCFF',
-        height: 40
+        height: 40,
+        color: 'white',
     },
     instructions: {
         textAlign: 'center',
@@ -296,5 +309,32 @@ const styles = StyleSheet.create({
     buttonStyle: {
         textAlign: 'center',
         height: 40
-    }
+    },
+    textInput: {
+        height: 40,
+        borderColor: 'white',
+        borderWidth: 1,
+        // borderBottomWidth: 2,
+        // borderTopWidth: 0,
+        // borderRightWidth: 0,
+        // borderLeftWidth: 0,
+        marginLeft: 20,
+        marginRight: 20,
+        padding: 10,
+
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });

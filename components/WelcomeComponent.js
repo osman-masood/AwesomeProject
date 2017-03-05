@@ -6,6 +6,7 @@ import {
     View,
     NavigatorIOS,
     TextInput,
+    TouchableHighlight,
     Button
 } from 'react-native';
 
@@ -44,20 +45,29 @@ class  WelcomeComponent extends Component{
                 <Text style={styles.welcome}>
                     Welcome to Stowk!
                 </Text>
-                <Button
-                  //  disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
-                    onPress={ () => {this.openEnterPhoneNumberComponent(1)}}
-                    title={"Login"}
-                    color="#841584"
-                    accessibilityLabel="Send code through SMS to log in"
-                />
-                <Button
-                  //  disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
-                    onPress={ () => {this.openEnterPhoneNumberComponent(2)}}
-                    title={"Create Account"}
-                    color="#841584"
-                    accessibilityLabel="Send code through SMS to log in"
-                />
+                <TouchableHighlight style={styles.button} accessibilityLabel="Send code through SMS to log in" onPress={ () => {this.openEnterPhoneNumberComponent(1)}}>
+                    <Text style={[styles.text, {paddingLeft: 100, paddingRight: 100}]}>Login</Text>
+                </TouchableHighlight>
+                <TouchableHighlight style={styles.button} accessibilityLabel="Send code through SMS to log in" onPress={ () => {this.openEnterPhoneNumberComponent(2)}}>
+                    <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>Create Account</Text>
+                </TouchableHighlight>
+                <Text style={styles.terms}>
+                    By signing up, I agree to stowk’s Terms of Service and Payment terms of Service and Privacy Policy.
+                </Text>
+                {/*<Button*/}
+                  {/*//  disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}*/}
+                    {/*onPress={ () => {this.openEnterPhoneNumberComponent(1)}}*/}
+                    {/*title={"Login"}*/}
+                    {/*accessibilityLabel="Send code through SMS to log in"*/}
+                    {/*style={styles.button}*/}
+                {/*/>*/}
+                {/*<Button*/}
+                  {/*//  disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}*/}
+                    {/*onPress={ () => {this.openEnterPhoneNumberComponent(2)}}*/}
+                    {/*title={"Create Account"}*/}
+                    {/*accessibilityLabel="Send code through SMS to log in"*/}
+                    {/*style={styles.button}*/}
+                {/*/>*/}
             </View>
         );
     }
@@ -68,18 +78,42 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
+        flexDirection: 'column',
     },
     welcome: {
-        fontSize: 20,
+        fontSize: 30,
         textAlign: 'center',
         margin: 10,
+        marginBottom: 20,
+        color: 'white',
     },
     instructions: {
         textAlign: 'center',
         color: '#333333',
         marginBottom: 5,
     },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+    },
+    terms: {
+        color: 'white',
+        justifyContent: 'flex-end',
+        fontSize: 12,
+        margin: 20,
+        textAlign: 'center',
+    }
 });
 
 export default WelcomeComponent;

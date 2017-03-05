@@ -12,6 +12,7 @@ import {
     View,
     Navigator,
     TextInput,
+    TouchableHighlight,
     Button
 } from 'react-native';
 
@@ -117,10 +118,10 @@ export default class EnterPhoneNumberComponent extends Component {
             returnComponent = (
 
 
-                <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+                <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
 
                     <NavigationBar
-                        style={{backgroundColor: '#F5FCFF'}}
+                        style={{backgroundColor: '#6AB0FC'}}
                         leftButton={leftButtonConfig}
                     />
                     <View style={styles.container}>
@@ -128,7 +129,7 @@ export default class EnterPhoneNumberComponent extends Component {
                             Enter Phone Number
                         </Text>
                         <TextInput
-                            style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+                            style={styles.textInput}
                             onChangeText={(phone) => this.setState({phone})}
                             value={this.state.phone}
                             placeholder="(510)555-1234"
@@ -136,14 +137,21 @@ export default class EnterPhoneNumberComponent extends Component {
                             autoFocus={true}
                             keyboardType="phone-pad"
                         />
-                        <Button
-                            style={styles.buttonStyle}
+                        <TouchableHighlight
+                            style={styles.button}
                             disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
                             onPress={this._onForward}
-                            title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
-                            color="#841584"
-                            accessibilityLabel="Send code through SMS to log in"
-                        />
+                            accessibilityLabel="Send code through SMS to log in" >
+                            <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>{this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}</Text>
+                        </TouchableHighlight>
+                        {/*<Button*/}
+                            {/*style={styles.buttonStyle}*/}
+                            {/*disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}*/}
+                            {/*onPress={this._onForward}*/}
+                            {/*title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}*/}
+                            {/*color="#841584"*/}
+                            {/*accessibilityLabel="Send code through SMS to log in"*/}
+                        {/*/>*/}
                     </View>
 
                 </View>
@@ -160,16 +168,16 @@ const styles = StyleSheet.create({
     container: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
         marginTop: 150,
-        height: 100
+        height: 100,
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
         textAlign: 'center',
         marginTop: 10,
-        backgroundColor: '#F5FCFF',
-        height: 40
+        height: 40,
+        color: 'white',
     },
     instructions: {
         textAlign: 'center',
@@ -177,7 +185,34 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     buttonStyle: {
-        textAlign: 'center',
+        //textAlign: 'center',
         height: 40
-    }
+    },
+    textInput: {
+        height: 40,
+        borderColor: 'white',
+        borderWidth: 1,
+        // borderBottomWidth: 2,
+        // borderTopWidth: 0,
+        // borderRightWidth: 0,
+        // borderLeftWidth: 0,
+        marginLeft: 20,
+        marginRight: 20,
+        padding: 10,
+
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });
