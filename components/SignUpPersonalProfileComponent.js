@@ -26,10 +26,6 @@ import {
 import DatePicker from 'react-native-datepicker';
 
 //noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import WelcomeComponent from './WelcomeComponent';
-
-import { getAccessTokenFromResponse } from './common';
 import CarrierProfileComponent from './CarrierProfileComponent';
 import LicensePhotoComponent from './LicensePhotoComponent';
 
@@ -202,6 +198,7 @@ export default class SignUpPersonalProfileComponent extends Component {
                                                      takePicture={this.tookPicture}
                                                      toggleCameraOpen={this.toggleCameraOpen}
 
+
                                 />
 
         }else if(this.state.openCarrierProfile){
@@ -215,6 +212,7 @@ export default class SignUpPersonalProfileComponent extends Component {
                                                        driversLicense={this.state.driversLicense}
                                                        driversLicenseState={this.state.driversLicenseState}
                                                        driversLicenseExpiry={this.state.driversLicenseExpiry}
+                                                       loginFunction={this.props.loginFunction}
             />
 
         }else{

@@ -18,7 +18,6 @@ import {
     TouchableHighlight
 } from 'react-native';
 
-//import { getAccessTokenFromResponse } from './common';
 
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
@@ -136,9 +135,10 @@ export default class EnterCodeComponent extends Component {
                         );
                     }
                     else if (this.props.loginOrAccount === 2) {
-                        //AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                        AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
                         this.setState({
-                            submittingCodeState: 2
+                            submittingCodeState: 2,
+                            accessToken: accessToken
                         });
                     }
                 }
@@ -192,6 +192,7 @@ export default class EnterCodeComponent extends Component {
                                                    accessToken={this.state.accessToken}
                                                    phone={this.props.phone}
                                                    logoutFunction={this.props.logoutFunction}
+                                                   loginFunction={this.props.loginFunction}
                                                    resetLoginState={this.props.resetLoginState}
                    />
             );

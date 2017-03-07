@@ -24,10 +24,7 @@ import {
 } from 'react-native';
 
 //noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import WelcomeComponent from './WelcomeComponent';
 
-import { fetchGraphQlQuery } from './common';
 
 import NavigationBar from 'react-native-navbar';
 import InsuranceComponent from './InsuranceComponent';
@@ -100,14 +97,14 @@ export default class SignatureComponent extends Component {
 
         // TODO add states for loading & failed
         return (
-            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+            <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
                 <NavigationBar
                     leftButton={leftButtonConfig}
-                    style={{backgroundColor: '#F5FCFF'}}
+                    style={{backgroundColor: '#6AB0FC'}}
                 />
 
                 <View style={styles.viewStyle} >
-                    <Text style={styles.textStyle}>Carrier's Signatue</Text>
+                    <Text style={styles.textStyle}>Carrier's Signature</Text>
                 </View>
 
                 {/*<Sketch*/}
@@ -126,10 +123,10 @@ export default class SignatureComponent extends Component {
                     title="Clear drawing"
                 />
                 <TouchableOpacity
-                    disabled={!this.state.encodedSignature}
-                    style={{width: 100, marginLeft: (Dimensions.get("window").width/2)-50}}
+                    disabled={false}
+                    style={styles.button}
                     onPress={this.signed.bind(this)}>
-                    <Text style={[styles.buttonText, {backgroundColor: '#000', textAlign:'center'}]}>Next</Text>
+                    <Text style={[styles.buttonText, {backgroundColor: '#6AB0FC', textAlign:'center'}]}>Next</Text>
                 </TouchableOpacity>
 
             </View>
@@ -163,7 +160,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     viewStyle :{
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'center',
         alignItems: 'center',
         height: 40,
@@ -195,8 +192,11 @@ const styles = StyleSheet.create({
         // position: 'relative'
     },
 
-    buttonStyle: {
-        textAlign: 'center',
-        height: 40
-    }
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });

@@ -28,6 +28,7 @@ import {
 import TabBarComponent from './TabBarComponent';
 import WelcomeComponent from './WelcomeComponent';
 import SignatureComponent from './SignatureComponent';
+import InsuranceComponent from './InsuranceComponent';
 
 
 import { fetchGraphQlQuery } from './common';
@@ -89,67 +90,62 @@ export default class CarrierProfileComponent extends Component {
             Alert.alert("All fields are required", "Please fill all fields");
         } else {
 
+
+
+
+
+            fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                body: JSON.stringify({
+                    "firstName": `${this.props.firstName}`,
+                    "lastName": `${this.props.lastName}`,
+                    "phone": `${this.props.phone}`,
+                    "email": `${this.props.email}`,
+                    "driversLicense": `${this.props.driversLicense}`,
+                    "driversLicenseState": `${this.props.driversLicenseState}`,
+                    "driversLicenseExpiry": `${this.props.driversLicenseExpiry}`,
+                    "dob" : `1991-08-08`,
+                    "role": 'user',
+                    "strategy" : 'sms',
+                    "profile" : {
+                        "type": "carrier",
+                        "role": "owner",
+                    }
+                })
+            }).then((response) => {
+                    console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
+                    if (response.status === 201) {
+                        fetchGraphQlQuery(
+                            this.state.accessToken,
+                            `mutation  {
+                        createCarrier(
+                            name: ${this.state.companyName},
+                            mcNumber: ${this.state.mcNumber},
+                            usDot: ${this.state.usDotNumber},
+                            phone: ${this.state.phone},
+                            email: ${this.state.email},
+                            address: ${this.state.address1}
+
+                        ) {
+                            record
+                        }
+                    }`
+                        ).then((response) => {
+                                console.log("Response from createCarrier ", this.props.phone, ": ", response);
+                            }
+                        )
+
+                    }
+            }).catch((error) => {
+                    console.error("Error Adding user " + this.props.phone, error);
+                });
+
+
+
             this.toggleSignatureScreen();
-
-
-
-            // fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/register", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json; charset=utf-8"
-            //     },
-            //     body: JSON.stringify({
-            //         "firstName": `${this.props.firstName}`,
-            //         "lastName": `${this.props.lastName}`,
-            //         "phone": `${this.props.phone}`,
-            //         "email": `${this.props.email}`,
-            //         "driversLicense": `${this.props.driversLicense}`,
-            //         "driversLicenseState": `${this.props.driversLicenseState}`,
-            //         "driversLicenseExpiry": `${this.props.driversLicenseExpiry}`,
-            //         "dob" : `1991-08-08`,
-            //         "role": 'user',
-            //         "strategy" : 'sms',
-            //         "profile" : {
-            //             "type": "carrier",
-            //             "role": "owner",
-            //         }
-            //     })
-            // }).then((response) => {
-            //         console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
-            //         if (response.status === 201) {
-            //             fetchGraphQlQuery(
-            //                 this.state.accessToken,
-            //                 `mutation  {
-            //             createCarrier(
-            //                 name: ${this.state.companyName},
-            //                 mcNumber: ${this.state.mcNumber},
-            //                 usDot: ${this.state.usDotNumber},
-            //                 phone: ${this.state.phone},
-            //                 email: ${this.state.email},
-            //                 address: ${this.state.address1}
-            //
-            //             ) {
-            //                 record
-            //             }
-            //         }`
-            //             ).then((response) => {
-            //                     console.log("Response from createCarrier ", this.props.phone, ": ", response);
-            //                 }
-            //             )
-            //
-            //         }
-            // })
-            //     .catch((error) => {
-            //         console.error("Error Adding user " + this.props.phone, error);
-            //     });
-            //
-            // this.props.navigator.push({
-            //         title: 'Welcome Screen',
-            //         component: WelcomeComponent,
-            //         navigator: this.props.navigator,
-            //         navigationBarHidden: true,
-            //         passProps: { title: "Welcome Screen", navigator: this.props.navigator}
-            // });
         }
     }
 
@@ -167,10 +163,17 @@ export default class CarrierProfileComponent extends Component {
 
         if(this.state.openSignature){
 
-            returnComponent = <SignatureComponent title="Signature Screen"
+            returnComponent = <InsuranceComponent title="Insurance Screen"
                                                   navigator={this.props.navigator}
-                                                  toggleSignatureScreen={this.toggleSignatureScreen}
-            />
+                                                  loginFunction={this.props.loginFunction}
+
+
+                />
+
+            // {/*returnComponent = <SignatureComponent title="Signature Screen"*/}
+            //                                       {/*navigator={this.props.navigator}*/}
+            //                                       {/*toggleSignatureScreen={this.toggleSignatureScreen}*/}
+            // />
 
         }else{
             returnComponent = (
