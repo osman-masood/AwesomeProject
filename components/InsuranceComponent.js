@@ -34,7 +34,7 @@ export default class InsuranceComponent extends Component{
             <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
 
 
-                <View style={styles.viewStyle} >
+                <View style={styles.viewStyle}>
                     <Text style={styles.textStyle}>Carrier's Signatue</Text>
                 </View>
 

@@ -19,6 +19,7 @@ import {
     Alert,
     ScrollView,
     Dimensions,
+    TouchableHighlight,
     PickerIOS,
     PickerItemIOS
 } from 'react-native';
@@ -173,10 +174,10 @@ export default class CarrierProfileComponent extends Component {
 
         }else{
             returnComponent = (
-                <ScrollView style={{height: Dimensions.get('window').height - 400, backgroundColor: '#F5FCFF', flex: 1}}>
+                <ScrollView style={{height: Dimensions.get('window').height - 400, backgroundColor: '#6AB0FC', flex: 1}}>
                     <NavigationBar
                         leftButton={leftButtonConfig}
-                        style={{backgroundColor: '#F5FCFF'}}
+                        style={{backgroundColor: '#6AB0FC'}}
                     />
 
                     <View style={styles.viewStyle} >
@@ -272,17 +273,21 @@ export default class CarrierProfileComponent extends Component {
                         keyboardType="default"
                     />
 
-                    <PickerIOS
-                        selectedValue={this.state.vehicleCount}
-                        onValueChange={(count) => this.setState({vehicleCount: count})}>
-                        {Object.keys(vCount).map((option) => (
-                            <PickerItemIOS
-                                key={option}
-                                value={option}
-                                label={vCount[option]}
-                            />
-                        ))}
-                    </PickerIOS>
+                    <View style={{marginLeft: 40, marginRight: 40}}>
+                        <Text style={styles.textRegular}>How many vehicles can you carry?</Text>
+                        <PickerIOS
+                            itemStyle={{fontSize: 14, color: 'white'}}
+                            selectedValue={this.state.vehicleCount}
+                            onValueChange={(count) => this.setState({vehicleCount: count})}>
+                            {Object.keys(vCount).map((option) => (
+                                <PickerItemIOS
+                                    key={option}
+                                    value={option}
+                                    label={vCount[option]}
+                                />
+                            ))}
+                        </PickerIOS>
+                    </View>
 
                     {/*<TextInput*/}
                     {/*style={styles.textInputStyle}*/}
@@ -294,14 +299,22 @@ export default class CarrierProfileComponent extends Component {
                     {/*keyboardType="number-pad"*/}
                     {/*/>*/}
 
-                    <Button
-                        style={styles.buttonStyle}
+                    <TouchableHighlight
+                        style={styles.button}
                         onPress={() => {this.goToSignature()}}
                         title="Next"
-                        color="#841584"
-                        accessibilityLabel="Go to Carrier Information"
+                        accessibilityLabel="Go to Carrier Information">
+                        <Text style={styles.text}>Next</Text>
+                    </TouchableHighlight>
 
-                    />
+                    {/*<Button*/}
+                        {/*style={styles.buttonStyle}*/}
+                        {/*onPress={() => {this.goToSignature()}}*/}
+                        {/*title="Next"*/}
+                        {/*color="#841584"*/}
+                        {/*accessibilityLabel="Go to Carrier Information"*/}
+
+                    {/*/>*/}
                 </ScrollView>
             );
         }
@@ -316,7 +329,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
@@ -329,7 +342,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     viewStyle :{
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'center',
         alignItems: 'center',
         height: 40,
@@ -337,24 +350,30 @@ const styles = StyleSheet.create({
     },
 
     textStyle: {
-        fontSize: 20
+        fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
+        marginBottom: 20,
     },
 
     textInputStyle: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: 'white',
         borderWidth: 1,
         padding: 10,
-        marginTop: 5,
-        marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        // marginTop: 5,
+        // marginBottom: 5,
+        marginLeft: 20,
+        marginRight: 20,
+        marginTop: 10,
+        marginBottom: 10,
+        fontSize: 14,
     },
 
     horizontalViewStyle: {
         borderBottomWidth: 1,
         padding: 5,
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'flex-start',
         flexDirection: 'row',
         borderColor: '#ddd',
@@ -364,5 +383,26 @@ const styles = StyleSheet.create({
     buttonStyle: {
         textAlign: 'center',
         height: 40
-    }
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        textAlign: 'center',
+    },
+    textRegular: {
+        marginTop: 10,
+        fontSize: 15,
+        color: 'white',
+        textAlign: 'center',
+    },
 });
