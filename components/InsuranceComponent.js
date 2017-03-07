@@ -7,7 +7,8 @@ import {
     View,
     Text,
     StyleSheet,
-    Button
+    Button,
+    TouchableHighlight
 
 } from 'react-native';
 
@@ -31,33 +32,43 @@ export default class InsuranceComponent extends Component{
 
                 <View style={{backgroundColor: '#6AB0FC', flex: 1, marginTop: 100}}>
 
-                    <Text>Please add Stowk, Inc as as a certificate holder and have
+                    <Text style={styles.textHeader}>Getting Started</Text>
+
+                    <Text style={styles.textParagraph}>Please add Stowk, Inc as as a certificate holder and have
                         your insurance email your certificate to insurance@stowk.com
                     </Text>
 
-                    <Text>Once we receive it, we will notify you when your account
+                    <Text style={styles.textParagraph}>Once we receive it, we will notify you when your account
                         has been activated!
                     </Text>
 
-                    <Text>Automobile Liability ("AL")</Text>
-                    <Text>Minimum per Truck  $1,000,000</Text>
-                    <Text>Motor Truck Cargo ("Cargo")  </Text>
-                    <Text>1   Car Hauler   $50,000</Text>
-                    <Text>2-3 Car Hauler  $100,000</Text>
-                    <Text>4   Car Hauler  $150,000</Text>
-                    <Text>5+  Car Hauler  $250,000</Text>
+                    <Text style={styles.textParagraph}>Automobile Liability ("AL")</Text>
+                    <Text style={styles.textParagraph}>Minimum per Truck  $1,000,000</Text>
+                    <Text style={styles.textParagraph}>Motor Truck Cargo ("Cargo")  </Text>
+                    <Text style={styles.textParagraph}>1   Car Hauler   $50,000</Text>
+                    <Text style={styles.textParagraph}>2-3 Car Hauler  $100,000</Text>
+                    <Text style={styles.textParagraph}>4   Car Hauler  $150,000</Text>
+                    <Text style={styles.textParagraph}>5+  Car Hauler  $250,000</Text>
 
-                    <Text>Questions?</Text>
-                    <Text>Email us at support@stowk.com</Text>
+                    <Text style={styles.textParagraph}>Questions?</Text>
+                    <Text style={styles.textParagraph}>Email us at support@stowk.com</Text>
 
-                    <Button
-                        style={styles.buttonStyle}
+                    <TouchableHighlight
+                        style={styles.button}
                         onPress={ () => {this.props.loginFunction()}}
                         title="Done"
-                        color="#841584"
-                        accessibilityLabel="Go to Carrier Information"
+                        accessibilityLabel="Go to Carrier Information">
+                        <Text style={styles.text}>Done</Text>
+                    </TouchableHighlight>
 
-                    />
+                    {/*<Button*/}
+                    {/*style={styles.buttonStyle}*/}
+                    {/*onPress={ () => {this.props.loginFunction()}}*/}
+                    {/*title="Done"*/}
+                    {/*color="#841584"*/}
+                    {/*accessibilityLabel="Go to Carrier Information"*/}
+
+                    {/*/>*/}
                 </View>
 
 
@@ -82,5 +93,34 @@ const styles = StyleSheet.create({
         marginTop: 100,
         textAlign: 'center',
         height: 40
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+        marginTop: 50,
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        textAlign: 'center',
+    },
+    textHeader: {
+        fontSize: 30,
+        fontWeight: 'bold',
+        marginLeft: 20,
+        marginBottom: 20,
+        color: 'white',
+    },
+    textParagraph: {
+        color: 'white',
+        marginLeft: 25,
+        marginRight: 25,
+        marginBottom: 10,
     }
 });
