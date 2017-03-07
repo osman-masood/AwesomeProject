@@ -46,6 +46,9 @@ export default class stowk extends Component {
     }
 
     render() {
+
+        console.log(`stowk: `, this.state);
+
         return (
             <NavigatorIOS
                 initialRoute={{
@@ -83,16 +86,15 @@ class MainScreen extends Component {
     }
 
     logoutFunction() {
-
-
-        AsyncStorage.setItem('stowkAccessToken', "")
+        //AsyncStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+        AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, "")
         loadAccessToken().then((result) => {
             this.setState({
                 token: result,
                 wait: false
             })
         });
-        this.props.changeSt();
+   //     this.props.changeSt();
     }
 
     loginFunction() {
@@ -102,20 +104,25 @@ class MainScreen extends Component {
                 wait: false
             })
         });
-        this.props.changeSt();
+ //       this.props.changeSt();
     }
-    componentWillReceiveProps(nextProps) {
-
-    }    
 
     render() {
-        //if (!this.state) return null;
+
+        console.log(`MainScreen:`, this.state);
+
         let retComponent;
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
         } else {
             if (this.state.token == null || this.state.token == "") {
-                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator} logoutFunction= {this.logoutFunction} loginFunction={this.loginFunction}/>;
+                retComponent = <WelcomeComponent title="Welcome Screen"
+                                                 navigator={this.props.navigator}
+                                                 logoutFunction={this.logoutFunction}
+                                                 loginFunction={this.loginFunction}
+                                                 accessToken={this.state.token}
+                                                 loginOrAccount= {0}
+                />;
             } else {
                 retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator} logoutFunction={this.logoutFunction}/>;
             }

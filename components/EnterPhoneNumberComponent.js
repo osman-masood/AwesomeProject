@@ -32,7 +32,6 @@ export default class EnterPhoneNumberComponent extends Component {
         loginOrAccount: PropTypes.number.isRequired,
 
       //  logoutFunction: PropTypes.object.isRequired
-
     };
 
     constructor(props) {
@@ -43,13 +42,20 @@ export default class EnterPhoneNumberComponent extends Component {
             phone: null,
             submittingPhoneNumberState: 0, // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
             loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
-            accessToken: null
+            accessToken: this.props.accessToken
         };
+
+        this.resetPhoneSubmission =this.resetPhoneSubmission.bind(this);
     }
 
-    _onForward() { // convention: _ = private
-        // Prepend +1 to phone number if not there
 
+    resetPhoneSubmission(){
+        this.setState({
+            submittingPhoneNumberState: 0
+        });
+    }
+
+    _onForward() {
 
         let phoneNumber = this.state.phone;
         if (phoneNumber.substring(0, 2) !== "+1") {
@@ -75,18 +81,6 @@ export default class EnterPhoneNumberComponent extends Component {
 
                 this.setState({submittingPhoneNumberState: 2, phone: phoneNumber, accessToken: accessToken});
 
-
-                // this.props.navigator.push({
-                //     id: 'EnterCode',
-                //     title: 'Enter Code',
-                //     accessToken: accessToken,
-                //     component: EnterCodeComponent,
-                //     navigator: this.props.navigator,
-                //     navigationBarHidden: true,
-                //     passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,
-                //         phone: this.state.phone, logoutFunction: this.props.logoutFunction, loginFunction: this.props.loginFunction}
-                // });
-
             })
             .catch((error) => {
                 this.setState({submittingPhoneNumberState: 3});
@@ -96,9 +90,11 @@ export default class EnterPhoneNumberComponent extends Component {
 
     render() {
         // TODO add states for loading & failed
+        console.log(`Phone Number Component:`, this.state);
+
         const leftButtonConfig = {
             title: 'Back',
-            handler: () => this.props.navigator.pop()
+            handler: () => this.props.resetLoginState()
         };
 
         let returnComponent;
@@ -111,6 +107,8 @@ export default class EnterPhoneNumberComponent extends Component {
                                                   phone={this.state.phone}
                                                   loginFunction={this.props.loginFunction}
                                                   logoutFunction={this.props.logoutFunction}
+                                                  resetPhoneSubmission={this.resetPhoneSubmission}
+                                                  resetLoginState={this.props.resetLoginState}
 
             />
         }

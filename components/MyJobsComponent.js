@@ -47,7 +47,7 @@ const PickerItemIOS = PickerIOS.Item;
 const CANCEL_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
     "Wrong trailer type", "Not operable", "Wrong price", "Other"];
 
-const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
+const LIST_VIEW_BOTTOM_PADDING_HACK = 100;
 
 
 export default class MyJobsComponent extends Component {
@@ -138,10 +138,10 @@ export default class MyJobsComponent extends Component {
             for (let item in deliveries) {
                 let r = deliveries[item]['request'];
                 acceptedRequests.push(r);
+
+                if(acceptedRequests.length == 5)
+                    break;
             }
-
-
-
 
             this.setState({
                 acceptedRequests: acceptedRequests

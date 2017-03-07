@@ -386,6 +386,23 @@ const carrierAcceptedDeliveriesQueryStringLambda = (requestsFunctionString:strin
 
 
 const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
+
+    // return fetchGraphQlQuery(
+    //     accessToken,
+    //     `mutation {
+    //             acceptRequest(requestId: ${request}) {
+    //                 record {
+    //                     shipper {
+    //                          name,
+    //                     }
+    //                 }
+    //                   recordId,
+    //             }
+    //     }`
+    // );
+
+
+
     return fetchGraphQlQuery(
         accessToken,
         `mutation UpdateRequestById {

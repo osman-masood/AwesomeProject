@@ -27,8 +27,8 @@ export default class SettingsComponent extends Component{
 
     openSettings() {
 
-       // this.props.navigator.popToTop(0);
         this.props.logoutFunction();
+
     }
 
     render () {
@@ -36,7 +36,7 @@ export default class SettingsComponent extends Component{
             <View style={{backgroundColor: '#F5FCFF', flex: 1, marginTop: 100}}>
 
                 <View style={styles.viewStyle} >
-                    <Text style={styles.textStyle}>Personal Profile</Text>
+                    <Text style={styles.textStyle}>Settings</Text>
                 </View>
 
                 <Button

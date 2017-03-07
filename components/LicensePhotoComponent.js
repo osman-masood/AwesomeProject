@@ -24,15 +24,6 @@ export default class LicensePhotoComponent extends Component {
         accessToken: PropTypes.string.isRequired
     };
 
-    // constructor(props) {
-    //     super(props);
-    //     this.state = {
-    //         usedPhoto: null,
-    //         cameraModalOpen: true, // <--
-    //         photos: [],
-    //     };
-    // }
-
     takePicture() {
         this.camera.capture()
             .then((data) => {
@@ -61,7 +52,7 @@ export default class LicensePhotoComponent extends Component {
                 <TouchableOpacity
                     style={{marginLeft: 10, marginTop:20, width:30}}
                     onPress={() => {
-                                this.props.navigator.popN(1);
+                                this.props.toggleCameraOpen();
                             }}>
                     <Image source={require('../assets/close-icon.png')}/>
                 </TouchableOpacity>

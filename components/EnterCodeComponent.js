@@ -14,18 +14,15 @@ import {
     TextInput,
     Button,
     AsyncStorage,
-    Alert
+    Alert,
+    TouchableHighlight
 } from 'react-native';
 
 //import { getAccessTokenFromResponse } from './common';
 
 import NavigationBar from 'react-native-navbar';
 //noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import TabAndroidComponent from './TabAndroidComponent';
 
-import WelcomeComponent from './WelcomeComponent';
-import EnterPhoneNumberComponent from './EnterPhoneNumberComponent';
 import SignUpPersonalProfileComponent from './SignUpPersonalProfileComponent';
 
 
@@ -40,7 +37,6 @@ export default class EnterCodeComponent extends Component {
         accessToken: PropTypes.string.isRequired,
         loginOrAccount: PropTypes.number.isRequired,
         phone: PropTypes.string.isRequired,
-       //s logoutFunction: PropTypes.object.isRequired,
     };
 
     constructor(props) {
@@ -50,35 +46,16 @@ export default class EnterCodeComponent extends Component {
         this._onForward = this._onForward.bind(this);
         this.state = {
             code: null,
-            submittingCodeState: 0,  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
-            loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
+            submittingCodeState: 0,  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure, 4: User not reg
             phone: this.props.phone,
-            accessToken: this.props.accessToken
+            accessToken: this.props.accessToken,
         };
-    }
 
-    openSignUpPersonalProfileComponent = (accessToken) => {
-        this.props.navigator.push({
-            title: 'Sign up details',
-            component: SignUpPersonalProfileComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken, phone: this.props.phone}
-        });
-    }
-
-    openWelcomeComponent = () => {
-        this.props.navigator.push({
-            title: 'Welcome Screen',
-            component: WelcomeComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: { title: "Welcome Screen", navigator: this.props.navigator}
-        });
+        this.onSignUp = this.onSignUp.bind(this);
     }
 
     resendCode() {
-        //Alert.alert("New Code Sent", "Please enter the new code. ");
+
             let phoneNumber = this.state.phone;
             if (phoneNumber.substring(0, 2) !== "+1") {
                 phoneNumber = "+1" + phoneNumber;
@@ -112,6 +89,8 @@ export default class EnterCodeComponent extends Component {
     }
 
     onSignUp() {
+
+        this.props.resetLoginState();
         this.props.logoutFunction();
     }
 
@@ -138,7 +117,7 @@ export default class EnterCodeComponent extends Component {
                 if (statusCode === 202) {
                     // User is not registered: Take to registration
                   //  console.error("User is not registered. Registration flow not implemented; must create the user first");
-                    this.setState({submittingCodeState: 0});
+                    this.setState({submittingCodeState: 4});
 
                     if (this.props.loginOrAccount === 1){
                         Alert.alert(
@@ -147,27 +126,21 @@ export default class EnterCodeComponent extends Component {
                             [
                                 {
                                     text: 'Sign up',
-                                    onPress: () => {this.onSignUp()}
+                                    onPress: () => this.onSignUp()
                                 },
                                 {
                                     text: 'Sign in',
-                                    onPress: () => {
-                                    this.props.navigator.push({
-                                        title: 'Enter phoneNumber number',
-                                        component: EnterPhoneNumberComponent,
-                                        navigator: this.props.navigator,
-                                        navigationBarHidden: true,
-                                        passProps: {title: 'Enter phoneNumber number', navigator: this.props.navigator}
-                                    });
-                                }
+                                    onPress: () => this.props.resetPhoneSubmission()
                                 },
                             ]
                         );
                     }
                     else if (this.props.loginOrAccount === 2) {
-                        this.openSignUpPersonalProfileComponent(accessToken);
+                        //AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                        this.setState({
+                            submittingCodeState: 2
+                        });
                     }
-
                 }
                 else if (statusCode === 200) {
                     // User is registered: Take to new jobs
@@ -176,25 +149,12 @@ export default class EnterCodeComponent extends Component {
                         Alert.alert("User Already Registered!", "User is already registered with phone entered. Loging in ...");
                     }
 
-                    //console.warn(ACCESS_TOKEN_STORAGE_KEY);
-                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-                    //console.warn(accessToken);
                     this.setState({submittingCodeState: 2, accessToken: accessToken});
-                    //this.props.loginFunction();
-                    // this.props.navigator.push({
-                    //     id: 'NewJobs',
-                    //     title: 'New Jobs',
-                    //     accessToken: accessToken,
-                    // });
-                    // this.props.navigator.push({ // push the next screen
-                    //     title: 'New Jobs',
-                    //     component: TabBarComponent,
-                    //     navigator: this.props.navigator,
-                    //     navigationBarHidden: true,
-                    //     passProps: {accessToken:this.state.accessToken, navigator:this.props.navigator,
-                    //         logoutFunction:this.props.logoutFunction}
-                    // });
 
+                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+
+
+                    this.props.loginFunction();
                     return accessToken;
                 }
                 else {
@@ -207,80 +167,83 @@ export default class EnterCodeComponent extends Component {
             });
     }
 
+    resetPhoneAndGoBack() {
+        this.props.resetPhoneSubmission();
+    }
 
 
     render() {
         // TODO add states for loading & failed
 
-        window.console.log("inside enter code render");
         console.log("Enter CC State", this.state);
 
         const leftButtonConfig = {
             title: 'Back',
-            handler: () => this.props.navigator.pop()
+            handler: () => this.props.resetPhoneSubmission()
         };
-        return (
 
-        <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
+        let returnComponent;
 
-            <NavigationBar
-                style={{backgroundColor: '#6AB0FC'}}
-                leftButton={leftButtonConfig}
+        if(this.state.submittingCodeState === 2 && this.props.loginOrAccount == 2)
+        {
+            returnComponent = (
+                   <SignUpPersonalProfileComponent title="Sign up details"
+                                                   navigator={this.props.navigator}
+                                                   accessToken={this.state.accessToken}
+                                                   phone={this.props.phone}
+                                                   logoutFunction={this.props.logoutFunction}
+                                                   resetLoginState={this.props.resetLoginState}
+                   />
+            );
 
-            />
+        }else{
+            returnComponent =  (
 
-            <View style={styles.container}>
+                <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
+
+                    <NavigationBar
+                        style={{backgroundColor: '#6AB0FC'}}
+                        leftButton={leftButtonConfig}
+
+                    />
+
+                    <View style={styles.container}>
 
 
-                <Text style={styles.welcome}>
-                    Enter Code
-                </Text>
-                <TextInput
-                    style={styles.textInput}
-                    onChangeText={(code) => this.setState({code})}
-                    value={this.state.code}
-                    placeholder="Enter code"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="phone-pad"
-                />
-
-            </View>
+                        <Text style={styles.welcome}>
+                            Enter Code
+                        </Text>
+                        <TextInput
+                            style={styles.textInput}
+                            onChangeText={(code) => this.setState({code})}
+                            value={this.state.code}
+                            placeholder="Enter code"
+                            multiline={false}
+                            autoFocus={true}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
 
             <TouchableHighlight
                 style={styles.button}
                 onPress={this._onForward}
                 accessibilityLabel="Send code through SMS to log in">
-                <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>Sign In</Text>
+                <Text style={[styles.text, {paddingLeft: 123, paddingRight: 55}]}>Sign In</Text>
             </TouchableHighlight>
 
             <TouchableHighlight
                 style={styles.button}
                 onPress={ () => {this.resendCode()}}
                 accessibilityLabel="Send code again through SMS to log in">
-                <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>Resend Code</Text>
+                <Text style={[styles.text, {paddingLeft: 100, paddingRight: 55}]}>Resend Code</Text>
             </TouchableHighlight>
 
-            {/*<Button*/}
-                {/*style={styles.buttonStyle}*/}
-                {/*onPress={this._onForward}*/}
-                {/*title="Sign In"*/}
-                {/*color="#841584"*/}
-                {/*accessibilityLabel="Send code through SMS to log in"*/}
 
-            {/*/>*/}
+                </View>
+            );
 
-            {/*<Button*/}
-                {/*style={styles.buttonStyle}*/}
-                {/*onPress={ () => {this.resendCode()}}*/}
-                {/*title="Resend Code"*/}
-                {/*color="#841584"*/}
-                {/*accessibilityLabel="Send code again through SMS to log in"*/}
-
-            {/*/>*/}
-        </View>
-
-        );
+        }
+        return returnComponent;
     }
 }
 
@@ -290,10 +253,11 @@ const styles = StyleSheet.create({
     container: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
         marginTop: 150,
-        height: 100
+        height: 100,
+        backgroundColor: '#6AB0FC',
     },
+
     welcome: {
         fontSize: 20,
         textAlign: 'center',
@@ -307,7 +271,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     buttonStyle: {
-        textAlign: 'center',
+       // textAlign: 'center',
         height: 40
     },
     textInput: {
@@ -323,6 +287,7 @@ const styles = StyleSheet.create({
         padding: 10,
 
     },
+
     text: {
         color: '#64B7FF',
         fontSize: 20,

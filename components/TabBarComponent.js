@@ -77,7 +77,8 @@ class TabBarComponent extends Component {
                 latitude: number,
                 longitude: number
             },
-            currentUser: User
+            currentUser: User,
+            accessToken: string
         } = {
             selectedTab: 'newJobsTab',
             notificationCount: 0,
@@ -89,7 +90,8 @@ class TabBarComponent extends Component {
                 latitude: 37.3382,
                 longitude: -121.8863
             },
-            currentUser: null
+            currentUser: null,
+            accessToken: this.props.accessToken
         };
         this.state = thisState;
 
@@ -144,6 +146,7 @@ class TabBarComponent extends Component {
                 const locationRequests = userAndLocationRequests['data']['viewer']['locationRequests'];
 
 
+
                 let openNonPreferredRequests = [], openPreferredRequests = [], acceptedRequests = [];
                 for (let openRequest of locationRequests) {
                     // If request was declined by this carrier, skip it
@@ -165,6 +168,12 @@ class TabBarComponent extends Component {
                     else if (TabBarComponent.hasCarrierAcceptedRequest(currentCarrierId, openRequest)) {
                         acceptedRequests.push(openRequest);
                     }
+
+                    if (openPreferredRequests.length === 5)
+                        break;
+
+                    if (openNonPreferredRequests.length === 5)
+                        break;
                 }
 
                // openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];
@@ -256,7 +265,8 @@ class TabBarComponent extends Component {
 
     render() {
 
-        console.log(`TabBarComponent: ${this.state}`);
+        console.log(`TabBarComponent: `, this);
+
         if(!this.state.currentUser)
         {
             return <TabBarIOS></TabBarIOS>;

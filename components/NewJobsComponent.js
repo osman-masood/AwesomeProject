@@ -50,7 +50,7 @@ const PickerItemIOS = PickerIOS.Item;
 const DECLINE_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
     "Wrong trailer type", "Not operable", "Wrong price", "Other"];
 
-const LIST_VIEW_BOTTOM_PADDING_HACK = 0;
+const LIST_VIEW_BOTTOM_PADDING_HACK = 100;
 
 
 export default class NewJobsComponent extends Component {
@@ -213,6 +213,9 @@ export default class NewJobsComponent extends Component {
      * http://stackoverflow.com/questions/34986149/how-to-hidden-back-button-of-react-native-navigator
      */
     render() {
+
+        console.log(`New Jobs Component: `, this);
+
         const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
             //handler: () => this.openMenuComponent(),
