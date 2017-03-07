@@ -228,7 +228,7 @@ export default class EnterCodeComponent extends Component {
                 style={styles.button}
                 onPress={this._onForward}
                 accessibilityLabel="Send code through SMS to log in">
-                <Text style={[styles.text, {paddingLeft: 123, paddingRight: 55}]}>Sign In</Text>
+                <Text style={[styles.text, {paddingLeft: 123, paddingRight: 55}]}>Sign Up</Text>
             </TouchableHighlight>
 
             <TouchableHighlight

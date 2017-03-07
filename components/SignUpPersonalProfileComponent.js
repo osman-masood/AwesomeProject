@@ -219,14 +219,18 @@ export default class SignUpPersonalProfileComponent extends Component {
 
         }else{
             returnComponent = (
-                <ScrollView style={{height: Dimensions.get('window').height - 800, backgroundColor: '#F5FCFF', flex: 1}}>
+                <ScrollView style={{height: Dimensions.get('window').height - 800, backgroundColor: '#6AB0FC', flex: 1}}>
                     <NavigationBar
                         leftButton={leftButtonConfig}
-                        style={{backgroundColor: '#F5FCFF'}}
+                        style={{backgroundColor: '#6AB0FC'}}
                     />
 
                     <View style={styles.viewStyle} >
-                        <Text style={styles.textStyle}>Personal Profile</Text>
+                        <Text style={styles.textTitle}>Personal Profile</Text>
+                    </View>
+
+                    <View>
+                        <Text style={styles.textRegular}>Driver License Photo</Text>
                     </View>
 
                     <TouchableHighlight
@@ -234,7 +238,7 @@ export default class SignUpPersonalProfileComponent extends Component {
                         <Image
                             //defaultSource={require('../assets/sign.jpeg')}
                             style={styles.imageStyle}
-                            source={ this.state.usedPhoto === null? require('../assets/sign.jpeg'): { uri : this.state.usedPhoto}}
+                            source={ this.state.usedPhoto === null? require('../assets/uploadpic@3x.png'): { uri : this.state.usedPhoto}}
                         />
                     </TouchableHighlight>
 
@@ -268,37 +272,51 @@ export default class SignUpPersonalProfileComponent extends Component {
                         keyboardType="default"
                     />
 
-                    <PickerIOS
-                        selectedValue={this.state.driversLicenseState}
-                        onValueChange={(state) => this.setState({driversLicenseState: state})}>
-                        {Object.keys(states).map((state) => (
-                            <PickerItemIOS
-                                key={state}
-                                value={`${states[state][0]}, ${states[state][1]}`}
-                                label={states[state][0]}
-                            />
-                        ))}
-                    </PickerIOS>
+                    <View style={{marginLeft: 40, marginRight: 40}}>
+                        <Text style={styles.textRegular}>Driver License State</Text>
+                        <PickerIOS
+                            itemStyle={{fontSize: 14, color: 'white'}}
+                            selectedValue={this.state.driversLicenseState}
+                            onValueChange={(state) => this.setState({driversLicenseState: state})}>
+                            {Object.keys(states).map((state) => (
+                                <PickerItemIOS
+                                    key={state}
+                                    value={`${states[state][0]}, ${states[state][1]}`}
+                                    label={states[state][0]}
+                                />
+                            ))}
+                        </PickerIOS>
+                    </View>
 
-                    <DatePicker
-                        style={styles.dateStyle}
-                        date={this.state.driversLicenseExpiry}
-                        mode="date"
-                        placeholder="select date"
-                        format="YYYY-MM-DD"
-                        confirmBtnText="Confirm"
-                        cancelBtnText="Cancel"
-                        onDateChange={(driversLicenseExpiry) => this.setState({driversLicenseExpiry})}
-                    />
+                    <View>
+                        <Text style={styles.textRegular}>License Expiration Date</Text>
+                        <DatePicker
+                            style={styles.dateStyle}
+                            date={this.state.driversLicenseExpiry}
+                            mode="date"
+                            placeholder="select date"
+                            format="YYYY-MM-DD"
+                            confirmBtnText="Confirm"
+                            cancelBtnText="Cancel"
+                            onDateChange={(driversLicenseExpiry) => this.setState({driversLicenseExpiry})}
+                        />
+                    </View>
 
-                    <Button
-                        style={styles.buttonStyle}
+                    <TouchableHighlight
+                        style={styles.button}
                         onPress={ () => {this.openCarrierProfileComponent()}}
-                        title="Next"
-                        color="#841584"
-                        accessibilityLabel="Go to Carrier Information"
+                        accessibilityLabel="Go to Carrier Information">
+                        <Text style={styles.text}>Next</Text>
+                    </TouchableHighlight>
 
-                    />
+                    {/*<Button*/}
+                        {/*style={[styles.button, {paddingLeft: 100, paddingRight: 55}]}*/}
+                        {/*onPress={ () => {this.openCarrierProfileComponent()}}*/}
+                        {/*title="Next"*/}
+                        {/*color="#64B7FF"*/}
+                        {/*accessibilityLabel="Go to Carrier Information"*/}
+
+                    {/*/>*/}
                 </ScrollView>
             );
         }
@@ -314,7 +332,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
@@ -327,26 +345,38 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     viewStyle :{
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'center',
         alignItems: 'center',
         height: 40,
         paddingTop: 15,
     },
+    textTitle: {
+        fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
 
-    textStyle: {
-        fontSize: 20
+    textRegular: {
+        marginTop: 10,
+        fontSize: 15,
+        color: 'white',
+        textAlign: 'center',
     },
 
     textInputStyle: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: 'white',
         borderWidth: 1,
         padding: 10,
-        marginTop: 5,
-        marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        // marginTop: 5,
+        // marginBottom: 5,
+        marginLeft: 20,
+        marginRight: 20,
+        marginTop: 10,
+        marginBottom: 10,
+        fontSize: 14,
     },
 
     dateStyle: {
@@ -355,8 +385,9 @@ const styles = StyleSheet.create({
         padding: 10,
         marginTop: 5,
         marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        marginLeft: 100,
+        marginRight: 5,
+        borderColor: 'white',
     },
 
     pictureStyle: {
@@ -364,13 +395,28 @@ const styles = StyleSheet.create({
     },
 
     imageStyle: {
-        height: 200,
-        width: 200,
+        height: 100,
+        width: 100,
+        margin: 10,
     },
-
 
     buttonStyle: {
         textAlign: 'center',
         height: 40
-    }
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        textAlign: 'center',
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });
