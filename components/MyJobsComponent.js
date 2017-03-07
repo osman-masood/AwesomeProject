@@ -413,7 +413,7 @@ export default class MyJobsComponent extends Component {
         const latitude = request[originOrDestinationKey].coordinates[0];
         const longitude = request[originOrDestinationKey].coordinates[1];
 
-        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
+        const directionsRequest = `comgooglemaps-x-callback://?daddr=${longitude},${latitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
 
         var options = {
             enableHighAccuracy: true,

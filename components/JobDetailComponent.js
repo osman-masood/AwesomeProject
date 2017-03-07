@@ -102,7 +102,7 @@ export default class JobDetailComponent extends Component {
         const latitude = this.state.job[originOrDestinationKey].coordinates[0];
         const longitude = this.state.job[originOrDestinationKey].coordinates[1];
 
-        const directionsRequest = `comgooglemaps-x-callback://?daddr=${latitude},${longitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
+        const directionsRequest = `comgooglemaps-x-callback://?daddr=${longitude},${latitude}&directionsmode=driving&nav=1&x-source=stowkapp&x-success=stowkapp://?resume=true`;
         Linking.openURL(directionsRequest).catch(err => {
             Alert.alert('Could not start navigation', err.message);
         });
