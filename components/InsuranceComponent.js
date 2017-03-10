@@ -25,6 +25,12 @@ export default class InsuranceComponent extends Component{
 
     }
 
+    backToWelcome() {
+
+        this.props.resetLoginState();
+        this.props.logoutFunction();
+    }
+
     render(){
 
         return (
@@ -55,7 +61,7 @@ export default class InsuranceComponent extends Component{
 
                     <TouchableHighlight
                         style={styles.button}
-                        onPress={ () => {this.props.loginFunction()}}
+                        onPress={ () => {this.backToWelcome()}}
                         title="Done"
                         accessibilityLabel="Go to Carrier Information">
                         <Text style={styles.text}>Done</Text>
@@ -70,8 +76,6 @@ export default class InsuranceComponent extends Component{
 
                     {/*/>*/}
                 </View>
-
-
             </View>
         );
     }

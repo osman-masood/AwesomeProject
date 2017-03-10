@@ -98,6 +98,7 @@ class MainScreen extends Component {
     }
 
     loginFunction() {
+
         loadAccessToken().then((result) => {
             this.setState({
                 token: result,

@@ -417,8 +417,8 @@ const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Requ
                 deliveryCreate(input: {
                     clientMutationId:"11",
                     record: {
-                        carrierId:"${carrierId}", 
-                        requestId:"${request._id}", 
+                        carrierId:"${carrierId}",
+                        requestId:"${request._id}",
                         currentCoordinates:[${currentLongitude}, ${currentLatitude}],
                         status: ${DeliveryStatusEnum.ACCEPTED},
                         vehicleIds: ${JSON.stringify(request.vehicleIds)}

@@ -135,7 +135,7 @@ export default class EnterCodeComponent extends Component {
                         );
                     }
                     else if (this.props.loginOrAccount === 2) {
-                        AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                       // AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
                         this.setState({
                             submittingCodeState: 2,
                             accessToken: accessToken
@@ -229,7 +229,7 @@ export default class EnterCodeComponent extends Component {
                 style={styles.button}
                 onPress={this._onForward}
                 accessibilityLabel="Send code through SMS to log in">
-                <Text style={[styles.text, {paddingLeft: 123, paddingRight: 55}]}>Sign Up</Text>
+                <Text style={[styles.text, {paddingLeft: 123, paddingRight: 55}]}> {this.props.loginOrAccount == 1? "Sign In": "Sign Up"}</Text>
             </TouchableHighlight>
 
             <TouchableHighlight

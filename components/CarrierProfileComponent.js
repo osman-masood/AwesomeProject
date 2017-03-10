@@ -21,17 +21,13 @@ import {
     Dimensions,
     TouchableHighlight,
     PickerIOS,
-    PickerItemIOS
+    PickerItemIOS,
+    AsyncStorage
 } from 'react-native';
 
-//noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import WelcomeComponent from './WelcomeComponent';
-import SignatureComponent from './SignatureComponent';
 import InsuranceComponent from './InsuranceComponent';
-
-
 import { fetchGraphQlQuery } from './common';
+import { getAccessTokenFromResponse, ACCESS_TOKEN_STORAGE_KEY, GRAPHQL_ENDPOINT} from './common';
 
 import NavigationBar from 'react-native-navbar';
 
@@ -90,10 +86,6 @@ export default class CarrierProfileComponent extends Component {
             Alert.alert("All fields are required", "Please fill all fields");
         } else {
 
-
-
-
-
             fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/register", {
                 method: "POST",
                 headers: {
@@ -116,34 +108,45 @@ export default class CarrierProfileComponent extends Component {
                     }
                 })
             }).then((response) => {
-                    console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
-                    if (response.status === 201) {
-                        fetchGraphQlQuery(
-                            this.state.accessToken,
-                            `mutation  {
-                        createCarrier(
-                            name: ${this.state.companyName},
-                            mcNumber: ${this.state.mcNumber},
-                            usDot: ${this.state.usDotNumber},
-                            phone: ${this.state.phone},
-                            email: ${this.state.email},
-                            address: ${this.state.address1}
+                return [response.json(), getAccessTokenFromResponse(response), response.status]
+            }).then((responseTuple) => {
+                    const responseJson = responseTuple[0];
+                    const accessToken = responseTuple[1];
+                    const statusCode = responseTuple[2];
 
-                        ) {
-                            record
+                //AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                //console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
+                if (statusCode === 201) {
+
+                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+
+                    return fetchGraphQlQuery(
+                        accessToken,
+                        `mutation  {
+                                createCarrier(
+                                             name: "${this.state.companyName}",
+                                             mcNumber: "${this.state.mcNumber}",
+                                             usDot: "${this.state.usDotNumber}",
+                                             phone: "${this.state.phone}",
+                                             email: "${this.state.email}",
+                                             address: {
+                                                address: "${this.state.address1}",
+                                                locationName: "Home"
+                                             }
+                                ) {
+                                    record {
+                                        name
+                                    }
+                                  }
+                            }`
+                    ).then((response) => {
+                            console.log("Response from createCarrier ", this.props.phone, ": ", response);
                         }
-                    }`
-                        ).then((response) => {
-                                console.log("Response from createCarrier ", this.props.phone, ": ", response);
-                            }
-                        )
+                    )
 
-                    }
-            }).catch((error) => {
-                    console.error("Error Adding user " + this.props.phone, error);
+                }
+
                 });
-
-
 
             this.toggleSignatureScreen();
         }
@@ -166,7 +169,8 @@ export default class CarrierProfileComponent extends Component {
             returnComponent = <InsuranceComponent title="Insurance Screen"
                                                   navigator={this.props.navigator}
                                                   loginFunction={this.props.loginFunction}
-
+                                                  logoutFunction={this.props.logoutFunction}
+                                                  resetLoginState={this.props.resetLoginState}
 
                 />
 
@@ -198,8 +202,6 @@ export default class CarrierProfileComponent extends Component {
                         keyboardType="default"
                     />
 
-
-
                     <TextInput
                         style={styles.textInputStyle}
                         onChangeText={(address1) => this.setState({address1})}
@@ -209,8 +211,6 @@ export default class CarrierProfileComponent extends Component {
                         autoFocus={false}
                         keyboardType="default"
                     />
-
-
 
                     <TextInput
                         style={styles.textInputStyle}

@@ -213,6 +213,8 @@ export default class SignUpPersonalProfileComponent extends Component {
                                                        driversLicenseState={this.state.driversLicenseState}
                                                        driversLicenseExpiry={this.state.driversLicenseExpiry}
                                                        loginFunction={this.props.loginFunction}
+                                                       logoutFunction={this.props.logoutFunction}
+                                                       resetLoginState={this.props.resetLoginState}
             />
 
         }else{
