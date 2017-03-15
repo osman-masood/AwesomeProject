@@ -118,7 +118,7 @@ export default class JobDetailComponent extends Component {
     }
 
     goToInspection() {        
-        let isDispatched = this.state.job.status === RequestStatusEnum.DISPATCHED;
+        let isDispatched = this.state.job.status === RequestStatusEnum.PROCESSING;
         this.props.navigator.push({
             component: isDispatched ? VehicleInspectionComponent : DropOffObtain,
             navigationBarHidden: false,
@@ -138,7 +138,7 @@ export default class JobDetailComponent extends Component {
     render() {
         const leftButtonConfig = {
             title: 'Back',
-            handler: () => this.props.navigator.pop()
+            handler: () => {this.props.toggleOpenJobDetailComponent(null, 0)}
         };
         const titleConfig = {
             title: 'Inspect'
@@ -146,12 +146,13 @@ export default class JobDetailComponent extends Component {
 
         const request = this.props.request;
 
+
         return (<View>
             <NavigationBar
                 title={titleConfig}
                 leftButton={leftButtonConfig}
             />
-            <ScrollView style={{height: Dimensions.get('window').height - 80}}>
+            <ScrollView style={{height: Dimensions.get('window').height - 120}}>
                 <View style={[styles.cardBottom, {flexDirection: 'row'}]}>
                     <View style={{flex: 3, flexDirection: 'column', alignItems: 'center'}}>
                         <Image style={{margin: 5}} source={require('../assets/profilepic@3x.png')}/>
@@ -172,11 +173,11 @@ export default class JobDetailComponent extends Component {
                 <View style={[styles.cardBottom, {flexDirection: 'column', margin: 2}]}>
                     <View style={{flexDirection: 'row', marginBottom: 10}}>
                         <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
-                        <Text style={{margin: 5}}>{request.origin.city}, {request.origin.state}</Text>
+                        <Text style={{margin: 5}}>{request.origin.address}, {request.origin.city}, {request.origin.state}</Text>
                     </View>
                     <View style={{flexDirection: 'row'}}>
                         <Image style={{margin: 5}} source={require('../assets/enddot@3x.png')} />
-                        <Text>{request.destination.city}, {request.origin.state}</Text>
+                        <Text>{request.destination.address}, {request.destination.city}, {request.origin.state}</Text>
                     </View>
                 </View>
 
@@ -276,6 +277,7 @@ export default class JobDetailComponent extends Component {
                         {/*</View>*/}
                     {/*</View>*/}
                     <View>
+                        {(request.status === RequestStatusEnum.PROCESSING || request.status === RequestStatusEnum.IN_PROGRESS) &&
                         <TouchableHighlight style={{backgroundColor: '#26C6DA',
                         padding: 5, 
                         height: 30, 
@@ -284,9 +286,21 @@ export default class JobDetailComponent extends Component {
                         width: Dimensions.get('window').width-40}}
                                             onPress={this.goToInspection.bind(this)}>
                             <Text style={{color: '#FFFFFF', textAlign: 'center', fontSize: 13}}>
-                                {(request.status === RequestStatusEnum.DISPATCHED) ? 'TAP TO START PICK UP INSPECTION' : 'OBTAIN DROP OFF SIGNATURE'}
+                                {(request.status === RequestStatusEnum.PROCESSING) ? 'TAP TO START PICK UP INSPECTION' : 'OBTAIN DROP OFF SIGNATURE'}
                             </Text>
                         </TouchableHighlight>
+                        }
+
+                        {
+                            (request.status === RequestStatusEnum.DISPATCHED) &&
+                            <TouchableHighlight
+                                     onPress={()=>{this.props.setAcceptModalVisible(true, request)}}>
+
+                                <View >
+                                    <Image source={require('../assets/accept@3x.png')} />
+                                </View>
+                            </TouchableHighlight>
+                        }
                     </View>
                 </View>
             </ScrollView>

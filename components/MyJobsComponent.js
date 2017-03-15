@@ -137,10 +137,13 @@ export default class MyJobsComponent extends Component {
 
             for (let item in deliveries) {
                 let r = deliveries[item]['request'];
-                acceptedRequests.push(r);
 
-                if(acceptedRequests.length == 5)
-                    break;
+                if(r.status == RequestStatusEnum.PROCESSING || r.status == RequestStatusEnum.IN_PROGRESS){
+                    acceptedRequests.push(r);
+                }
+
+                // if(acceptedRequests.length == 5)
+                //     break;
             }
 
             this.setState({
@@ -489,7 +492,7 @@ export default class MyJobsComponent extends Component {
         }
 
         // Is it pick up or drop off?
-        const isPickUp = request.status === RequestStatusEnum.DISPATCHED;
+        const isPickUp = request.status === RequestStatusEnum.PROCESSING;
 
         // The touchable job summary
         const summaryView = this.renderJobListElementSummary(request, true);
@@ -504,7 +507,7 @@ export default class MyJobsComponent extends Component {
             {/* Navigate and Cancel buttons */}
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
                 { phoneNumberLambda(request) }
-                <TouchableHighlight onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
+                <TouchableHighlight underlayColor="transparent" onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
                     <View >
                         <Image source={isPickUp ? require('../assets/navpickup@3x.png') : require('../assets/navdropoff.png')} />
                     </View>
@@ -512,7 +515,7 @@ export default class MyJobsComponent extends Component {
                 {/*<Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>*/}
                     {/*<Text style={{fontSize: 12}}>Navigate to {isPickUp ? "Pick up" : "Drop off"}</Text>*/}
                 {/*</Icon.Button>*/}
-                <TouchableHighlight onPress={ () => this.setCancelModalVisible(true, request)}>
+                <TouchableHighlight underlayColor="transparent" onPress={ () => this.setCancelModalVisible(true, request)}>
                     <View >
                         <Image source={require('../assets/cancel@3x.png')} />
                     </View>
@@ -585,10 +588,10 @@ export default class MyJobsComponent extends Component {
             </View>
             <View style={{flex: 1, flexDirection: 'row', margin: 2}}>
                 <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
-                <Text style={{margin: 5}}>{request.origin.city}, {originStateAbbr}</Text>
+                <Text style={{margin: 5}}>{request.origin.city}, {request.origin.state}</Text>
                 <Image style={{margin: 5}} source={require('../assets/arrow@3x.png')} />
                 <Image style={{margin: 5}}source={require('../assets/enddot@3x.png')} />
-                <Text>{request.destination.city}, {destStateAbbr}</Text>
+                <Text>{request.destination.city}, {request.origin.state}</Text>
             </View>
             <View style={{flexDirection: 'row', margin: 5}}>
                 <View style={{flexDirection: 'row'}}>
@@ -642,7 +645,7 @@ export default class MyJobsComponent extends Component {
         // If it's touchable, wrap it with a TouchableHighlight
         let finalView;
         if (isTouchable) {
-            finalView = <TouchableHighlight onPress={() => this.props.navigator.push({
+            finalView = <TouchableHighlight underlayColor="transparent" onPress={() => this.props.navigator.push({
                 component: JobDetailComponent,
                 navigationBarHidden: false,
                 navigator: this.props.navigator,
@@ -835,7 +838,7 @@ class JobMapPreview extends Component {
                 vehicles += ' ' + vcounts[obj] + ' ' + obj;
             }
 
-            const isPickUp = job.status === RequestStatusEnum.DISPATCHED;
+            const isPickUp = job.status === RequestStatusEnum.PROCESSING;
             return (
                 <View style={styles.buildPreview}>
                     <View style={{height: 30}}>

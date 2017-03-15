@@ -156,7 +156,7 @@ class TabBarComponent extends Component {
                     }
 
                     // Figure out if request is preferred to carrier, not preferred, or already accepted by carrier
-                    if (openRequest.status === RequestStatusEnum.PROCESSING) {
+                    if (openRequest.status === RequestStatusEnum.DISPATCHED) {
                         // TODO add logic to support carrier -> carrier reqs. That is, if preferredCarrierIds.length === 2, then preferredCarrierIds[0] recommended the job to preferredCarrierIds[1], and the job should be in the Network Jobs list of preferredCarrierIds[1]
                         if (openRequest['preferredCarrierIds'].indexOf(currentCarrierId) === -1) {
                             // If current carrier's ID is within the request's preferred carrier IDs, it is preferred. Otherwise not.
@@ -169,11 +169,11 @@ class TabBarComponent extends Component {
                         acceptedRequests.push(openRequest);
                     }
 
-                    if (openPreferredRequests.length === 5)
-                        break;
-
-                    if (openNonPreferredRequests.length === 5)
-                        break;
+                    // if (openPreferredRequests.length === 5)
+                    //     break;
+                    //
+                    // if (openNonPreferredRequests.length === 5)
+                    //     break;
                 }
 
                // openPreferredRequests = userAndLocationRequests['data']['viewer']['carrierRequests'];

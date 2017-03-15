@@ -67,7 +67,8 @@ export default class NewJobsComponent extends Component {
         acceptRequestFunction: PropTypes.func.isRequired,
         declineRequestFunction: PropTypes.func.isRequired,
         currentUserId: PropTypes.string.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+
     };
 
     constructor(props) {
@@ -84,6 +85,8 @@ export default class NewJobsComponent extends Component {
         this.selectIsInOperation = this.selectIsInOperation.bind(this);
         this.selectTrailerType = this.selectTrailerType.bind(this);
         this.selectShipFromDaysInFuture = this.selectShipFromDaysInFuture.bind(this);
+        this.toggleOpenJobDetailComponent = this.toggleOpenJobDetailComponent.bind(this);
+        this.resetJobDetail = this.resetJobDetail.bind(this);
 
         //noinspection UnnecessaryLocalVariableJS
         let thisState: {
@@ -118,7 +121,10 @@ export default class NewJobsComponent extends Component {
             declineReason: string,
             declineReasonComments: string,
             currentUserId: string,
-            accessToken: string
+            accessToken: string,
+            openJobDetailComponent: boolean,
+            detailRequest: Request,
+            detailHaversineDistance: number
 
         } = {
             selectedTab: "all_jobs",
@@ -150,7 +156,10 @@ export default class NewJobsComponent extends Component {
             declineReason: DECLINE_REASONS[0],
             declineReasonComments: null,
             currentUserId: this.props.currentUserId,
-            accessToken: this.props.accessToken
+            accessToken: this.props.accessToken,
+            openJobDetailComponent: false,
+            detailRequest: null,
+            detailHaversineDistance: 0
         };
         this.state = thisState;
 
@@ -233,31 +242,49 @@ export default class NewJobsComponent extends Component {
             mainView = this.searchLoadsView();
         }
 
-        return <View style={{flex: 1}}>
-            <NavigationBar
-                title={{title: this.props.title}}
-                //rightButton={rightButtonConfig}
+        let returnComponent;
+
+        if(this.state.openJobDetailComponent){
+
+            returnComponent = <JobDetailComponent title="My Job String"
+                                                  request={this.state.detailRequest}
+                                                  navigator={this.props.navigator}
+                                                  haversineDistance={this.state.detailHaversineDistance}
+                                                  setAcceptModalVisible={this.setAcceptModalVisible}
+                                                  toggleOpenJobDetailComponent={this.toggleOpenJobDetailComponent}
+                                                  resetJobDetail={this.resetJobDetail}
             />
-            <View>
-                {/*
-                <View style={{borderBottomWidth: 1, borderBottomColor: 'grey'}}>
-                    <Tabs selected={this.state.selectedTab}
-                          style={{backgroundColor:'white'}}
-                          selectedIconStyle={{borderBottomWidth:2,borderBottomColor:'blue'}}
-                          selectedStyle={{fontWeight:'bold'}}
-                          onSelect={el => this.setState({selectedTab:el.props.name})}>
-                        <Text style={{fontWeight: '100'}} name="all_jobs">All Jobs</Text>
-                        <Text style={{fontWeight: '100'}} name="search_loads" >Search Loads</Text>
-                    </Tabs>
+
+        }else{
+            returnComponent = (
+                <View style={{flex: 1}}>
+                    <NavigationBar
+                        title={{title: this.props.title}}
+                        //rightButton={rightButtonConfig}
+                    />
+                    <View>
+                        {/*
+                         <View style={{borderBottomWidth: 1, borderBottomColor: 'grey'}}>
+                         <Tabs selected={this.state.selectedTab}
+                         style={{backgroundColor:'white'}}
+                         selectedIconStyle={{borderBottomWidth:2,borderBottomColor:'blue'}}
+                         selectedStyle={{fontWeight:'bold'}}
+                         onSelect={el => this.setState({selectedTab:el.props.name})}>
+                         <Text style={{fontWeight: '100'}} name="all_jobs">All Jobs</Text>
+                         <Text style={{fontWeight: '100'}} name="search_loads" >Search Loads</Text>
+                         </Tabs>
+                         </View>
+                         */}
+                        <View>
+                            {this.renderAcceptModalIfVisible()}
+                            {this.renderDeclineModalIfVisible()}
+                            {mainView}
+                        </View>
+                    </View>
                 </View>
-                */}
-                <View>
-                    {this.renderAcceptModalIfVisible()}
-                    {this.renderDeclineModalIfVisible()}
-                    {mainView}
-                </View>
-            </View>
-        </View>;
+            );
+        }
+        return returnComponent;
     }
 
     searchLoadsView() {
@@ -630,6 +657,32 @@ export default class NewJobsComponent extends Component {
         this.setState({isAcceptModalVisible: visible, jobOfModal: job});
     }
 
+    toggleOpenJobDetailComponent(request: Request, haversineDistance: number){
+
+        if(this.state.openJobDetailComponent){
+            this.setState({
+                openJobDetailComponent: false,
+                detailRequest: null,
+                detailHaversineDistance: 0
+            });
+        }else{
+            this.setState({
+                openJobDetailComponent: true,
+                detailRequest: request,
+                detailHaversineDistance: haversineDistance
+            });
+        }
+
+    }
+
+    resetJobDetail(){
+        this.setState({
+            openJobDetailComponent: false,
+            detailRequest: null,
+            detailHaversineDistance: 0
+        });
+    }
+
     renderAcceptModalIfVisible() {
         return <Modal
             animationType={"slide"}
@@ -781,14 +834,12 @@ export default class NewJobsComponent extends Component {
         let originStateAbbr = this.abbrState(r.origin.state, 'abbr');
         let destStateAbbr = this.abbrState(r.destination.state, 'abbr');
 
-        return <View key={request._id} style={styles.job}>
+        let returnComponent;
 
-            <TouchableHighlight disabled={dealerJobsOrMyJobs} onPress={() => this.props.navigator.push({
-                component: JobDetailComponent,
-                navigationBarHidden: false,
-                navigator: this.props.navigator,
-                passProps: {title: "My Job String", request:request, haversineDistance: haversineDistance},
-            })}>
+
+        returnComponent = (<View key={request._id} style={styles.job}>
+
+
                 <View>
                     <View style={{margin: 2, alignItems: 'flex-end'}}>
                         <Text style={{marginBottom: 2, marginRight: 5}}>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
@@ -796,10 +847,10 @@ export default class NewJobsComponent extends Component {
                     </View>
                     <View style={{flexDirection: 'row', margin: 2}}>
                         <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
-                        <Text style={{margin: 5}}>{request.origin.city}, {originStateAbbr}</Text>
+                        <Text style={{margin: 5}}>{request.origin.city}, {request.origin.state}</Text>
                         <Image style={{margin: 5}} source={require('../assets/arrow@3x.png')} />
                         <Image style={{margin: 5}}source={require('../assets/enddot@3x.png')} />
-                        <Text style={{margin: 5}}>{request.destination.city}, {destStateAbbr}</Text>
+                        <Text style={{margin: 5}}>{request.destination.city}, {request.destination.state}</Text>
                     </View>
                     <View style={{flexDirection: 'row', margin: 5}}>
                         <View style={{flexDirection: 'row'}}>
@@ -835,55 +886,62 @@ export default class NewJobsComponent extends Component {
 
 
                     {/*<View style={{flex: 3}}>*/}
-                        {/*<Text style={{fontWeight: 'bold'}}>{request.name}</Text>*/}
-                        {/*<Text>Origin: {request.origin.city}, {request.origin.state}</Text>*/}
-                        {/*<Text>Destination: {request.destination.city}, {request.destination.state}</Text>*/}
-                        {/*<Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>*/}
-                        {/*<Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>*/}
-                        {/*<Text>{NewJobsComponent.generateIsOperableString(request)}</Text>*/}
+                    {/*<Text style={{fontWeight: 'bold'}}>{request.name}</Text>*/}
+                    {/*<Text>Origin: {request.origin.city}, {request.origin.state}</Text>*/}
+                    {/*<Text>Destination: {request.destination.city}, {request.destination.state}</Text>*/}
+                    {/*<Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>*/}
+                    {/*<Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>*/}
+                    {/*<Text>{NewJobsComponent.generateIsOperableString(request)}</Text>*/}
                     {/*</View>*/}
                     {/*<View style={{flex: 1}}>*/}
-                        {/*<Text>{`${request.paymentType}: $${request.amountDue}`}</Text>*/}
-                        {/*<Text>Distance: {haversineDistance}</Text>*/}
-                        {/*<Text>Pickup: {request.pickupDate.substring(0,10)}</Text>*/}
-                        {/*<Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>*/}
+                    {/*<Text>{`${request.paymentType}: $${request.amountDue}`}</Text>*/}
+                    {/*<Text>Distance: {haversineDistance}</Text>*/}
+                    {/*<Text>Pickup: {request.pickupDate.substring(0,10)}</Text>*/}
+                    {/*<Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>*/}
                     {/*</View>*/}
                 </View>
-            </TouchableHighlight>
 
-            {/* Call, Accept/Decline buttons */}
-            <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 5}}>
-                { phoneNumberLambda(request) }
-                <TouchableHighlight onPress={ () => this.props.navigator.push({
-                    component: JobDetailComponent,
-                    navigationBarHidden: false,
-                    navigator: this.props.navigator,
-                    passProps: {title: "My Job String", request:request, haversineDistance: haversineDistance},
-                })}>
-                    <View >
-                        <Image source={require('../assets/jobdetails@3x.png')} />
-                    </View>
-                </TouchableHighlight>
-                <TouchableHighlight onPress={ () => this.setDeclineModalVisible(true, request)}>
-                    <View>
-                        <Image source={require('../assets/decline@3x.png')} />
-                    </View>
-                </TouchableHighlight>
-                <TouchableHighlight onPress={ () => this.setAcceptModalVisible(true, request)}>
-                    <View >
-                        <Image source={require('../assets/accept@3x.png')} />
-                    </View>
-                </TouchableHighlight>
-                {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>*/}
+
+                {/* Call, Accept/Decline buttons */}
+                <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 5}}>
+                    { phoneNumberLambda(request) }
+
+                    {!dealerJobsOrMyJobs &&
+
+                    <TouchableHighlight underlayColor="transparent"
+                                        disabled={dealerJobsOrMyJobs}
+                                        activeOpacity={100}
+                                        onPress={()=>this.toggleOpenJobDetailComponent(request, haversineDistance)}
+                    >
+                        <View>
+                            <Image source={require('../assets/jobdetails@3x.png')}/>
+                        </View>
+                    </TouchableHighlight>
+                    }
+
+                    <TouchableHighlight onPress={ () => this.setDeclineModalVisible(true, request)}>
+                        <View>
+                            <Image source={require('../assets/decline@3x.png')} />
+                        </View>
+                    </TouchableHighlight>
+                    <TouchableHighlight onPress={ () => this.setAcceptModalVisible(true, request)}>
+                        <View >
+                            <Image source={require('../assets/accept@3x.png')} />
+                        </View>
+                    </TouchableHighlight>
+
+                    {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>*/}
                     {/*<Text style={{fontSize: 14}}>Decline</Text>*/}
-                {/*</Icon.Button>*/}
-                {/*
-                <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.phoneNumber)}>
-                    <Text style={{fontSize: 12}}>Forward</Text>
-                </Icon.Button>
-                */}
-            </View>
-        </View>
+                    {/*</Icon.Button>*/}
+                    {/*
+                     <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.phoneNumber)}>
+                     <Text style={{fontSize: 12}}>Forward</Text>
+                     </Icon.Button>
+                     */}
+                </View>
+            </View>);
+
+        return returnComponent;
     }
 
     callPhone(phoneNumber: string) {
