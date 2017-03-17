@@ -180,7 +180,7 @@ export default class DropOffObtain extends Component {
                         customerModelOpen: false
                     });
                     // emit event
-                    global.evente.emit('re-send-my-request', {});
+                    global.evente.emit('re-send-request', {reload: true});
                     that.props.navigator.popN(2);
                 }).catch(e => {
                     Alert.alert('Could not save request details',

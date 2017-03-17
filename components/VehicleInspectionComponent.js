@@ -137,7 +137,8 @@ export default class VehicleInspectionComponent extends Component {
                     that.setState({
                         customerModelOpen: false
                     });
-                    global.evente.emit('re-send-my-request', {reload: true});
+                    global.evente.emit('re-send-request', {reload: true});
+                    //global.evente.emit('re-send-my-request', {reload: true});
                     that.props.navigator.popN(2);
                 }).catch(e => {
                     Alert.alert('Could not save request details',
