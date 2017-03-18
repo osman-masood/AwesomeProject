@@ -12,6 +12,7 @@ import {
     View,
     Navigator,
     TextInput,
+    TouchableHighlight,
     Button
 } from 'react-native';
 
@@ -28,8 +29,9 @@ export default class EnterPhoneNumberComponent extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        loginOrAccount: PropTypes.number.isRequired
+        loginOrAccount: PropTypes.number.isRequired,
 
+      //  logoutFunction: PropTypes.object.isRequired
     };
 
     constructor(props) {
@@ -40,17 +42,20 @@ export default class EnterPhoneNumberComponent extends Component {
             phone: null,
             submittingPhoneNumberState: 0, // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
             loginOrAccount: this.props.loginOrAccount, // 0 : Not initialized, 1: Login, 2: Create account
+            accessToken: this.props.accessToken
         };
+
+        this.resetPhoneSubmission =this.resetPhoneSubmission.bind(this);
     }
 
-    verifyPhone() {
 
+    resetPhoneSubmission(){
+        this.setState({
+            submittingPhoneNumberState: 0
+        });
     }
 
-
-    _onForward() { // convention: _ = private
-        // Prepend +1 to phone number if not there
-
+    _onForward() {
 
         let phoneNumber = this.state.phone;
         if (phoneNumber.substring(0, 2) !== "+1") {
@@ -74,29 +79,8 @@ export default class EnterPhoneNumberComponent extends Component {
                 const responseJson = responseJsonAndAccessToken[0];
                 const accessToken = responseJsonAndAccessToken[1];
 
-                this.setState({submittingPhoneNumberState: 2, phone: phoneNumber});
+                this.setState({submittingPhoneNumberState: 2, phone: phoneNumber, accessToken: accessToken});
 
-
-
-                this.props.navigator.push({
-                    id: 'EnterCode',
-                    title: 'Enter Code',
-                    accessToken: accessToken,
-                    loginOrAccount: this.props.loginOrAccount,
-                    phone: phoneNumber,
-                    // component: EnterCodeComponent,
-                    // navigator: this.props.navigator,
-                    // navigationBarHidden: true,
-                    // passProps: {title: 'Enter Code', navigator: this.props.navigator, accessToken: accessToken, loginOrAccount: this.state.loginOrAccount,  phone: this.state.phone}
-                });
-                // this.props.navigator.push({
-                //     title: 'Enter Code',
-                //     component: EnterCodeComponent,
-                //     navigator: this.props.navigator,
-                //     navigationBarHidden: true,
-                //     passProps: {accessToken: accessToken, title: 'Enter Code'},
-                //
-                // });
             })
             .catch((error) => {
                 this.setState({submittingPhoneNumberState: 3});
@@ -106,46 +90,73 @@ export default class EnterPhoneNumberComponent extends Component {
 
     render() {
         // TODO add states for loading & failed
+        console.log(`Phone Number Component:`, this.state);
+
         const leftButtonConfig = {
             title: 'Back',
-            handler: () => this.props.navigator.pop()
+            handler: () => this.props.resetLoginState()
         };
 
-        return (
+        let returnComponent;
+
+        if (this.state.submittingPhoneNumberState === 2) {
+            returnComponent = <EnterCodeComponent title="Enter Code Component"
+                                                  navigator={this.props.navigator}
+                                                  accessToken={this.state.accessToken}
+                                                  loginOrAccount={this.props.loginOrAccount}
+                                                  phone={this.state.phone}
+                                                  loginFunction={this.props.loginFunction}
+                                                  logoutFunction={this.props.logoutFunction}
+                                                  resetPhoneSubmission={this.resetPhoneSubmission}
+                                                  resetLoginState={this.props.resetLoginState}
+
+            />
+        }
+        else {
+            returnComponent = (
 
 
-            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
+                <View style={{backgroundColor: '#6AB0FC', flex: 1}}>
 
-                <NavigationBar
-                    style={{backgroundColor: '#F5FCFF'}}
-                    leftButton={leftButtonConfig}
+                    <NavigationBar
+                        style={{backgroundColor: '#6AB0FC'}}
+                        leftButton={leftButtonConfig}
+                    />
+                    <View style={styles.container}>
+                        <Text style={styles.welcome}>
+                            Enter Phone Number
+                        </Text>
+                        <TextInput
+                            style={styles.textInput}
+                            onChangeText={(phone) => this.setState({phone})}
+                            value={this.state.phone}
+                            placeholder="(510)555-1234"
+                            multiline={false}
+                            autoFocus={true}
+                            keyboardType="phone-pad"
+                        />
+                        <TouchableHighlight
+                            style={styles.button}
+                            disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
+                            onPress={this._onForward}
+                            accessibilityLabel="Send code through SMS to log in" >
+                            <Text style={[styles.text, {paddingLeft: 55, paddingRight: 55}]}>{this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}</Text>
+                        </TouchableHighlight>
+                        {/*<Button*/}
+                            {/*style={styles.buttonStyle}*/}
+                            {/*disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}*/}
+                            {/*onPress={this._onForward}*/}
+                            {/*title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}*/}
+                            {/*color="#841584"*/}
+                            {/*accessibilityLabel="Send code through SMS to log in"*/}
+                        {/*/>*/}
+                    </View>
 
-                />
-            <View style={styles.container}>
-                <Text style={styles.welcome}>
-                    Enter Phone Number
-                </Text>
-                <TextInput
-                    style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-                    onChangeText={(phone) => this.setState({phone})}
-                    value={this.state.phone}
-                    placeholder="(510)555-1234"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="phone-pad"
-                />
-                <Button
-                    style={styles.buttonStyle}
-                    disabled={!this.state.phone || this.state.phone.length < 10 || this.state.submittingPhoneNumberState > 0}
-                    onPress={this._onForward}
-                    title={this.state.submittingPhoneNumberState > 0 ? "Getting SMS code..." : "Next"}
-                    color="#841584"
-                    accessibilityLabel="Send code through SMS to log in"
-                />
-            </View>
+                </View>
+            );
+        }
 
-            </View>
-        );
+        return returnComponent;
     }
 }
 
@@ -155,16 +166,16 @@ const styles = StyleSheet.create({
     container: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
         marginTop: 150,
-        height: 100
+        height: 100,
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
         textAlign: 'center',
         marginTop: 10,
-        backgroundColor: '#F5FCFF',
-        height: 40
+        height: 40,
+        color: 'white',
     },
     instructions: {
         textAlign: 'center',
@@ -172,7 +183,34 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     buttonStyle: {
-        textAlign: 'center',
+        //textAlign: 'center',
         height: 40
-    }
+    },
+    textInput: {
+        height: 40,
+        borderColor: 'white',
+        borderWidth: 1,
+        // borderBottomWidth: 2,
+        // borderTopWidth: 0,
+        // borderRightWidth: 0,
+        // borderLeftWidth: 0,
+        marginLeft: 20,
+        marginRight: 20,
+        padding: 10,
+
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });

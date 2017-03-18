@@ -11,31 +11,90 @@ import {
     Text,
     View,
     Navigator,
+    NavigatorIOS,
+    TouchableHighlight,
+    Image,
     TextInput,
     Button,
     Alert,
-    Date
+    Date,
+    ScrollView,
+    Dimensions,
+    PickerIOS,
+    PickerItemIOS
 } from 'react-native';
 
 import DatePicker from 'react-native-datepicker';
 
 //noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import WelcomeComponent from './WelcomeComponent';
-// import InformationBar from './InformationBar';
 
-import { getAccessTokenFromResponse } from './common';
 import CarrierProfileComponent from './CarrierProfileComponent';
+import LicensePhotoComponent from './LicensePhotoComponent';
 
 import NavigationBar from 'react-native-navbar';
 
+var states =  [
+    ['Arizona', 'AZ'],
+    ['Alabama', 'AL'],
+    ['Alaska', 'AK'],
+    ['Arizona', 'AZ'],
+    ['Arkansas', 'AR'],
+    ['California', 'CA'],
+    ['Colorado', 'CO'],
+    ['Connecticut', 'CT'],
+    ['Delaware', 'DE'],
+    ['Florida', 'FL'],
+    ['Georgia', 'GA'],
+    ['Hawaii', 'HI'],
+    ['Idaho', 'ID'],
+    ['Illinois', 'IL'],
+    ['Indiana', 'IN'],
+    ['Iowa', 'IA'],
+    ['Kansas', 'KS'],
+    ['Kentucky', 'KY'],
+    ['Kentucky', 'KY'],
+    ['Louisiana', 'LA'],
+    ['Maine', 'ME'],
+    ['Maryland', 'MD'],
+    ['Massachusetts', 'MA'],
+    ['Michigan', 'MI'],
+    ['Minnesota', 'MN'],
+    ['Mississippi', 'MS'],
+    ['Missouri', 'MO'],
+    ['Montana', 'MT'],
+    ['Nebraska', 'NE'],
+    ['Nevada', 'NV'],
+    ['New Hampshire', 'NH'],
+    ['New Jersey', 'NJ'],
+    ['New Mexico', 'NM'],
+    ['New York', 'NY'],
+    ['North Carolina', 'NC'],
+    ['North Dakota', 'ND'],
+    ['Ohio', 'OH'],
+    ['Oklahoma', 'OK'],
+    ['Oregon', 'OR'],
+    ['Pennsylvania', 'PA'],
+    ['Rhode Island', 'RI'],
+    ['South Carolina', 'SC'],
+    ['South Dakota', 'SD'],
+    ['Tennessee', 'TN'],
+    ['Texas', 'TX'],
+    ['Utah', 'UT'],
+    ['Vermont', 'VT'],
+    ['Virginia', 'VA'],
+    ['Washington', 'WA'],
+    ['West Virginia', 'WV'],
+    ['Wisconsin', 'WI'],
+    ['Wyoming', 'WY'],
+];
 
 export default class SignUpPersonalProfileComponent extends Component {
     //noinspection JSUnresolvedVariable,JSUnusedGlobalSymbols
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        phone: PropTypes.string.isRequired,
     };
 
     constructor(props) {
@@ -47,67 +106,144 @@ export default class SignUpPersonalProfileComponent extends Component {
             accessToken: this.props.accessToken,
             firstName: null,
             lastName: null,
-            licenseNumber: null,
-            countryState: null,
-            expirationDate: "2016-05-01"
-        }
-        // console.info("SignUpPersonalProfileComponent constructor with accessToken", props.accessToken, "title", props.title);
-        // this._onForward = this._onForward.bind(this);
-        // this.state = { code: null, submittingCodeState: 0 };  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
+            driversLicense: null,
+            driversLicenseState: null,
+            driversLicenseExpiry: "2016-05-01",
+            usedPhoto: null,
+            cameraModalOpen: true,
+            openCamera: false,
+            openCarrierProfile: false,
+            // <--
+        };
+
+
+        this.tookPicture = this.tookPicture.bind(this);
+        this.toggleCameraOpen = this.toggleCameraOpen.bind(this);
+        this.toggleCarrierProfile = this.toggleCarrierProfile.bind(this);
     }
 
-    openWelcomeComponent = () => {
-        this.state.navigator.push({
-            id: 'Welcome',
-            title: 'Welcome Screen',
-            // component: WelcomeComponent,
-            // navigator: this.state.navigator,
-            // navigationBarHidden: true,
-            // passProps: { title: "Welcome Screen", navigator: this.state.navigator}
+
+    openCarrierProfileComponent()  {
+
+        if (this.state.firstName == null || this.state.lastName == null || this.state.driversLicense == null
+            || this.state.driversLicenseState == null || this.state.driversLicenseExpiry === "Invalid Date" || this.state.usedPhoto === null
+        )
+        {
+            Alert.alert("All fields are required", "Please fill all fields");
+        } else {
+            this.toggleCarrierProfile();
+        }
+    }
+
+    _onForward() {
+
+    }
+
+    tookPicture(path) {
+        let that = this;
+        that.setState({
+            usedPhoto: path,
+            cameraModalOpen: false,
+            openCamera: false
+
         });
     }
 
-    openCarrierProfileComponent = (accessToken) => {
+    toggleCarrierProfile() {
 
-        if (this.state.firstName == null || this.state.lastName == null || this.state.licenseNumber == null
-            || this.state.countryState == null || this.state.expirationDate === "Invalid Date"
-        )
-        {
-            Alert.alert("All fields are required", "Please fill the complete information");
-        } else {
-            this.props.navigator.push({
-                id: 'CarrierProfile',
-                title: 'Sign up details',
-                // component: CarrierProfileComponent,
-                // navigator: this.props.navigator,
-                // navigationBarHidden: true,
-                // passProps: {title: 'Carrier Company details', navigator: this.props.navigator, accessToken: accessToken}
+        if(this.state.openCarrierProfile){
+            this.setState({
+                openCarrierProfile: false
+            });
+        }else{
+            this.setState({
+                openCarrierProfile: true
             });
         }
-    }
-    _onForward() {
 
+    }
+
+    toggleCameraOpen() {
+
+        if(this.state.openCamera){
+            this.setState({
+                openCamera: false
+            });
+        }else{
+            this.setState({
+                openCamera: true
+            });
+        }
+
+    }
+
+    backToWelcome() {
+
+        this.props.resetLoginState();
+        this.props.logoutFunction();
     }
 
     render() {
 
         const leftButtonConfig = {
             title: 'Back',
-            handler: () => {this.openWelcomeComponent()}
+            handler: () => this.backToWelcome()
         };
 
         // TODO add states for loading & failed
-        return (
-            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
-                <NavigationBar
-                    leftButton={leftButtonConfig}
-                    style={{backgroundColor: '#F5FCFF'}}
-                />
+        let returnComponent;
 
-                <View style={styles.viewStyle} >
-                    <Text style={styles.textStyle}>Personal Profile</Text>
-                </View>
+        if(this.state.openCamera){
 
+            returnComponent = <LicensePhotoComponent title='License photo'
+                                                     navigator={this.props.navigator}
+                                                     accessToken= {this.props.accessToken}
+                                                     takePicture={this.tookPicture}
+                                                     toggleCameraOpen={this.toggleCameraOpen}
+
+
+                                />
+
+        }else if(this.state.openCarrierProfile){
+
+            returnComponent = <CarrierProfileComponent title="Carrier Company details"
+                                                       navigator={this.props.navigator}
+                                                       accessToken= {this.props.accessToken}
+                                                       phone={this.props.phone}
+                                                       firstName={this.state.firstName}
+                                                       lastName={this.state.lastName}
+                                                       driversLicense={this.state.driversLicense}
+                                                       driversLicenseState={this.state.driversLicenseState}
+                                                       driversLicenseExpiry={this.state.driversLicenseExpiry}
+                                                       loginFunction={this.props.loginFunction}
+                                                       logoutFunction={this.props.logoutFunction}
+                                                       resetLoginState={this.props.resetLoginState}
+            />
+
+        }else{
+            returnComponent = (
+                <ScrollView style={{height: Dimensions.get('window').height - 800, backgroundColor: '#6AB0FC', flex: 1}}>
+                    <NavigationBar
+                        leftButton={leftButtonConfig}
+                        style={{backgroundColor: '#6AB0FC'}}
+                    />
+
+                    <View style={styles.viewStyle} >
+                        <Text style={styles.textTitle}>Personal Profile</Text>
+                    </View>
+
+                    <View>
+                        <Text style={styles.textRegular}>Driver License Photo</Text>
+                    </View>
+
+                    <TouchableHighlight
+                        style={styles.pictureStyle} onPress={() => {this.toggleCameraOpen()}}>
+                        <Image
+                            //defaultSource={require('../assets/sign.jpeg')}
+                            style={styles.imageStyle}
+                            source={ this.state.usedPhoto === null? require('../assets/uploadpic@3x.png'): { uri : this.state.usedPhoto}}
+                        />
+                    </TouchableHighlight>
 
                     <TextInput
                         style={styles.textInputStyle}
@@ -115,11 +251,9 @@ export default class SignUpPersonalProfileComponent extends Component {
                         value={this.state.firstName}
                         placeholder="First Name"
                         multiline={false}
-                        autoFocus={true}
+                        autoFocus={false}
                         keyboardType="default"
                     />
-
-
 
                     <TextInput
                         style={styles.textInputStyle}
@@ -127,57 +261,70 @@ export default class SignUpPersonalProfileComponent extends Component {
                         value={this.state.lastName}
                         placeholder="Last Name"
                         multiline={false}
-                        autoFocus={true}
+                        autoFocus={false}
                         keyboardType="default"
                     />
 
-
-
                     <TextInput
                         style={styles.textInputStyle}
-                        onChangeText={(licenseNumber) => this.setState({licenseNumber})}
-                        value={this.state.licenseNumber}
+                        onChangeText={(driversLicense) => this.setState({driversLicense})}
+                        value={this.state.driversLicense}
                         placeholder="Driver's License Number"
                         multiline={false}
-                        autoFocus={true}
+                        autoFocus={false}
                         keyboardType="default"
                     />
 
+                    <View style={{marginLeft: 40, marginRight: 40}}>
+                        <Text style={styles.textRegular}>Driver License State</Text>
+                        <PickerIOS
+                            itemStyle={{fontSize: 14, color: 'white'}}
+                            selectedValue={this.state.driversLicenseState}
+                            onValueChange={(state) => this.setState({driversLicenseState: state})}>
+                            {Object.keys(states).map((state) => (
+                                <PickerItemIOS
+                                    key={state}
+                                    value={`${states[state][0]}, ${states[state][1]}`}
+                                    label={states[state][0]}
+                                />
+                            ))}
+                        </PickerIOS>
+                    </View>
 
+                    <View>
+                        <Text style={styles.textRegular}>License Expiration Date</Text>
+                        <DatePicker
+                            style={styles.dateStyle}
+                            date={this.state.driversLicenseExpiry}
+                            mode="date"
+                            placeholder="select date"
+                            format="YYYY-MM-DD"
+                            confirmBtnText="Confirm"
+                            cancelBtnText="Cancel"
+                            onDateChange={(driversLicenseExpiry) => this.setState({driversLicenseExpiry})}
+                        />
+                    </View>
 
-                    <TextInput
-                        style={styles.textInputStyle}
-                        onChangeText={(countryState) => this.setState({countryState})}
-                        value={this.state.countryState}
-                        placeholder="State"
-                        multiline={false}
-                        autoFocus={true}
-                        keyboardType="default"
-                    />
+                    <TouchableHighlight
+                        style={styles.button}
+                        onPress={ () => {this.openCarrierProfileComponent()}}
+                        accessibilityLabel="Go to Carrier Information">
+                        <Text style={styles.text}>Next</Text>
+                    </TouchableHighlight>
 
+                    {/*<Button*/}
+                        {/*style={[styles.button, {paddingLeft: 100, paddingRight: 55}]}*/}
+                        {/*onPress={ () => {this.openCarrierProfileComponent()}}*/}
+                        {/*title="Next"*/}
+                        {/*color="#64B7FF"*/}
+                        {/*accessibilityLabel="Go to Carrier Information"*/}
 
-                <DatePicker
-                    style={styles.dateStyle}
-                    date={this.state.expirationDate}
-                    mode="date"
-                    placeholder="select date"
-                    format="YYYY-MM-DD"
-                    confirmBtnText="Confirm"
-                    cancelBtnText="Cancel"
-                    onDateChange={(expirationDate) => this.setState({expirationDate})}
-                />
+                    {/*/>*/}
+                </ScrollView>
+            );
+        }
 
-
-                <Button
-                    style={styles.buttonStyle}
-                    onPress={ () => {this.openCarrierProfileComponent(this.state.accessToken)}}
-                    title="Next"
-                    color="#841584"
-                    accessibilityLabel="Go to Carrier Information"
-
-                />
-            </View>
-        );
+        return returnComponent;
     }
 }
 
@@ -188,7 +335,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
@@ -201,26 +348,38 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     viewStyle :{
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'center',
         alignItems: 'center',
         height: 40,
         paddingTop: 15,
     },
+    textTitle: {
+        fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
 
-    textStyle: {
-        fontSize: 20
+    textRegular: {
+        marginTop: 10,
+        fontSize: 15,
+        color: 'white',
+        textAlign: 'center',
     },
 
     textInputStyle: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: 'white',
         borderWidth: 1,
         padding: 10,
-        marginTop: 5,
-        marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        // marginTop: 5,
+        // marginBottom: 5,
+        marginLeft: 20,
+        marginRight: 20,
+        marginTop: 10,
+        marginBottom: 10,
+        fontSize: 14,
     },
 
     dateStyle: {
@@ -229,12 +388,38 @@ const styles = StyleSheet.create({
         padding: 10,
         marginTop: 5,
         marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        marginLeft: 100,
+        marginRight: 5,
+        borderColor: 'white',
+    },
+
+    pictureStyle: {
+        alignItems: 'center'
+    },
+
+    imageStyle: {
+        height: 100,
+        width: 100,
+        margin: 10,
     },
 
     buttonStyle: {
         textAlign: 'center',
         height: 40
-    }
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        textAlign: 'center',
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
 });

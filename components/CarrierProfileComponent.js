@@ -15,25 +15,30 @@ import {
     View,
     NavigatorIOS,
     TextInput,
-    Button
+    Button,
+    Alert,
+    ScrollView,
+    Dimensions,
+    TouchableHighlight,
+    PickerIOS,
+    PickerItemIOS,
+    AsyncStorage
 } from 'react-native';
 
-//noinspection JSUnresolvedVariable
-import TabBarComponent from './TabBarComponent';
-import WelcomeComponent from './WelcomeComponent';
-// import InformationBar from './InformationBar';
-
-import { getAccessTokenFromResponse } from './common';
+import InsuranceComponent from './InsuranceComponent';
+import { fetchGraphQlQuery } from './common';
+import { getAccessTokenFromResponse, ACCESS_TOKEN_STORAGE_KEY, GRAPHQL_ENDPOINT} from './common';
 
 import NavigationBar from 'react-native-navbar';
 
-
+var vCount = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 export default class CarrierProfileComponent extends Component {
     //noinspection JSUnresolvedVariable,JSUnusedGlobalSymbols
     static propTypes = {
         title: PropTypes.string.isRequired,
         navigator: PropTypes.object.isRequired,
-        accessToken: PropTypes.string.isRequired
+        accessToken: PropTypes.string.isRequired,
+        phone: PropTypes.string.isRequired
     };
 
     constructor(props) {
@@ -43,165 +48,280 @@ export default class CarrierProfileComponent extends Component {
             title: this.props.title,
             navigator: this.props.navigator,
             accessToken: this.props.accessToken,
+            phone: this.props.phone,
             companyName: null,
             address1: null,
-            address2: null,
             city: null,
             countryState: null,
             zipCode: null,
-            emailAddress: null,
+            email: null,
             mcNumber: null,
             usDotNumber: null,
-            vehicleAmount: null
+            vehicleCount: null,
+            openSignature: false
         }
-        // console.info("SignUpPersonalProfileComponent constructor with accessToken", props.accessToken, "title", props.title);
-        // this._onForward = this._onForward.bind(this);
-        // this.state = { code: null, submittingCodeState: 0 };  // 0: Not submitted, 1: Loading, 2: Success, 3: Failure
+
+        this.toggleSignatureScreen = this.toggleSignatureScreen.bind(this);
     }
 
-    openSignUpPersonalProfileComponent = (accessToken) => {
-        this.props.navigator.push({
-            title: 'Sign up details',
-            component: SignUpPersonalProfileComponent,
-            navigator: this.props.navigator,
-            navigationBarHidden: true,
-            passProps: {title: 'Sign up details', navigator: this.props.navigator, accessToken: accessToken}
-        });
+    toggleSignatureScreen() {
+        if (this.state.openSignature) {
+            this.setState({
+                openSignature: false
+            });
+        } else {
+            this.setState({
+                openSignature: true
+
+            });
+        }
     }
 
-    _onForward() {
+    goToSignature() {
 
+        if ( this.state.companyName === null || this.state.address1 === null || this.state.city === null
+              || this.state.zipCode === null || this.state.email === null || this.state.mcNumber === null
+            || this.state.usDotNumber === null || this.state.vehicleCount === null) {
 
+            Alert.alert("All fields are required", "Please fill all fields");
+        } else {
+
+            fetch("https://stowkapi-staging.herokuapp.com/auth/carrier/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                body: JSON.stringify({
+                    "firstName": `${this.props.firstName}`,
+                    "lastName": `${this.props.lastName}`,
+                    "phone": `${this.props.phone}`,
+                    "email": `${this.props.email}`,
+                    "driversLicense": `${this.props.driversLicense}`,
+                    "driversLicenseState": `${this.props.driversLicenseState}`,
+                    "driversLicenseExpiry": `${this.props.driversLicenseExpiry}`,
+                    "dob" : `1991-08-08`,
+                    "role": 'user',
+                    "strategy" : 'sms',
+                    "profile" : {
+                        "type": "carrier",
+                        "role": "owner",
+                    }
+                })
+            }).then((response) => {
+                return [response.json(), getAccessTokenFromResponse(response), response.status]
+            }).then((responseTuple) => {
+                    const responseJson = responseTuple[0];
+                    const accessToken = responseTuple[1];
+                    const statusCode = responseTuple[2];
+
+                //AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+                //console.log("Response from /auth/carrier/register for phone ",this.props.phone, ": ", response);
+                if (statusCode === 201) {
+
+                    AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+
+                    return fetchGraphQlQuery(
+                        accessToken,
+                        `mutation  {
+                                createCarrier(
+                                             name: "${this.state.companyName}",
+                                             mcNumber: "${this.state.mcNumber}",
+                                             usDot: "${this.state.usDotNumber}",
+                                             phone: "${this.state.phone}",
+                                             email: "${this.state.email}",
+                                             address: {
+                                                address: "${this.state.address1}",
+                                                locationName: "Home"
+                                             }
+                                ) {
+                                    record {
+                                        name
+                                    }
+                                  }
+                            }`
+                    ).then((response) => {
+                            console.log("Response from createCarrier ", this.props.phone, ": ", response);
+                        }
+                    )
+
+                }
+
+                });
+
+            this.toggleSignatureScreen();
+        }
     }
 
-    render() {
+
+
+    render(){
 
         const leftButtonConfig = {
             title: 'Back',
-            handler: ()  => this.state.navigator.pop()
+            handler: ()  => this.props.toggleCarrierProfile()
         };
 
         // TODO add states for loading & failed
-        return (
-            <View style={{backgroundColor: '#F5FCFF', flex: 1}}>
-                <NavigationBar
-                    leftButton={leftButtonConfig}
-                    style={{backgroundColor: '#F5FCFF'}}
-                />
+        let returnComponent;
 
-                <View style={styles.viewStyle} >
-                    <Text style={styles.textStyle}>Carrier Profile</Text>
-                </View>
+        if(this.state.openSignature){
 
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(companyName) => this.setState({companyName})}
-                    value={this.state.companyName}
-                    placeholder="Company Name"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(address1) => this.setState({address1})}
-                    value={this.state.address1}
-                    placeholder="Address"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(city) => this.setState({city})}
-                    value={this.state.city}
-                    placeholder="City"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(countryState) => this.setState({countryState})}
-                    value={this.state.countryState}
-                    placeholder="State"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(zipCode) => this.setState({zipCode})}
-                    value={this.state.zipCode}
-                    placeholder="Zip Code"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(emailAddress) => this.setState({emailAddress})}
-                    value={this.state.emailAddress}
-                    placeholder="Email Address"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="email-address"
-                />
-
-
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(mcNumber) => this.setState({mcNumber})}
-                    value={this.state.mcNumber}
-                    placeholder="MC #"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(usDotNumber) => this.setState({usDotNumber})}
-                    value={this.state.usDotNumber}
-                    placeholder="USDOT #"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="default"
-                />
-
-                <TextInput
-                    style={styles.textInputStyle}
-                    onChangeText={(vehicleAmount) => this.setState({vehicleAmount})}
-                    value={this.state.vehicleAmount}
-                    placeholder="How many vehicles can you carry?"
-                    multiline={false}
-                    autoFocus={true}
-                    keyboardType="number-pad"
-                />
-
-                <Button
-                    style={styles.buttonStyle}
-                    onPress={this._onForward}
-                    title="Submit"
-                    color="#841584"
-                    accessibilityLabel="Go to Carrier Information"
+            returnComponent = <InsuranceComponent title="Insurance Screen"
+                                                  navigator={this.props.navigator}
+                                                  loginFunction={this.props.loginFunction}
+                                                  logoutFunction={this.props.logoutFunction}
+                                                  resetLoginState={this.props.resetLoginState}
 
                 />
-            </View>
-        );
+
+            // {/*returnComponent = <SignatureComponent title="Signature Screen"*/}
+            //                                       {/*navigator={this.props.navigator}*/}
+            //                                       {/*toggleSignatureScreen={this.toggleSignatureScreen}*/}
+            // />
+
+        }else{
+            returnComponent = (
+                <ScrollView style={{height: Dimensions.get('window').height - 400, backgroundColor: '#6AB0FC', flex: 1}}>
+                    <NavigationBar
+                        leftButton={leftButtonConfig}
+                        style={{backgroundColor: '#6AB0FC'}}
+                    />
+
+                    <View style={styles.viewStyle} >
+                        <Text style={styles.textStyle}>Carrier Profile</Text>
+                    </View>
+
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(companyName) => this.setState({companyName})}
+                        value={this.state.companyName}
+                        placeholder="Company Name"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(address1) => this.setState({address1})}
+                        value={this.state.address1}
+                        placeholder="Address"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(city) => this.setState({city})}
+                        value={this.state.city}
+                        placeholder="City"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(countryState) => this.setState({countryState})}
+                        value={this.state.driversLicenseState}
+                        placeholder="State"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(zipCode) => this.setState({zipCode})}
+                        value={this.state.zipCode}
+                        placeholder="Zip Code"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(email) => this.setState({email})}
+                        value={this.state.email}
+                        placeholder="Email Address"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="email-address"
+                    />
+
+
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(mcNumber) => this.setState({mcNumber})}
+                        value={this.state.mcNumber}
+                        placeholder="MC #"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+
+
+                    <TextInput
+                        style={styles.textInputStyle}
+                        onChangeText={(usDotNumber) => this.setState({usDotNumber})}
+                        value={this.state.usDotNumber}
+                        placeholder="USDOT #"
+                        multiline={false}
+                        autoFocus={false}
+                        keyboardType="default"
+                    />
+
+                    <View style={{marginLeft: 40, marginRight: 40}}>
+                        <Text style={styles.textRegular}>How many vehicles can you carry?</Text>
+                        <PickerIOS
+                            itemStyle={{fontSize: 14, color: 'white'}}
+                            selectedValue={this.state.vehicleCount}
+                            onValueChange={(count) => this.setState({vehicleCount: count})}>
+                            {Object.keys(vCount).map((option) => (
+                                <PickerItemIOS
+                                    key={option}
+                                    value={option}
+                                    label={vCount[option]}
+                                />
+                            ))}
+                        </PickerIOS>
+                    </View>
+
+                    {/*<TextInput*/}
+                    {/*style={styles.textInputStyle}*/}
+                    {/*onChangeText={(vehicleCount) => this.setState({vehicleCount})}*/}
+                    {/*value={this.state.vehicleCount}*/}
+                    {/*placeholder="How many vehicles can you carry?"*/}
+                    {/*multiline={false}*/}
+                    {/*autoFocus={false}*/}
+                    {/*keyboardType="number-pad"*/}
+                    {/*/>*/}
+
+                    <TouchableHighlight
+                        style={styles.button}
+                        onPress={() => {this.goToSignature()}}
+                        title="Next"
+                        accessibilityLabel="Go to Carrier Information">
+                        <Text style={styles.text}>Next</Text>
+                    </TouchableHighlight>
+
+                    {/*<Button*/}
+                        {/*style={styles.buttonStyle}*/}
+                        {/*onPress={() => {this.goToSignature()}}*/}
+                        {/*title="Next"*/}
+                        {/*color="#841584"*/}
+                        {/*accessibilityLabel="Go to Carrier Information"*/}
+
+                    {/*/>*/}
+                </ScrollView>
+            );
+        }
+        return returnComponent;
     }
 }
 
@@ -212,7 +332,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
     },
     welcome: {
         fontSize: 20,
@@ -225,7 +345,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     viewStyle :{
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'center',
         alignItems: 'center',
         height: 40,
@@ -233,32 +353,60 @@ const styles = StyleSheet.create({
     },
 
     textStyle: {
-        fontSize: 20
+        fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
+        marginBottom: 20,
     },
 
     textInputStyle: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: 'white',
         borderWidth: 1,
         padding: 10,
-        marginTop: 5,
-        marginBottom: 5,
-        marginLeft: 5,
-        marginRight: 5
+        // marginTop: 5,
+        // marginBottom: 5,
+        marginLeft: 20,
+        marginRight: 20,
+        marginTop: 10,
+        marginBottom: 10,
+        fontSize: 14,
     },
 
     horizontalViewStyle: {
         borderBottomWidth: 1,
         padding: 5,
-        backgroundColor: '#F5FCFF',
+        backgroundColor: '#6AB0FC',
         justifyContent: 'flex-start',
         flexDirection: 'row',
         borderColor: '#ddd',
-        // position: 'relative'
+       // position: 'relative'
     },
 
     buttonStyle: {
         textAlign: 'center',
         height: 40
-    }
+    },
+    button: {
+        borderWidth: 1,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        borderColor: 'white',
+        margin: 20,
+    },
+    text: {
+        color: '#64B7FF',
+        fontSize: 20,
+        margin: 5,
+        paddingTop: 5,
+        paddingBottom: 5,
+        textAlign: 'center',
+    },
+    textRegular: {
+        marginTop: 10,
+        fontSize: 15,
+        color: 'white',
+        textAlign: 'center',
+    },
 });
+

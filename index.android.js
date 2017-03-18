@@ -22,6 +22,7 @@ import {
 //noinspection JSUnresolvedVariable
 import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
+import TabViewComponent from "./components/TabViewComponent";
 import EnterCodeComponent from "./components/EnterCodeComponent";
 import TabAndroidComponent from "./components/TabAndroidComponent";
 import WelcomeComponent from "./components/WelcomeComponent";

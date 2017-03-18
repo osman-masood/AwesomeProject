@@ -25,8 +25,8 @@ import {AsyncStorage} from 'react-native';
 
 const RequestStatusEnum = Object.freeze({
     NEW: 0,
-    PROCESSING: 1,
-    DISPATCHED: 2,
+    DISPATCHED: 1,
+    PROCESSING: 2,
     IN_PROGRESS: 3,
     COMPLETE: 4,
     CANCELLED: 5,
@@ -386,32 +386,47 @@ const carrierAcceptedDeliveriesQueryStringLambda = (requestsFunctionString:strin
 
 
 const acceptRequestAndCreateDeliveryFunction = (accessToken:string, request:Request, carrierId:string, currentLatitude:number, currentLongitude:number) => {
+
     return fetchGraphQlQuery(
         accessToken,
-        `mutation UpdateRequestById {
-            requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status:${RequestStatusEnum.DISPATCHED}}}) {
-                recordId
-            }
-        }`
-    ).then((response) => {
-        return fetchGraphQlQuery(
-            accessToken,
-            `mutation AddDeliveryToRequest {
-                deliveryCreate(input: {
-                    clientMutationId:"11",
-                    record: {
-                        carrierId:"${carrierId}", 
-                        requestId:"${request._id}", 
-                        currentCoordinates:[${currentLongitude}, ${currentLatitude}],
-                        status: ${DeliveryStatusEnum.ACCEPTED},
-                        vehicleIds: ${JSON.stringify(request.vehicleIds)}
+        `mutation {
+                acceptRequest(requestId: "${request._id}") {
+                    record {
+                        shipper {
+                             name,
+                        }
                     }
-                }) {
-                    record { _id }
+                      recordId,
                 }
-            }`
-        )
-    });
+        }`
+    );
+
+    // return fetchGraphQlQuery(
+    //     accessToken,
+    //     `mutation UpdateRequestById {
+    //         requestUpdateById(input: {clientMutationId: "10", record:{_id:"${request._id}", status:${RequestStatusEnum.DISPATCHED}}}) {
+    //             recordId
+    //         }
+    //     }`
+    // ).then((response) => {
+    //     return fetchGraphQlQuery(
+    //         accessToken,
+    //         `mutation AddDeliveryToRequest {
+    //             deliveryCreate(input: {
+    //                 clientMutationId:"11",
+    //                 record: {
+    //                     carrierId:"${carrierId}",
+    //                     requestId:"${request._id}",
+    //                     currentCoordinates:[${currentLongitude}, ${currentLatitude}],
+    //                     status: ${DeliveryStatusEnum.ACCEPTED},
+    //                     vehicleIds: ${JSON.stringify(request.vehicleIds)}
+    //                 }
+    //             }) {
+    //                 record { _id }
+    //             }
+    //         }`
+    //     )
+    // });
 };
 
 const createDeclinedByGraphQlString = (request:Request, carrierId:string, reason:string) => {

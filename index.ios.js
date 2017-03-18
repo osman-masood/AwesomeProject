@@ -30,16 +30,32 @@ export default class stowk extends Component {
 
     constructor(props) {
         super(props);
+
+        this.state = { maniplulator: true};
+        this.changeSt = this.changeSt.bind(this);
+
+    }
+
+    changeSt() {
+        if(this.state.maniplulator){
+            this.setState({manipulator: false});
+        }
+        else{
+            this.setState({manipulator: true});
+        }
     }
 
     render() {
+
+        console.log(`stowk: `, this.state);
+
         return (
             <NavigatorIOS
                 initialRoute={{
                     component: MainScreen,
                     title: '',
                     navigationBarHidden: true,
-                    passProps: {title: ""}
+                    passProps: {title: "", changeSt: this.changeSt}
                     }}
                 style={{flex: 1}}
             />
@@ -51,6 +67,9 @@ class MainScreen extends Component {
 
     constructor(props) {
         super(props);
+
+        this.logoutFunction = this.logoutFunction.bind(this);
+        this.loginFunction  = this.loginFunction.bind(this);
     }
 
     componentWillMount() {
@@ -66,20 +85,47 @@ class MainScreen extends Component {
         });
     }
 
-    componentWillReceiveProps(nextProps) {
+    logoutFunction() {
+        //AsyncStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+        AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, "")
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+   //     this.props.changeSt();
+    }
 
-    }    
+    loginFunction() {
+
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+ //       this.props.changeSt();
+    }
 
     render() {
-        //if (!this.state) return null;
+
+        console.log(`MainScreen:`, this.state);
+
         let retComponent;
         if (this.state.wait) {
             retComponent = <WaitScreen/>;
         } else {
-            if (this.state.token == null) {
-                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator}/>;
+            if (this.state.token == null || this.state.token == "") {
+                retComponent = <WelcomeComponent title="Welcome Screen"
+                                                 navigator={this.props.navigator}
+                                                 logoutFunction={this.logoutFunction}
+                                                 loginFunction={this.loginFunction}
+                                                 accessToken={this.state.token}
+                                                 loginOrAccount= {0}
+                />;
             } else {
-                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator}/>;
+                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator} logoutFunction={this.logoutFunction}/>;
             }
         }
         return retComponent;
