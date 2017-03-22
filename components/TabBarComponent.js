@@ -12,13 +12,14 @@
 //noinspection JSUnresolvedVariable
 import React, {Component, PropTypes} from "react";
 //noinspection JSUnresolvedVariable
-import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput, TabBarIOS} from "react-native";
+import {AppRegistry, StyleSheet, Text, View, Navigator, TextInput, TabBarIOS, Image} from "react-native";
 
 import NewJobsComponent from "./NewJobsComponent";
 import MyJobsComponent from "./MyJobsComponent";
 import DeliveredComponent from "./DeliveredComponent";
 import MyNetworkComponent from "./MyNetworkComponent";
 import SettingsComponent from "./SettingsComponent";
+import TabNavigator from 'react-native-tab-navigator';
 
 import {
     fetchCurrentUserAndLocationRequests,
@@ -269,14 +270,17 @@ class TabBarComponent extends Component {
 
         if(!this.state.currentUser)
         {
-            return <TabBarIOS></TabBarIOS>;
+            return <TabNavigator></TabNavigator>;
         }
         return (
-            <TabBarIOS>
+            <TabNavigator>
 
-                <TabBarIOS.Item
+                <TabNavigator.Item
                     title="New Jobs"
-                    icon={require('../assets/newjobsbutton.png')}
+                    renderIcon={() =>
+                        <Image source={require('../assets/newjobsbutton.png')} />
+                    }
+                    //icon={require('../assets/newjobsbutton.png')}
                     selected={this.state.selectedTab === 'newJobsTab'}
                     onPress={() => {
                     this.setState({
@@ -284,11 +288,14 @@ class TabBarComponent extends Component {
                     });
                 }}>
                     {this._renderContent()}
-                </TabBarIOS.Item>
+                </TabNavigator.Item>
 
-                <TabBarIOS.Item
+                <TabNavigator.Item
                     title="My Jobs"
-                    icon={require('../assets/myjobsbutton.png')}
+                    renderIcon={() =>
+                        <Image source={require('../assets/myjobsbutton.png')} />
+                    }
+                    //icon={require('../assets/myjobsbutton.png')}
                     selected={this.state.selectedTab === 'myJobsTab'}
                     onPress={() => {
                     this.setState({
@@ -297,11 +304,14 @@ class TabBarComponent extends Component {
                     });
                 }}>
                     {this._renderContent()}
-                </TabBarIOS.Item>
+                </TabNavigator.Item>
 
-                <TabBarIOS.Item
+                <TabNavigator.Item
                     title="Settings"
-                    icon={{uri: base64Icon, scale: 3}}
+                    renderIcon={() =>
+                        <Image source={require('../relay@3x.png')} />
+                    }
+                    //icon={{uri: base64Icon, scale: 3}}
                     selected={this.state.selectedTab === 'settingsTab'}
                     onPress={() => {
                     this.setState({
@@ -310,7 +320,7 @@ class TabBarComponent extends Component {
                     });
                 }}>
                     {this._renderContent()}
-                </TabBarIOS.Item>
+                </TabNavigator.Item>
                 {/*
                  <TabBarIOS.Item
                  title="Delivered"
@@ -338,7 +348,7 @@ class TabBarComponent extends Component {
                  {this._renderContent()}
                  </TabBarIOS.Item>
                  */}
-            </TabBarIOS>
+            </TabNavigator>
         );
     }
 }

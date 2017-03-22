@@ -22,7 +22,6 @@ import {
 //noinspection JSUnresolvedVariable
 import EnterPhoneNumberComponent from "./components/EnterPhoneNumberComponent";
 import VehicleInspectionComponent from './components/VehicleInspectionComponent'
-import TabViewComponent from "./components/TabViewComponent";
 import EnterCodeComponent from "./components/EnterCodeComponent";
 import TabAndroidComponent from "./components/TabAndroidComponent";
 import WelcomeComponent from "./components/WelcomeComponent";
@@ -30,6 +29,7 @@ import SignUpPersonalProfileComponent from "./components/SignUpPersonalProfileCo
 import CarrierProfileComponent from "./components/CarrierProfileComponent";
 import JobDetailComponent from "./components/JobDetailComponent";
 import DropOffObtain from "./components/DropOffObtain";
+import TabBarComponent from "./components/TabBarComponent";
 import {ACCESS_TOKEN_STORAGE_KEY, loadAccessToken} from "./components/common";
 
 export default class stowk extends Component {
@@ -113,6 +113,9 @@ class MainScreen extends Component {
 
     constructor(props) {
         super(props);
+
+        this.logoutFunction = this.logoutFunction.bind(this);
+        this.loginFunction  = this.loginFunction.bind(this);
     }
 
     componentWillMount() {
@@ -132,6 +135,29 @@ class MainScreen extends Component {
 
     }
 
+    logoutFunction() {
+        //AsyncStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+        AsyncStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, "")
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+        //     this.props.changeSt();
+    }
+
+    loginFunction() {
+
+        loadAccessToken().then((result) => {
+            this.setState({
+                token: result,
+                wait: false
+            })
+        });
+        //       this.props.changeSt();
+    }
+
     render() {
         //window.console.log("inside mainscreen render func");
         //if (!this.state) return null;
@@ -143,11 +169,18 @@ class MainScreen extends Component {
             //window.console.log("state token: " + this.state.token);
             if (this.state.token == null) {
                 //window.console.log("state token is null");
-                retComponent = <WelcomeComponent title="Welcome Screen" navigator={this.props.navigator}/>;
+                retComponent = <WelcomeComponent title="Welcome Screen"
+                                                 navigator={this.props.navigator}
+                                                 logoutFunction={this.logoutFunction}
+                                                 loginFunction={this.loginFunction}
+                                                 accessToken={this.state.token}
+                                                 loginOrAccount= {0}
+                />;
                 //retComponent = <EnterPhoneNumberComponent title="Enter phone number" navigator={this.props.navigator}/>;
             } else {
                 //window.console.log("calling tab android");
-                retComponent = <TabAndroidComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
+                //retComponent = <TabAndroidComponent accessToken={this.state.token} navigator={this.props.navigator}/>; // if already signed in
+                retComponent = <TabBarComponent accessToken={this.state.token} navigator={this.props.navigator} logoutFunction={this.logoutFunction}/>;
             }
         }
         return retComponent;
@@ -182,4 +215,4 @@ const styles = StyleSheet.create({
     }
 });
 
-AppRegistry.registerComponent('stowk', () => stowk);
+AppRegistry.registerComponent('stowk41', () => stowk);

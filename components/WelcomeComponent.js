@@ -7,8 +7,8 @@ import {
     Navigator,
     NavigatorIOS,
     TextInput,
-    NavigatorIOS,
-    Button
+    Button,
+    TouchableHighlight
 } from 'react-native';
 
 import EnterPhoneNumberComponent from './EnterPhoneNumberComponent';
