@@ -134,13 +134,14 @@ class TabBarComponent extends Component {
      * Get User and all nearby Requests from GraphQL endpoint, and set state vars based on response.
      */
     fetchUserAndRequests = () => {
+      //  console.log( "Fetch Requests Start: ", (new Date).toISOString().replace(/z|t/gi,' ').trim());
         fetchCurrentUserAndLocationRequests(
             this.props.accessToken, this.state.currentPosition.latitude, this.state.currentPosition.longitude, 6000)
             .then((userAndLocationRequests) => {
                 const currentUser = userAndLocationRequests['data']['viewer']['me'];
                 const currentCarrierId = currentUser['carrier']['_id'];
 
-                console.log(userAndLocationRequests['data']);
+                //console.log(userAndLocationRequests['data']);
 
                 // Go through the list of all requests and set the open preferred, open non-preferred, and accepted requests.
                 const locationRequests = userAndLocationRequests['data']['viewer']['locationRequests'];
@@ -151,7 +152,7 @@ class TabBarComponent extends Component {
                 for (let openRequest of locationRequests) {
                     // If request was declined by this carrier, skip it
                     if (openRequest.declinedBy && openRequest.declinedBy.length > 0 && openRequest.declinedBy.map((db) => db['carrierId']).indexOf(currentCarrierId) !== -1) {
-                        console.log("TabBarComponent constructor: Request ", openRequest, "had current carrier ID ", currentCarrierId, " in its declined list");
+                      //  console.log("TabBarComponent constructor: Request ", openRequest, "had current carrier ID ", currentCarrierId, " in its declined list");
                         continue;
                     }
 
@@ -186,6 +187,29 @@ class TabBarComponent extends Component {
                     acceptedRequests: []
                 });
             });
+
+        this.acceptedRequests().then( response => {
+
+            let deliveries = response['data']['viewer']['carrierAcceptedDeliveries'];
+            let acceptedRequests = [];
+
+            for (let item in deliveries) {
+                let r = deliveries[item]['request'];
+
+                if(r.status == RequestStatusEnum.PROCESSING || r.status == RequestStatusEnum.IN_PROGRESS){
+                    acceptedRequests.push(r);
+                }
+
+                // if(acceptedRequests.length == 5)
+                //     break;
+            }
+
+            this.setState({
+                acceptedRequests: acceptedRequests
+            })
+        });
+
+       // console.log( "Fetch Requests End: ", (new Date).toISOString().replace(/z|t/gi,' ').trim());
     };
 
     static hasCarrierAcceptedRequest(carrierId: string, request:Request) {
@@ -239,6 +263,7 @@ class TabBarComponent extends Component {
                                                uploadImageJPGS3={uploadImageJPGS3}
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
                                                accessToken={this.props.accessToken}
+                                               acceptedRequestsArray={this.state.acceptedRequests}
             />
         }else if (this.state.selectedTab == 'settingsTab') {
             returnComponent = <SettingsComponent title="Settings"
@@ -265,7 +290,7 @@ class TabBarComponent extends Component {
 
     render() {
 
-        console.log(`TabBarComponent: `, this);
+     //   console.log(`TabBarComponent: `, this);
 
         if(!this.state.currentUser)
         {

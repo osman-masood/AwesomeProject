@@ -18,6 +18,8 @@ import {
   PickerIOS,
     Picker,
   Linking,
+    ListView,
+    SectionList,
   TabBarIOS,
   Button,
   ScrollView,
@@ -50,7 +52,7 @@ const PickerItemIOS = PickerIOS.Item;
 const DECLINE_REASONS = ["Not interested", "Customer not available", "Customer doesn't want to ship",
     "Wrong trailer type", "Not operable", "Wrong price", "Other"];
 
-const LIST_VIEW_BOTTOM_PADDING_HACK = 100;
+const LIST_VIEW_BOTTOM_PADDING_HACK = 200;
 
 
 export default class NewJobsComponent extends Component {
@@ -87,6 +89,9 @@ export default class NewJobsComponent extends Component {
         this.selectShipFromDaysInFuture = this.selectShipFromDaysInFuture.bind(this);
         this.toggleOpenJobDetailComponent = this.toggleOpenJobDetailComponent.bind(this);
         this.resetJobDetail = this.resetJobDetail.bind(this);
+        this.renderRow = this.renderRow.bind(this);
+        this.renderSectionHeader = this.renderSectionHeader.bind(this);
+        this.convertJobsToMap = this.convertJobsToMap.bind(this);
 
         //noinspection UnnecessaryLocalVariableJS
         let thisState: {
@@ -124,7 +129,8 @@ export default class NewJobsComponent extends Component {
             accessToken: string,
             openJobDetailComponent: boolean,
             detailRequest: Request,
-            detailHaversineDistance: number
+            detailHaversineDistance: number,
+            jobsMap: Map
 
         } = {
             selectedTab: "all_jobs",
@@ -159,7 +165,8 @@ export default class NewJobsComponent extends Component {
             accessToken: this.props.accessToken,
             openJobDetailComponent: false,
             detailRequest: null,
-            detailHaversineDistance: 0
+            detailHaversineDistance: 0,
+            jobsMap: new Object()
         };
         this.state = thisState;
 
@@ -179,8 +186,6 @@ export default class NewJobsComponent extends Component {
             }),
             (positionError) => console.error("NewJobsComponent.constructor: Got an error trying to getCurrentPosition: " + positionError.message)
         );
-
-
     }
 
     componentWillReceiveProps(nextProps) {
@@ -191,20 +196,15 @@ export default class NewJobsComponent extends Component {
     }
 
     componentWillMount() {
-        // fetchCurrentUserAndLocationRequests(this.state.accessToken, this.state.currentPosition.latitude,
-        //     this.state.currentPosition.longitude, 12000)
-        //     .then(response => {
-        //         console.log("fetchCurrentUserAndLocationRequests", response, this.state.currentPosition);
+        // const ds = new ListView.DataSource({
+        //     rowHasChanged: (r1, r2) => r1 !== r2,
+        //     sectionHeaderHasChanged: (s1, s2) => s1 !== s2
+        // });
         //
-        //         let openPreferredRequests = response['data']['viewer']['carrierRequests'];
-        //         let openNonPreferredRequests = response['data']['viewer']['locationRequests'];
-        //         this.setState({
-        //             openNonPreferredRequests: openNonPreferredRequests,
-        //             openPreferredRequests: openPreferredRequests
-        //         })
-        //     })
-    }
+        // //this.dataSource = ds.cloneWithRows(this.state.openNonPreferredRequests);
+        // this.dataSource = ds.cloneWithRowsAndSections(this.convertJobsToMap());
 
+    }
 
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -213,7 +213,7 @@ export default class NewJobsComponent extends Component {
     }
 
     onRegionChange(mapViewRegion) {
-        console.log(`NewJobComponent.onRegionChange(mapViewRegion: ${mapViewRegion})`);
+        //console.log(`NewJobComponent.onRegionChange(mapViewRegion: ${mapViewRegion})`);
         this.setState({mapViewRegion});
     }
 
@@ -223,8 +223,9 @@ export default class NewJobsComponent extends Component {
      */
     render() {
 
-        console.log(`New Jobs Component: `, this);
-
+        this.convertJobsToMap();
+       // console.log(`New Jobs Component: `, this);
+     //   console.log( "New Jobs Component Render Start: ", (new Date).toISOString().replace(/z|t/gi,' ').trim());
         const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
             //handler: () => this.openMenuComponent(),
@@ -284,7 +285,24 @@ export default class NewJobsComponent extends Component {
                 </View>
             );
         }
+       // console.log( "NewJobsComponent: Render end", (new Date).toISOString().replace(/z|t/gi,' ').trim());
         return returnComponent;
+    }
+
+    convertJobsToMap() {
+
+        this.dataBlob = {};
+
+        this.dataSource = new ListView.DataSource({
+            rowHasChanged: (r1, r2) => r1 !== r2,
+            sectionHeaderHasChanged: (s1, s2) => s1 !== s2
+        });
+
+        this.dataBlob["dealerJobs"] = this.state.openPreferredRequests;
+        this.dataBlob["allJobs"] = this.state.openNonPreferredRequests;
+        this.dataBlob["networkJobs"] = [];
+
+        this.dataSource = this.dataSource.cloneWithRowsAndSections(this.dataBlob);
     }
 
     searchLoadsView() {
@@ -505,7 +523,7 @@ export default class NewJobsComponent extends Component {
 
     listView() {
         // Get list of dealer jobs
-        console.log("--->",this.state.openPreferredRequests, this.state.openNonPreferredRequests);
+       // console.log("--->",this.state.openPreferredRequests, this.state.openNonPreferredRequests);
         let dealerJobsContainer = this.dealerJobsContainer();
 
         // Get list of network jobs
@@ -525,7 +543,19 @@ export default class NewJobsComponent extends Component {
             this.renderAllJobsSubTabs();
             returnView = <View><Text>Loading...</Text></View>
         } else {
-            returnView = <ScrollView>{[subTabs, ...allContainers]}</ScrollView>;
+
+            returnView = <View style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}} >
+                        {subTabs}
+                        <ListView style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}}
+                                  automaticallyAdjustContentInsets={false}
+                                  initialListSize={1}
+                                  pageSize={5}
+                                  dataSource={this.dataSource}
+                                  renderRow={this.renderRow}
+                                  renderSectionHeader={this.renderSectionHeader}
+                        />
+                    </View>;
+
         }
         return returnView;
     }
@@ -713,7 +743,7 @@ export default class NewJobsComponent extends Component {
     }
 
     onAcceptJob() {
-        console.log("onAcceptJob called with state.currentPosition:", this.state.currentPosition);
+     //   console.log("onAcceptJob called with state.currentPosition:", this.state.currentPosition);
         // Remove job from all lists
         const requestIdToRemove = this.state.jobOfModal._id;
         if (!requestIdToRemove) {
@@ -725,7 +755,7 @@ export default class NewJobsComponent extends Component {
         // API call to accept job
         this.props.acceptRequestFunction(this.state.jobOfModal, this.state.currentPosition.latitude, this.state.currentPosition.longitude).then((responseJson) => {
             global.evente.emit('re-send-request', {reload: true});
-            console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
+          //  console.log("NewJobsComponent.onAcceptJob: Successfully accepted job. Response: ", responseJson);
         });
 
         // Set state to hide accepted job & modal
@@ -751,6 +781,224 @@ export default class NewJobsComponent extends Component {
         return retStr;
     }
 
+    renderSectionHeader(sectionData, category) {
+
+        let title = "Title";
+        if (category === "allJobs") {
+
+            title = "All Jobs";
+        }else if (category === "dealerJobs") {
+            title = "My Dealer Jobs";
+        } else if (category === "networkJobs") {
+            title = "Network Jobs";
+        }
+        const subTabs = this.renderAllJobsSubTabs();
+
+        return (
+            <View key={title}>
+            <View style={[styles.listViewHeader, {backgroundColor: '#F4F0F0', paddingTop: 10, paddingBottom: 10, paddingLeft: 15}]}>
+                <Text style={styles.listViewHeaderText}>{title}</Text>
+            </View>
+
+        </View>
+
+        );
+    }
+
+    renderRow(request:Request) {
+
+        let r = request;
+
+        let carCount = 0, suvCount = 0, vanCount = 0, trucksCount = 0;
+
+        if(r.vehicles.count > 0) {
+
+            for (let e of r.vehicles.edges){
+
+                switch(e.node.type){
+                    case "car":
+                        carCount++;
+                        break;
+                    case "suv":
+                        suvCount++;
+                        break;
+                    case "van":
+                        vanCount++;
+                        break;
+                    case "truck":
+                        trucksCount++;
+                        break;
+                }
+            }
+        }
+
+        let vehicleTypeString = "";
+
+        if (carCount > 0) {
+
+            vehicleTypeString+= `Cars: ${carCount}`
+        }
+        if (suvCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `SUVs: ${suvCount}`
+        }
+        if (vanCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `Vans: ${vanCount}`
+        }
+        if (trucksCount > 0) {
+
+            vehicleTypeString += vehicleTypeString.length == 0? "":", ";
+            vehicleTypeString+= `Trucks: ${trucksCount}`
+        }
+
+        let showPhoneNumber = false;
+
+
+        let phoneNumberLambda = null;
+        //let ButtonIcon = require('../node_modules/react-native-icon-button');
+        if (showPhoneNumber) {
+            phoneNumberLambda = (r) =>
+                //<Text style={{fontSize: 12}}> Call </Text>
+                //<ButtonIcon icon={require("../assets/phonebuttonios@3x.png")} onPress={ () => this.callPhone(r.shipper.phoneNumber)} />;
+                //<Icon.Button name="phone" color="white" backgroundColor="#0AC318" borderRadius={50} size={30} iconStyle={{margin: 5}} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                //</Icon.Button>;
+                <TouchableHighlight onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                    <View >
+                        <Image style={{width: 40, height: 40}} source={require('../assets/phonebuttonios@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+        } else {
+            phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
+        }
+
+        if(this.state === undefined)
+        {
+            return <View>
+
+            </View>;
+        }
+
+        const haversineDistance = haversineDistanceToRequest(this.state.currentPosition, request);
+
+
+        let dealerJobsOrMyJobs = (request.preferredCarrierIds.indexOf(this.state.currentUserId) === -1 )? true : false;
+
+
+        let originStateAbbr = this.abbrState(r.origin.state, 'abbr');
+        let destStateAbbr = this.abbrState(r.destination.state, 'abbr');
+
+        let returnComponent;
+
+
+        returnComponent = (<View key={request._id} style={styles.job}>
+
+
+            <View key={request._id}>
+                <View style={{margin: 2, alignItems: 'flex-end'}}>
+                    <Text style={{marginBottom: 2, marginRight: 5}}>Job Expires: {request.dropoffDate.substring(0,10)}</Text>
+                    <Text style={{marginRight: 5}}>{`${request.paymentType}: $${request.amountDue}`}</Text>
+                </View>
+                <View style={{flexDirection: 'row', margin: 2}}>
+                    <Image style={{margin: 5}} source={require('../assets/startdot@3x.png')} />
+                    <Text style={{margin: 5}}>{request.origin.city}, {request.origin.state}</Text>
+                    <Image style={{margin: 5}} source={require('../assets/arrow@3x.png')} />
+                    <Image style={{margin: 5}}source={require('../assets/enddot@3x.png')} />
+                    <Text style={{margin: 5}}>{request.destination.city}, {request.destination.state}</Text>
+                </View>
+                <View style={{flexDirection: 'row', margin: 5}}>
+                    <View style={{flexDirection: 'row'}}>
+                        <Text>{carCount} x </Text>
+                        <Image source={require('../assets/car@3x.png')} />
+                    </View>
+                    <View><Text> | </Text></View>
+                    <View style={{flexDirection: 'row'}}>
+                        <Text>{trucksCount} x </Text>
+                        <Image source={require('../assets/truck@3x.png')} />
+                    </View>
+                    <View><Text> | </Text></View>
+                    <View style={{flexDirection: 'row'}}>
+                        <Text>{vanCount} x </Text>
+                        <Image source={require('../assets/van@3x.png')} />
+                    </View>
+                    <View><Text> | </Text></View>
+                    <View style={{flexDirection: 'row'}}>
+                        <Text>{suvCount} x </Text>
+                        <Image source={require('../assets/suv@3x.png')} />
+                    </View>
+                </View>
+
+                <View style={styles.details}>
+                    <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Trailer Type: </Text>{request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>
+                    <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Distance: </Text>{haversineDistance}</Text>
+                </View>
+
+                <View style={styles.details}>
+                    <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Running: </Text>{NewJobsComponent.generateIsOperableString(request)}</Text>
+                    <Text style={styles.detailText}><Text style={{fontWeight: 'bold'}}>Pickup: </Text>{request.pickupDate.substring(0,10)}</Text>
+                </View>
+
+
+                {/*<View style={{flex: 3}}>*/}
+                {/*<Text style={{fontWeight: 'bold'}}>{request.name}</Text>*/}
+                {/*<Text>Origin: {request.origin.city}, {request.origin.state}</Text>*/}
+                {/*<Text>Destination: {request.destination.city}, {request.destination.state}</Text>*/}
+                {/*<Text>Vehicles: {request.vehicles.count} {vehicleTypeString.length > 0?"(":""} {vehicleTypeString} {vehicleTypeString.length> 0? ")":""}</Text>*/}
+                {/*<Text>Trailer Type: {request.vehicles.count == 0? "None": request.vehicles.edges[0].node.enclosed?"Enclosed":"Open"}</Text>*/}
+                {/*<Text>{NewJobsComponent.generateIsOperableString(request)}</Text>*/}
+                {/*</View>*/}
+                {/*<View style={{flex: 1}}>*/}
+                {/*<Text>{`${request.paymentType}: $${request.amountDue}`}</Text>*/}
+                {/*<Text>Distance: {haversineDistance}</Text>*/}
+                {/*<Text>Pickup: {request.pickupDate.substring(0,10)}</Text>*/}
+                {/*<Text>Job Expires: {request.dropoffDate.substring(0,10)}</Text>*/}
+                {/*</View>*/}
+            </View>
+
+
+            {/* Call, Accept/Decline buttons */}
+            <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 5}}>
+                { phoneNumberLambda(request) }
+
+                {!dealerJobsOrMyJobs &&
+
+                <TouchableHighlight underlayColor="transparent"
+                                    disabled={dealerJobsOrMyJobs}
+                                    activeOpacity={100}
+                                    onPress={()=>this.toggleOpenJobDetailComponent(request, haversineDistance)}
+                >
+                    <View>
+                        <Image source={require('../assets/jobdetails@3x.png')}/>
+                    </View>
+                </TouchableHighlight>
+                }
+
+                <TouchableHighlight onPress={ () => this.setDeclineModalVisible(true, request)}>
+                    <View>
+                        <Image source={require('../assets/decline@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                <TouchableHighlight onPress={ () => this.setAcceptModalVisible(true, request)}>
+                    <View >
+                        <Image source={require('../assets/accept@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+
+                {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={45} onPress={ () => this.setDeclineModalVisible(true, request)}>*/}
+                {/*<Text style={{fontSize: 14}}>Decline</Text>*/}
+                {/*</Icon.Button>*/}
+                {/*
+                 <Icon.Button name="mail-forward" color="blue" backgroundColor="white" size={30} onPress={ () => this.callPhone(job.location.phoneNumber)}>
+                 <Text style={{fontSize: 12}}>Forward</Text>
+                 </Icon.Button>
+                 */}
+            </View>
+        </View>);
+
+        return returnComponent;
+    }
 
 
     renderJobListElement(request:Request, showPhoneNumber: boolean, marginBottom: number) {

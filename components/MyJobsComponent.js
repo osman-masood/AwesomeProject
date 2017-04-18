@@ -21,6 +21,7 @@ import {
     TabBarIOS,
     Button,
     ScrollView,
+    ListView,
     Text,
     Image,
     Dimensions,
@@ -68,6 +69,8 @@ export default class MyJobsComponent extends Component {
         this.onCancelJob = this.onCancelJob.bind(this);
         this.onRegionChange = this.onRegionChange.bind(this);
         this.callPhone = this.callPhone.bind(this);
+        this.renderRow = this.renderRow.bind(this);
+        this.convertJobsToMap = this.convertJobsToMap.bind(this);
 
         const thisState: {
             allJobsSubTab: string,
@@ -87,11 +90,11 @@ export default class MyJobsComponent extends Component {
             jobOfModal: Request,
             cancelReason: string,
             cancelReasonComments: string,
-            accessToken: string
+            accessToken: string,
         } = {
             allJobsSubTab: "list",  // allJobsSubTab is "list", "map", or "sort"
 
-            acceptedRequests: [],
+            acceptedRequests: this.props.acceptedRequestsArray,
             mapViewRegion: {
                 latitude: this.props.currentPosition.latitude,
                 longitude: this.props.currentPosition.longitude,
@@ -105,10 +108,26 @@ export default class MyJobsComponent extends Component {
             cancelReason: CANCEL_REASONS[0],
             cancelReasonComments: null,
             accessToken: this.props.accessToken,
-            buildPreview: null
+            buildPreview: null,
+
         };
         this.state = thisState;
     }
+
+    convertJobsToMap() {
+
+        this.dataBlob = {};
+
+        this.dataSource = new ListView.DataSource({
+            rowHasChanged: (r1, r2) => r1 !== r2,
+            sectionHeaderHasChanged: (s1, s2) => s1 !== s2
+        });
+
+        this.dataBlob["myJobs"] = this.state.acceptedRequests;
+        this.dataSource = this.dataSource.cloneWithRowsAndSections(this.dataBlob);
+
+    }
+
 
     componentWillReceiveProps(nextProps) {
         // TODO we can optimize further by deep-comparing the requests in shouldComponentUpdate.
@@ -126,6 +145,7 @@ export default class MyJobsComponent extends Component {
         global.evente.addListener('re-send-request', function(e) {
             that.getMyjoblist();
         });
+
     }
 
     getMyjoblist() {
@@ -135,20 +155,18 @@ export default class MyJobsComponent extends Component {
             let deliveries = response['data']['viewer']['carrierAcceptedDeliveries'];
             let acceptedRequests = [];
 
+
             for (let item in deliveries) {
                 let r = deliveries[item]['request'];
 
                 if(r.status == RequestStatusEnum.PROCESSING || r.status == RequestStatusEnum.IN_PROGRESS){
                     acceptedRequests.push(r);
                 }
-
-                // if(acceptedRequests.length == 5)
-                //     break;
             }
 
             this.setState({
                 acceptedRequests: acceptedRequests
-            })
+            });
         });
     }
 
@@ -174,12 +192,32 @@ export default class MyJobsComponent extends Component {
         this.setState({mapViewRegion});
     }
 
+    renderSectionHeader(sectionData, category) {
+
+        let title = "Title";
+        if (category === "myJobs") {
+
+            title = "My Jobs";
+        }
+
+        return (
+
+                <View key={title} style={[styles.listViewHeader, {backgroundColor: '#F4F0F0', paddingTop: 10, paddingBottom: 10, paddingLeft: 15}]}>
+                    <Text style={styles.listViewHeaderText}>{title}</Text>
+                </View>
+
+
+        );
+    }
+
     /*
      * To make it so that NavigationBar interacts with Navigator (i.e. back button support), do:
      * http://stackoverflow.com/questions/34986149/how-to-hidden-back-button-of-react-native-navigator
      */
 
     render() {
+
+        this.convertJobsToMap();
         const rightButtonConfig = {  // TODO add Menu in
             title: 'Menu',
             handler: () => alert('Menu!'),
@@ -238,10 +276,22 @@ export default class MyJobsComponent extends Component {
         const subTabs = this.renderAllJobsSubTabs();
 
         let returnView;
-        if (!allJobsContainer) {
+        if (this.dataBlob.isEmpty) {
             returnView = <View><Text style={{textAlign:'center'}}>Loading jobs ...</Text></View>
         } else {
-            returnView = <ScrollView>{[subTabs, allJobsContainer]}</ScrollView>;
+
+            returnView =
+                <View style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}} >
+                    {subTabs}
+                    <ListView style={{paddingBottom: LIST_VIEW_BOTTOM_PADDING_HACK}}
+                              automaticallyAdjustContentInsets={false}
+                              initialListSize={1}
+                              pageSize={5}
+                              dataSource={this.dataSource}
+                              renderRow={this.renderRow}
+                              renderSectionHeader={this.renderSectionHeader}
+                    />
+                </View>;
         }
         return returnView;
     }
@@ -345,7 +395,7 @@ export default class MyJobsComponent extends Component {
 
                 <View style={{flex: 9, flexDirection: 'column', justifyContent: 'flex-start'}}>
                     <Picker
-                        style={{fontSize: 25}}
+
                         selectedValue={this.state.cancelReason}
                         onValueChange={(cancelReason) => this.setState({cancelReason})}>
                         {CANCEL_REASONS.map((cancelReason) => (
@@ -401,9 +451,8 @@ export default class MyJobsComponent extends Component {
             isCancelModalVisible: false,
             jobOfModal: null,
             acceptedRequests: acceptedRequests,
-            buildPreview: null
+            buildPreview: null,
         });
-
     }
 
     /**
@@ -432,6 +481,7 @@ export default class MyJobsComponent extends Component {
                 navigator.geolocation.getCurrentPosition(
                     location => {
                         var coords = location.coords;
+                        console.log
                         return fetchGraphQlQuery(
                             this.props.accessToken,
                             `mutation UpdateDeliveryById{
@@ -464,6 +514,65 @@ export default class MyJobsComponent extends Component {
                 Alert.alert('You don\'t have Google maps installed', 'Directions require Google maps application to run');
             }
         });
+    }
+
+    renderRow(request) {
+        // Whether to show Call Phone button
+        let phoneNumberLambda = null;
+        // if (showPhoneNumber) {
+        //     phoneNumberLambda = (r) => <Icon.Button name="phone" color="green" backgroundColor="white" size={30} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+        //         <Text style={{fontSize: 12}}>Call</Text>
+        //     </Icon.Button>;
+        // } else {
+        //     phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
+        // }
+        let showPhoneNumber = true;
+        if (showPhoneNumber) {
+            phoneNumberLambda = (r) =>
+                //<Text style={{fontSize: 12}}> Call </Text>
+                //<ButtonIcon icon={require("../assets/phonebuttonios@3x.png")} onPress={ () => this.callPhone(r.shipper.phoneNumber)} />;
+                //<Icon.Button name="phone" color="white" backgroundColor="#0AC318" borderRadius={50} size={30} iconStyle={{margin: 5}} onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                //</Icon.Button>;
+                <TouchableHighlight onPress={ () => this.callPhone(r.shipper.phoneNumber)}>
+                    <View >
+                        <Image style={{width: 40, height: 40}} source={require('../assets/phonebuttonios@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+        } else {
+            phoneNumberLambda = (r) => <View style={{width: 0, height: 0}} />;
+        }
+
+        // Is it pick up or drop off?
+        const isPickUp = request.status === RequestStatusEnum.PROCESSING;
+
+        // The touchable job summary
+        const summaryView = this.renderJobListElementSummary(request, true);
+
+        return <View key={request._id} style={styles.cardBottom}>
+            {/* Job View */}
+            { summaryView }
+
+            {/* Navigate and Cancel buttons */}
+            <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+                { phoneNumberLambda(request) }
+                <TouchableHighlight underlayColor="transparent" onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>
+                    <View >
+                        <Image source={isPickUp ? require('../assets/navpickup@3x.png') : require('../assets/navdropoff.png')} />
+                    </View>
+                </TouchableHighlight>
+                {/*<Icon.Button name="thumbs-o-up" color="black" backgroundColor="white" size={30} onPress={ () => this.onNavigateToPickUpOrDropOff(true, request, isPickUp)}>*/}
+                {/*<Text style={{fontSize: 12}}>Navigate to {isPickUp ? "Pick up" : "Drop off"}</Text>*/}
+                {/*</Icon.Button>*/}
+                <TouchableHighlight underlayColor="transparent" onPress={ () => this.setCancelModalVisible(true, request)}>
+                    <View >
+                        <Image source={require('../assets/cancel@3x.png')} />
+                    </View>
+                </TouchableHighlight>
+                {/*<Icon.Button name="times-circle" color="red" backgroundColor="white" size={30} onPress={ () => this.setCancelModalVisible(true, request)}>*/}
+                {/*<Text style={{fontSize: 12}}>Cancel</Text>*/}
+                {/*</Icon.Button>*/}
+            </View>
+        </View>
     }
 
     renderJobListElement(request, showPhoneNumber: boolean, marginBottom?: number) {

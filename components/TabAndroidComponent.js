@@ -125,6 +125,7 @@ class TabAndroidComponent extends Component {
      * Get User and all nearby Requests from GraphQL endpoint, and set state vars based on response.
      */
     fetchUserAndRequests = () => {
+
         fetchCurrentUserAndLocationRequests(
             this.props.accessToken, this.state.currentPosition.latitude, this.state.currentPosition.longitude, 6000)
             .then((userAndLocationRequests) => {
@@ -170,6 +171,9 @@ class TabAndroidComponent extends Component {
                     acceptedRequests: []
                 });
             });
+        console.log( "Fetch Requests End: ", (new Date).toISOString().replace(/z|t/gi,' ').trim());
+
+
     };
 
     static hasCarrierAcceptedRequest(carrierId: string, request:Request) {
@@ -222,6 +226,7 @@ class TabAndroidComponent extends Component {
                                                uploadImageJPGS3={uploadImageJPGS3}
                                                updateDeliveryMutation={this.updateDeliveryFwd.bind(this)}
                                                accessToken={this.props.accessToken}
+                                               acceptedRequestsArray={this.state.acceptedRequests}
             />
         }
         else if (this.state.selectedTab == 'deliveredTab') {
